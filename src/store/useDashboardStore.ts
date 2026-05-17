@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as XLSX from 'xlsx';
-import { Estudiante, PeriodConfig, RowArea, RowAsignatura } from '../domain/types';
+import type { Estudiante, PeriodConfig, RowArea, RowAsignatura } from '../domain/types';
 import { parseHeaders, extractStudents, flattenRows } from '../services/excelParser';
 import { applyAcademicLogic } from '../services/academicLogic';
 
@@ -69,7 +69,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const headerRows = rows.slice(0, 3);
       const dataRows = rows.slice(3);
       
-      const { headers, totalPeriods } = parseHeaders(headerRows);
+      const { headers } = parseHeaders(headerRows);
       
       // Use filename as curso for now, stripping extension
       const curso = file.name.replace(/\.[^/.]+$/, "");

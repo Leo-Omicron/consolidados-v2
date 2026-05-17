@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ChartsTab } from './ChartsTab';
@@ -21,7 +20,7 @@ describe('ChartsTab', () => {
     useDashboardStore.setState({ 
       estudiantes: [{ id: '1', nombre: 'Test', notas: [] } as any],
       rowsArea: [
-        { areaId: 'AREA_1', notaFinal: 10, estado: 'APROBADO', estudianteId: '1', notaQ1: 10, notaQ2: 10 }
+        { area: 'AREA_1', promActual: 10, estado: { text: 'Ganado', color: 'green' }, estudiante: '1', defP1: 10, defP2: 10 } as any
       ]
     });
     

@@ -1,16 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import {
+import type {
   PeriodConfig,
-  PeriodoNotas,
-  EstadoAcademicoText,
-  EstadoAcademicoColor,
   EstadoAcademico,
-  EvaluacionStats,
   Asignatura,
   Area,
-  Estudiante,
-  RowArea,
-  RowAsignatura
+  Estudiante
 } from './types';
 
 describe('domain types', () => {

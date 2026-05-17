@@ -1,4 +1,4 @@
-import { Area, Asignatura, Estudiante, PeriodoNotas, RowArea, RowAsignatura } from '../domain/types';
+import type { Estudiante, RowArea, RowAsignatura } from '../domain/types';
 
 export interface HeaderComponent {
   index: number;

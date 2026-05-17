@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { parseHeaders, extractStudents, flattenRows, HeaderComponent } from './excelParser';
-import { Estudiante } from '../domain/types';
+import { parseHeaders, extractStudents, flattenRows } from './excelParser';
+import type { HeaderComponent } from './excelParser';
+import type { Estudiante } from '../domain/types';
 
 describe('excelParser', () => {
   describe('parseHeaders', () => {

@@ -33,13 +33,15 @@ export const ChartsTab: React.FC = () => {
     let reprobados = 0;
 
     rowsArea.forEach(row => {
-      if (!areaAverages[row.areaId]) {
-        areaAverages[row.areaId] = { total: 0, count: 0 };
+      if (!areaAverages[row.area]) {
+        areaAverages[row.area] = { total: 0, count: 0 };
       }
-      areaAverages[row.areaId].total += row.notaFinal;
-      areaAverages[row.areaId].count += 1;
+      if (row.promActual !== null) {
+        areaAverages[row.area].total += row.promActual;
+        areaAverages[row.area].count += 1;
+      }
 
-      if (row.estado === 'APROBADO') aprobados++;
+      if (row.estado.color === 'green' || row.estado.text === 'Ganado') aprobados++;
       else reprobados++;
     });
 

@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
-import { PeriodConfig } from '../../domain/types';
+import type { PeriodConfig } from '../../domain/types';
 
 export const FileUploadArea: React.FC = () => {
   const processFile = useDashboardStore((state) => state.processFile);

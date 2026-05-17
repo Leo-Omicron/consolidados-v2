@@ -1,4 +1,4 @@
-import { PeriodConfig, PeriodoNotas, EstadoAcademico, Estudiante } from '../domain/types';
+import type { PeriodConfig, PeriodoNotas, EstadoAcademico, Estudiante } from '../domain/types';
 
 export const PASSING_GRADE = 3.0;
 export const MAX_GRADE = 5.0;

@@ -11,7 +11,7 @@ vi.mock('../services/excelParser', () => ({
   parseHeaders: vi.fn(),
   extractStudents: vi.fn(),
   flattenRows: vi.fn(() => ({
-    rowsArea: [{ areaId: 'AREA_1', notaFinal: 10, estado: 'APROBADO' }],
+    rowsArea: [{ area: 'AREA_1', promActual: 10, estado: { text: 'Ganado', color: 'green' } }],
     rowsAsignatura: []
   }))
 }));
@@ -52,6 +52,6 @@ describe('useDashboardStore', () => {
     );
     expect(excelParser.flattenRows).toHaveBeenCalled();
     expect(useDashboardStore.getState().rowsArea).toHaveLength(1);
-    expect(useDashboardStore.getState().rowsArea[0].areaId).toBe('AREA_1');
+    expect(useDashboardStore.getState().rowsArea[0].area).toBe('AREA_1');
   });
 });

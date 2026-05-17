@@ -34,18 +34,16 @@ export const ReportsTab: React.FC = () => {
         <div className="space-y-6">
           {estudiantes.slice(0, 5).map(est => (
             <div key={est.id} className="border border-gray-200 rounded p-4 break-inside-avoid">
-              <h4 className="font-medium text-lg mb-2">{est.nombre}</h4>
+              <h4 className="font-medium text-lg mb-2">{est.name}</h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <span className="block text-gray-500">Promedio General</span>
-                  <span className="font-semibold">{est.promedioGeneral?.toFixed(2) || 'N/A'}</span>
+                  <span className="block text-gray-500">Curso</span>
+                  <span className="font-semibold">{est.CURSO || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="block text-gray-500">Estado</span>
-                  <span className={`font-semibold ${
-                    est.estadoGeneral === 'APROBADO' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {est.estadoGeneral || 'N/A'}
+                  <span className="block text-gray-500">Total Áreas</span>
+                  <span className="font-semibold">
+                    {Object.keys(est.areas).length}
                   </span>
                 </div>
               </div>

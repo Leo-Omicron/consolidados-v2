@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calcularPromedioActual, calcularMinimoRequerido, determinarEstado, applyAcademicLogic } from './academicLogic';
-import { PeriodConfig, PeriodoNotas, Estudiante } from '../domain/types';
+import type { PeriodConfig, PeriodoNotas, Estudiante } from '../domain/types';
 
 describe('academicLogic', () => {
   const config3Periods: PeriodConfig = { P1: 33.3, P2: 33.3, P3: 33.4 };

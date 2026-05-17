@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
 
 export const AnalysisTab: React.FC = () => {
-  const { rowsArea, config } = useDashboardStore(state => ({
-    rowsArea: state.rowsArea,
-    config: state.config
-  }));
+  // Use separate selectors to avoid returning a new object on every render
+  const rowsArea = useDashboardStore(state => state.rowsArea);
+  const config = useDashboardStore(state => state.config);
+  
   const [page, setPage] = useState(1);
   const rowsPerPage = 15;
 

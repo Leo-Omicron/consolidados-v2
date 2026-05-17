@@ -29,7 +29,25 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   error: null,
   config: DEFAULT_CONFIG,
   
-  setConfig: (config) => set({ config }),
+  setConfig: (config) => set((state) => {
+    let newEstudiantes = state.estudiantes;
+    let newRowsArea = state.rowsArea;
+    let newRowsAsignatura = state.rowsAsignatura;
+
+    if (newEstudiantes.length > 0) {
+      applyAcademicLogic(newEstudiantes, config);
+      const flattened = flattenRows(newEstudiantes);
+      newRowsArea = flattened.rowsArea;
+      newRowsAsignatura = flattened.rowsAsignatura;
+    }
+
+    return { 
+      config,
+      estudiantes: newEstudiantes,
+      rowsArea: newRowsArea,
+      rowsAsignatura: newRowsAsignatura
+    };
+  }),
   
   processFile: async (file: File) => {
     set({ loading: true, error: null });

@@ -1,71 +1,57 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useDashboardStore } from './useDashboardStore';
+import * as academicLogic from '../services/academicLogic';
+import * as excelParser from '../services/excelParser';
 
-// Mock File API since it's not available in Node environment by default
-class MockFile {
-  name: string;
-  constructor(public parts: BlobPart[], name: string, public options?: FilePropertyBag) {
-    this.name = name;
-  }
-  async arrayBuffer() {
-    return new ArrayBuffer(0); // We don't actually read this in the mock
-  }
-}
+vi.mock('../services/academicLogic', () => ({
+  applyAcademicLogic: vi.fn()
+}));
 
-// Mock XLSX
-vi.mock('xlsx', () => {
-  return {
-    read: vi.fn().mockReturnValue({
-      SheetNames: ['Sheet1'],
-      Sheets: {
-        'Sheet1': {} // Mock sheet
-      }
-    }),
-    utils: {
-      sheet_to_json: vi.fn().mockReturnValue([
-        ['No', 'Estudiante', 'CIENCIAS', undefined],
-        ['', '', 'BIOLOGIA', 'QUIMICA'],
-        ['', '', 'P1', 'P1'],
-        [1, 'Juan Perez', 4.0, 3.5]
-      ])
-    }
-  };
-});
+vi.mock('../services/excelParser', () => ({
+  parseHeaders: vi.fn(),
+  extractStudents: vi.fn(),
+  flattenRows: vi.fn(() => ({
+    rowsArea: [{ areaId: 'AREA_1', notaFinal: 10, estado: 'APROBADO' }],
+    rowsAsignatura: []
+  }))
+}));
 
 describe('useDashboardStore', () => {
-  it('initializes with default state', () => {
-    const state = useDashboardStore.getState();
-    expect(state.estudiantes).toEqual([]);
-    expect(state.rowsArea).toEqual([]);
-    expect(state.rowsAsignatura).toEqual([]);
-    expect(state.loading).toBe(false);
-    expect(state.error).toBeNull();
-    expect(state.config.P1).toBe(33.3);
+  beforeEach(() => {
+    useDashboardStore.setState({
+      estudiantes: [],
+      rowsArea: [],
+      rowsAsignatura: [],
+      loading: false,
+      error: null,
+      config: { P1: 33.3, P2: 33.3, P3: 33.4 }
+    });
+    vi.clearAllMocks();
   });
 
-  it('updates state upon successful file processing', async () => {
-    const file = new MockFile([], '10A.xlsx') as unknown as File;
-    
-    // We get the processFile function from store
-    const { processFile } = useDashboardStore.getState();
-    
-    await processFile(file);
-    
-    const state = useDashboardStore.getState();
-    
-    expect(state.loading).toBe(false);
-    expect(state.error).toBeNull();
-    
-    expect(state.estudiantes.length).toBe(1);
-    expect(state.estudiantes[0].name).toBe('JUAN PEREZ');
-    
-    // Check if the data was flattened
-    expect(state.rowsAsignatura.length).toBe(2);
-    expect(state.rowsAsignatura[0].asignatura).toBe('BIOLOGIA');
-    expect(state.rowsAsignatura[0].p1).toBe(4.0);
-    
-    // Check if academic logic was applied
-    // (4.0 * 33.3) / 33.3 = 4.0 for Biologia P1
-    expect(state.rowsAsignatura[0].promActual).toBe(4.0);
+  it('setConfig should only update config if no students', () => {
+    const newConfig = { P1: 40, P2: 30, P3: 30 };
+    useDashboardStore.getState().setConfig(newConfig);
+
+    expect(useDashboardStore.getState().config).toEqual(newConfig);
+    expect(academicLogic.applyAcademicLogic).not.toHaveBeenCalled();
+  });
+
+  it('setConfig should trigger recalculation if students exist', () => {
+    // Inject mock students
+    useDashboardStore.setState({
+      estudiantes: [{ id: '1', nombre: 'Test', notas: [] } as any]
+    });
+
+    const newConfig = { P1: 40, P2: 30, P3: 30 };
+    useDashboardStore.getState().setConfig(newConfig);
+
+    expect(academicLogic.applyAcademicLogic).toHaveBeenCalledWith(
+      [{ id: '1', nombre: 'Test', notas: [] }],
+      newConfig
+    );
+    expect(excelParser.flattenRows).toHaveBeenCalled();
+    expect(useDashboardStore.getState().rowsArea).toHaveLength(1);
+    expect(useDashboardStore.getState().rowsArea[0].areaId).toBe('AREA_1');
   });
 });

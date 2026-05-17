@@ -1,4 +1,4 @@
-import { PeriodConfig, PeriodoNotas, EstadoAcademico } from '../domain/types';
+import { PeriodConfig, PeriodoNotas, EstadoAcademico, Estudiante } from '../domain/types';
 
 export const PASSING_GRADE = 3.0;
 export const MAX_GRADE = 5.0;
@@ -97,3 +97,24 @@ export function determinarEstado(notas: PeriodoNotas, config: PeriodConfig): Est
   // Si requiere 3.0 o menos en los cortes restantes
   return { text: 'Ganable', color: 'cyan' };
 }
+
+export function applyAcademicLogic(students: Estudiante[], config: PeriodConfig): void {
+  students.forEach(student => {
+    Object.values(student.areas).forEach(area => {
+      // Calculate each asignatura
+      Object.values(area.asignaturas).forEach(asig => {
+        asig.promedioActual = calcularPromedioActual(asig, config);
+        asig.p4Min = calcularMinimoRequerido(asig, config);
+        asig.estado = determinarEstado(asig, config);
+      });
+
+      // Calculate area stats based on area DEF
+      area.areaStats = {
+        promedioActual: calcularPromedioActual(area.DEF, config),
+        p4Min: calcularMinimoRequerido(area.DEF, config),
+        estado: determinarEstado(area.DEF, config),
+      };
+    });
+  });
+}
+

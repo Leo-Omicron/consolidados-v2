@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calcularPromedioActual, calcularMinimoRequerido, determinarEstado } from './academicLogic';
-import { PeriodConfig, PeriodoNotas } from '../domain/types';
+import { calcularPromedioActual, calcularMinimoRequerido, determinarEstado, applyAcademicLogic } from './academicLogic';
+import { PeriodConfig, PeriodoNotas, Estudiante } from '../domain/types';
 
 describe('academicLogic', () => {
   const config3Periods: PeriodConfig = { P1: 33.3, P2: 33.3, P3: 33.4 };
@@ -92,4 +92,35 @@ describe('academicLogic', () => {
       expect(determinarEstado(notas, config3Periods).text).toBe('Perdido');
     });
   });
+
+  describe('applyAcademicLogic', () => {
+    it('mutates the students array to add academic logic', () => {
+      const student: Estudiante = {
+        id: '1', name: 'JUAN', CURSO: '10A',
+        areas: {
+          'MATEMATICAS': {
+            DEF: { P1: 3.0, P2: null, P3: null, P4: null },
+            asignaturas: {
+              'ALGEBRA': { 
+                P1: 3.0, P2: null, P3: null, P4: null,
+                promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' }
+              }
+            }
+          }
+        }
+      };
+
+      applyAcademicLogic([student], config3Periods);
+      
+      const asig = student.areas['MATEMATICAS'].asignaturas['ALGEBRA'];
+      expect(asig.promedioActual).toBe(3.0);
+      expect(asig.estado.text).toBe('Ganable');
+
+      const def = student.areas['MATEMATICAS'].areaStats;
+      expect(def).toBeDefined();
+      expect(def?.promedioActual).toBe(3.0);
+      expect(def?.estado.text).toBe('Ganable');
+    });
+  });
 });
+

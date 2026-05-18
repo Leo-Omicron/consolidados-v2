@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
-import { useAnalysisPipeline, AnalysisFilters } from '../../hooks/useAnalysisPipeline';
-import { SortConfig } from '../../domain/types';
+import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
+import type { AnalysisFilters } from '../../hooks/useAnalysisPipeline';
+import type { SortConfig } from '../../domain/types';
 
 export const AnalysisTab: React.FC = () => {
   const rowsArea = useDashboardStore(state => state.rowsArea);
@@ -22,7 +23,7 @@ export const AnalysisTab: React.FC = () => {
 
   const handleSort = (key: any) => {
     setSortConfig(prev => {
-      if (prev?.key === key) {
+      if (prev && prev.key === key) {
         if (prev.direction === 'desc') return { key, direction: 'asc' };
         return null;
       }
@@ -39,7 +40,7 @@ export const AnalysisTab: React.FC = () => {
 
   const getSortIcon = (key: any) => {
     if (sortConfig?.key !== key) return '↕️';
-    return sortConfig.direction === 'desc' ? '⬇️' : '⬆️';
+    return sortConfig?.direction === 'desc' ? '⬇️' : '⬆️';
   };
 
   return (

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { RowArea, AugmentedRowArea, StudentGroup, SortConfig, Trend } from '../domain/types';
+import type { RowArea, AugmentedRowArea, StudentGroup, SortConfig, Trend } from '../domain/types';
 
 export interface AnalysisFilters {
   search: string;

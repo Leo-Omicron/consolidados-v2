@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { useAnalysisPipeline } from './useAnalysisPipeline';
-import { RowArea, SortConfig } from '../domain/types';
+import type { RowArea, SortConfig } from '../domain/types';
 
 describe('useAnalysisPipeline', () => {
   const createMockRow = (

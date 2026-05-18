@@ -76,3 +76,26 @@ export interface RowAsignatura {
   ASIG_NORM: string;
   EST_NORM: string;
 }
+
+export type Trend = 'up' | 'down' | 'flat' | 'none';
+
+export interface AugmentedRowArea extends RowArea {
+  tendencia: Trend;
+}
+
+export interface StudentGroup {
+  estudiante: string;
+  rows: AugmentedRowArea[];
+  aggregates: {
+    defP1: number | null;
+    defP2: number | null;
+    defP3: number | null;
+    promActual: number | null;
+  };
+}
+
+export type SortConfig = {
+  key: keyof AugmentedRowArea | 'aggregates.promActual';
+  direction: 'asc' | 'desc';
+} | null;
+

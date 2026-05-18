@@ -1,118 +1,207 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
+import { useAnalysisPipeline, AnalysisFilters } from '../../hooks/useAnalysisPipeline';
+import { SortConfig } from '../../domain/types';
 
 export const AnalysisTab: React.FC = () => {
-  // Use separate selectors to avoid returning a new object on every render
   const rowsArea = useDashboardStore(state => state.rowsArea);
   const config = useDashboardStore(state => state.config);
   
-  const [page, setPage] = useState(1);
-  const rowsPerPage = 15;
+  const [filters, setFilters] = useState<AnalysisFilters>({ search: '', area: '', status: '' });
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  
+  const hasP4 = config.P4 !== undefined && config.P4 > 0;
+  
+  const { groupedAndSorted, kpis } = useAnalysisPipeline(rowsArea, filters, sortConfig);
+  
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (estudiante: string) => {
+    setExpandedGroups(prev => ({ ...prev, [estudiante]: !prev[estudiante] }));
+  };
+
+  const handleSort = (key: any) => {
+    setSortConfig(prev => {
+      if (prev?.key === key) {
+        if (prev.direction === 'desc') return { key, direction: 'asc' };
+        return null;
+      }
+      return { key, direction: 'desc' };
+    });
+  };
+
+  const uniqueAreas = useMemo(() => Array.from(new Set(rowsArea.map(r => r.area))).sort(), [rowsArea]);
+  const uniqueStatuses = useMemo(() => Array.from(new Set(rowsArea.map(r => r.estado.text))).sort(), [rowsArea]);
 
   if (rowsArea.length === 0) {
     return <div className="p-8 text-center text-gray-500">No hay datos para analizar. Cargue un archivo Excel.</div>;
   }
 
-  const hasP4 = config.P4 !== undefined && config.P4 > 0;
-  
-  const totalPages = Math.ceil(rowsArea.length / rowsPerPage);
-  const startIndex = (page - 1) * rowsPerPage;
-  const paginatedRows = rowsArea.slice(startIndex, startIndex + rowsPerPage);
+  const getSortIcon = (key: any) => {
+    if (sortConfig?.key !== key) return '↕️';
+    return sortConfig.direction === 'desc' ? '⬇️' : '⬆️';
+  };
 
   return (
     <div className="p-6">
-      <h2 className="text-lg font-medium mb-4">Análisis por Área</h2>
-      <div className="overflow-x-auto mb-4">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Área</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P1</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P2</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P3</th>
-              {hasP4 && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P4</th>}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Promedio</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {paginatedRows.map((row, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.estudiante}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.area}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.defP1?.toFixed(2) ?? '-'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.defP2?.toFixed(2) ?? '-'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.defP3?.toFixed(2) ?? '-'}</td>
-                {hasP4 && <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.defP4?.toFixed(2) ?? '-'}</td>}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{row.promActual?.toFixed(2) ?? '-'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    row.estado.color === 'green' ? 'bg-green-100 text-green-800' :
-                    row.estado.color === 'red' ? 'bg-red-100 text-red-800' :
-                    row.estado.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
-                    row.estado.color === 'blue' ? 'bg-blue-100 text-blue-800' :
-                    row.estado.color === 'cyan' ? 'bg-cyan-100 text-cyan-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {row.estado.text}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <h2 className="text-xl font-bold mb-6">Análisis Avanzado</h2>
       
-      {/* Paginación */}
-      <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-        <div className="flex flex-1 justify-between sm:hidden">
-          <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            Anterior
-          </button>
-          <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            Siguiente
-          </button>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-600 mb-1">Buscar estudiante</label>
+          <input 
+            type="text" 
+            className="border border-gray-300 rounded px-3 py-1"
+            value={filters.search}
+            onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
+            placeholder="Ej: Perez"
+          />
         </div>
-        <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-gray-700">
-              Mostrando <span className="font-medium">{startIndex + 1}</span> a{' '}
-              <span className="font-medium">{Math.min(startIndex + rowsPerPage, rowsArea.length)}</span> de{' '}
-              <span className="font-medium">{rowsArea.length}</span> registros
-            </p>
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-600 mb-1">Área</label>
+          <select 
+            className="border border-gray-300 rounded px-3 py-1"
+            value={filters.area}
+            onChange={e => setFilters(prev => ({ ...prev, area: e.target.value }))}
+          >
+            <option value="">Todas</option>
+            {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-600 mb-1">Estado</label>
+          <select 
+            className="border border-gray-300 rounded px-3 py-1"
+            value={filters.status}
+            onChange={e => setFilters(prev => ({ ...prev, status: e.target.value }))}
+          >
+            <option value="">Todos</option>
+            {uniqueStatuses.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col justify-center items-center">
+          <div className="text-gray-500 text-sm font-medium uppercase mb-1">Promedio General</div>
+          <div className="text-3xl font-bold text-blue-600">{kpis.promedioGeneral.toFixed(2)}</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+          <div className="text-gray-500 text-sm font-medium uppercase mb-2 text-center">Distribución de Estados</div>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {Object.entries(kpis.statusDistribution).map(([status, count]) => (
+              <div key={status} className="bg-gray-100 px-3 py-1 rounded text-sm">
+                <span className="font-semibold">{status}:</span> {count}
+              </div>
+            ))}
+            {Object.keys(kpis.statusDistribution).length === 0 && (
+              <div className="text-gray-400 text-sm">No hay datos</div>
+            )}
           </div>
-          <div>
-            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50"
-              >
-                <span className="sr-only">Anterior</span>
-                &larr;
-              </button>
-              <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0">
-                Página {page} de {totalPages}
-              </span>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50"
-              >
-                <span className="sr-only">Siguiente</span>
-                &rarr;
-              </button>
-            </nav>
+        </div>
+      </div>
+
+      {/* Grouped Table List */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-gray-100 px-4 py-3 border-b flex font-semibold text-sm text-gray-700">
+          <div className="w-1/3 cursor-pointer select-none" onClick={() => handleSort('estudiante')}>
+            Estudiante {getSortIcon('estudiante')}
           </div>
+          <div className="flex-1 text-center">Áreas</div>
+          <div className="w-24 text-right cursor-pointer select-none" onClick={() => handleSort('aggregates.promActual')}>
+            Prom. {getSortIcon('aggregates.promActual')}
+          </div>
+        </div>
+        
+        <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
+          {groupedAndSorted.length === 0 && (
+            <div className="p-8 text-center text-gray-500">No se encontraron resultados.</div>
+          )}
+          {groupedAndSorted.map(group => {
+            const isExpanded = expandedGroups[group.estudiante];
+            
+            return (
+              <div key={group.estudiante} className="flex flex-col">
+                <div 
+                  className="px-4 py-3 flex items-center justify-between bg-white hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => toggleGroup(group.estudiante)}
+                >
+                  <div className="w-1/3 font-medium text-gray-900 flex items-center">
+                    <span className="mr-2 text-gray-400">{isExpanded ? '▼' : '▶'}</span>
+                    {group.estudiante}
+                  </div>
+                  <div className="flex-1 text-center text-sm text-gray-500">
+                    {group.rows.length} {group.rows.length === 1 ? 'área' : 'áreas'}
+                  </div>
+                  <div className="w-24 text-right font-bold text-gray-700">
+                    {group.aggregates.promActual?.toFixed(2) ?? '-'}
+                  </div>
+                </div>
+                
+                {isExpanded && (
+                  <div className="bg-gray-50 px-4 py-3 border-t border-b border-gray-100">
+                    <table className="min-w-full divide-y divide-gray-200 text-sm">
+                      <thead>
+                        <tr className="text-gray-500 text-left">
+                          <th className="font-medium pb-2 w-1/4">Área</th>
+                          <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('defP1')}>
+                            P1 {getSortIcon('defP1')}
+                          </th>
+                          <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('defP2')}>
+                            P2 {getSortIcon('defP2')}
+                          </th>
+                          <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('defP3')}>
+                            P3 {getSortIcon('defP3')}
+                          </th>
+                          {hasP4 && (
+                            <th className="font-medium pb-2 w-1/12 text-center">P4</th>
+                          )}
+                          <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('tendencia')}>
+                            Tendencia {getSortIcon('tendencia')}
+                          </th>
+                          <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('promActual')}>
+                            Prom {getSortIcon('promActual')}
+                          </th>
+                          <th className="font-medium pb-2 w-1/4 text-center">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {group.rows.map((row, idx) => (
+                          <tr key={idx} className="hover:bg-white">
+                            <td className="py-2 text-gray-700">{row.area}</td>
+                            <td className="py-2 text-center text-gray-600">{row.defP1?.toFixed(2) ?? '-'}</td>
+                            <td className="py-2 text-center text-gray-600">{row.defP2?.toFixed(2) ?? '-'}</td>
+                            <td className="py-2 text-center text-gray-600">{row.defP3?.toFixed(2) ?? '-'}</td>
+                            {hasP4 && (
+                              <td className="py-2 text-center text-gray-600">{row.defP4?.toFixed(2) ?? '-'}</td>
+                            )}
+                            <td className="py-2 text-center text-xl" title={`Tendencia: ${row.tendencia}`}>
+                              {row.tendencia === 'up' ? '↗️' : row.tendencia === 'down' ? '↘️' : row.tendencia === 'flat' ? '➡️' : '-'}
+                            </td>
+                            <td className="py-2 text-center font-medium text-gray-900">{row.promActual?.toFixed(2) ?? '-'}</td>
+                            <td className="py-2 text-center">
+                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                row.estado.color === 'green' ? 'bg-green-100 text-green-800' :
+                                row.estado.color === 'red' ? 'bg-red-100 text-red-800' :
+                                row.estado.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                                row.estado.color === 'blue' ? 'bg-blue-100 text-blue-800' :
+                                row.estado.color === 'cyan' ? 'bg-cyan-100 text-cyan-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {row.estado.text}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

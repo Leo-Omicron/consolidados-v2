@@ -1,6 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { useAnalysisPipeline } from './useAnalysisPipeline';
+import { useDashboardStore } from '../store/useDashboardStore';
 import type { RowArea, SortConfig } from '../domain/types';
 
 describe('useAnalysisPipeline', () => {
@@ -191,5 +192,88 @@ describe('useAnalysisPipeline', () => {
     );
     const sortedGroup = sortedResult.current.groupedAndSorted.find(g => g.estudiante === 'Alice');
     expect((sortedGroup?.rows[0] as any).asignatura).toBe('Algebra'); // Algebra (3.0) > Geometry (null)
+  });
+
+  describe('Promotion logic ("Regla de Oro")', () => {
+    it('calculates failedAreasCount and isReprobado correctly from unfiltered rowsArea', () => {
+      const aliceMath = createMockRow('a1', 'Alice', 'Math', 3.0, 3.0, 2.0, 2.7, 'Perdido');
+      const aliceScience = createMockRow('a2', 'Alice', 'Science', 3.0, 3.0, 2.0, 2.7, 'Perdido');
+      const aliceSpanish = createMockRow('a3', 'Alice', 'Spanish', 4.0, 4.0, 4.0, 4.0, 'Ganado');
+      
+      const bobMath = createMockRow('b1', 'Bob', 'Math', 3.0, 3.0, 2.0, 2.7, 'Perdido');
+      const bobScience = createMockRow('b2', 'Bob', 'Science', 3.0, 3.0, 2.0, 2.7, 'Perdido');
+      const bobSpanish = createMockRow('b3', 'Bob', 'Spanish', 3.0, 3.0, 2.0, 2.7, 'Perdido');
+
+      const charlieMath = createMockRow('c1', 'Charlie', 'Math', 3.0, 3.0, 2.0, 2.7, 'Perdido');
+      const charlieScience = createMockRow('c2', 'Charlie', 'Science', 4.0, 4.0, 4.0, 4.0, 'Ganado');
+
+      const storeRows = [aliceMath, aliceScience, aliceSpanish, bobMath, bobScience, bobSpanish, charlieMath, charlieScience];
+      useDashboardStore.setState({ rowsArea: storeRows });
+
+      const { result } = renderHook(() =>
+        useAnalysisPipeline(storeRows, 'Todos', { search: '', area: '', status: '' }, null, 'area')
+      );
+
+      const aliceGroup = result.current.groupedAndSorted.find(g => g.estudiante === 'Alice');
+      expect(aliceGroup?.failedAreasCount).toBe(2);
+      expect(aliceGroup?.isReprobado).toBe(false);
+
+      const bobGroup = result.current.groupedAndSorted.find(g => g.estudiante === 'Bob');
+      expect(bobGroup?.failedAreasCount).toBe(3);
+      expect(bobGroup?.isReprobado).toBe(true);
+
+      const charlieGroup = result.current.groupedAndSorted.find(g => g.estudiante === 'Charlie');
+      expect(charlieGroup?.failedAreasCount).toBe(1);
+      expect(charlieGroup?.isReprobado).toBe(false);
+    });
+
+    it('retains isReprobado and failedAreasCount even when active rows are filtered', () => {
+      const aliceMath = createMockRow('a1', 'Alice', 'Math', 3.0, 3.0, 2.0, 2.7, 'Perdido');
+      const aliceScience = createMockRow('a2', 'Alice', 'Science', 3.0, 3.0, 2.0, 2.7, 'Perdido');
+      const aliceSpanish = createMockRow('a3', 'Alice', 'Spanish', 4.0, 4.0, 4.0, 4.0, 'Ganado');
+      
+      const bobMath = createMockRow('b1', 'Bob', 'Math', 3.0, 3.0, 2.0, 2.7, 'Perdido');
+      const bobScience = createMockRow('b2', 'Bob', 'Science', 3.0, 3.0, 2.0, 2.7, 'Perdido');
+      const bobSpanish = createMockRow('b3', 'Bob', 'Spanish', 3.0, 3.0, 2.0, 2.7, 'Perdido');
+
+      const storeRows = [aliceMath, aliceScience, aliceSpanish, bobMath, bobScience, bobSpanish];
+      useDashboardStore.setState({ rowsArea: storeRows });
+
+      const filteredActiveRows = [aliceMath, bobMath];
+
+      const { result } = renderHook(() =>
+        useAnalysisPipeline(filteredActiveRows, 'Todos', { search: '', area: 'Math', status: 'Perdido' }, null, 'area')
+      );
+
+      const aliceGroup = result.current.groupedAndSorted.find(g => g.estudiante === 'Alice');
+      expect(aliceGroup?.failedAreasCount).toBe(2);
+      expect(aliceGroup?.isReprobado).toBe(false);
+
+      const bobGroup = result.current.groupedAndSorted.find(g => g.estudiante === 'Bob');
+      expect(bobGroup?.failedAreasCount).toBe(3);
+      expect(bobGroup?.isReprobado).toBe(true);
+    });
+
+    it('does not count subject-level failures for the academic promotion status', () => {
+      const aliceMath = createMockRow('a1', 'Alice', 'Math', 3.0, 3.0, 2.0, 2.7, 'Perdido');
+      const aliceScience = createMockRow('a2', 'Alice', 'Science', 4.0, 4.0, 4.0, 4.0, 'Ganado');
+      const storeRows = [aliceMath, aliceScience];
+      useDashboardStore.setState({ rowsArea: storeRows });
+
+      const mockAsignaturas = [
+        { id: 'as1', estudiante: 'Alice', area: 'Math', asignatura: 'Algebra', estado: { text: 'Perdido' }, grupo: 'mock' },
+        { id: 'as2', estudiante: 'Alice', area: 'Math', asignatura: 'Geometry', estado: { text: 'Perdido' }, grupo: 'mock' },
+        { id: 'as3', estudiante: 'Alice', area: 'Math', asignatura: 'Calculus', estado: { text: 'Perdido' }, grupo: 'mock' },
+        { id: 'as4', estudiante: 'Alice', area: 'Math', asignatura: 'Trig', estado: { text: 'Perdido' }, grupo: 'mock' },
+      ];
+
+      const { result } = renderHook(() =>
+        useAnalysisPipeline(mockAsignaturas, 'Todos', { search: '', area: '', status: '' }, null, 'subject')
+      );
+
+      const aliceGroup = result.current.groupedAndSorted.find(g => g.estudiante === 'Alice');
+      expect(aliceGroup?.failedAreasCount).toBe(1);
+      expect(aliceGroup?.isReprobado).toBe(false);
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { StudentGroup, SortConfig, Trend, PipelineRow } from '../domain/types';
+import { useDashboardStore } from '../store/useDashboardStore';
 
 export interface AnalysisFilters {
   search: string;
@@ -14,6 +15,18 @@ export function useAnalysisPipeline(
   sortConfig: SortConfig | null,
   viewMode: 'area' | 'subject' = 'area'
 ) {
+  const rowsArea = useDashboardStore(state => state.rowsArea);
+
+  const failedAreasMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    rowsArea.forEach(row => {
+      if (row.estado && row.estado.text === 'Perdido') {
+        map[row.estudiante] = (map[row.estudiante] || 0) + 1;
+      }
+    });
+    return map;
+  }, [rowsArea]);
+
   // 1. Augmentation
   const augmentedRows = useMemo(() => {
     return rows.map((row) => {
@@ -122,9 +135,13 @@ export function useAnalysisPipeline(
         promActual: calcAvg('promActual', 'promActual')
       };
       
+      const failedCount = failedAreasMap[group.estudiante] || 0;
+      group.failedAreasCount = failedCount;
+      group.isReprobado = failedCount >= 3;
+
       return group;
     });
-  }, [filteredRows, viewMode]);
+  }, [filteredRows, viewMode, failedAreasMap]);
 
   // 5. Final Sorting
   const groupedAndSorted = useMemo(() => {

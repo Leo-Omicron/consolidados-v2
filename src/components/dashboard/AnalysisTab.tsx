@@ -190,6 +190,11 @@ export const AnalysisTab: React.FC = () => {
                   <div className="w-1/3 font-medium text-gray-900 flex items-center">
                     <span className="mr-2 text-gray-400">{isExpanded ? '▼' : '▶'}</span>
                     {group.estudiante}
+                    {group.isReprobado && (
+                      <span className="ml-2 bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold">
+                        Año Reprobado ({group.failedAreasCount} Áreas)
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 text-center text-sm text-gray-500">
                     {group.rows.length} {group.rows.length === 1 ? (viewMode === 'area' ? 'área' : 'asignatura') : (viewMode === 'area' ? 'áreas' : 'asignaturas')}
@@ -223,6 +228,9 @@ export const AnalysisTab: React.FC = () => {
                           <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('promActual')}>
                             Prom {getSortIcon('promActual')}
                           </th>
+                          <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('p4Min')}>
+                            {hasP4 ? 'Mín. P4' : 'Mín. P3'} {getSortIcon('p4Min')}
+                          </th>
                           <th className="font-medium pb-2 w-1/4 text-center">Estado</th>
                         </tr>
                       </thead>
@@ -239,8 +247,11 @@ export const AnalysisTab: React.FC = () => {
                             <td className="py-2 text-center text-xl" title={`Tendencia: ${row.tendencia}`}>
                               {row.tendencia === 'up' ? '↗️' : row.tendencia === 'down' ? '↘️' : row.tendencia === 'flat' ? '➡️' : '-'}
                             </td>
-                            <td className="py-2 text-center font-medium text-gray-900">{row.promActual?.toFixed(2) ?? '-'}</td>
-                            <td className="py-2 text-center">
+                             <td className="py-2 text-center font-medium text-gray-900">{row.promActual?.toFixed(2) ?? '-'}</td>
+                             <td className="py-2 text-center text-gray-600">
+                               {row.p4Min !== null && row.p4Min !== undefined && row.p4Min <= 5.0 ? row.p4Min.toFixed(2) : '-'}
+                             </td>
+                             <td className="py-2 text-center">
                               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                 row.estado.color === 'green' ? 'bg-green-100 text-green-800' :
                                 row.estado.color === 'red' ? 'bg-red-100 text-red-800' :

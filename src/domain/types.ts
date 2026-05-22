@@ -102,6 +102,8 @@ export interface StudentGroup<T = PipelineRow> {
     defP3: number | null;
     promActual: number | null;
   };
+  failedAreasCount?: number;
+  isReprobado?: boolean;
 }
 
 export type SortConfig = {

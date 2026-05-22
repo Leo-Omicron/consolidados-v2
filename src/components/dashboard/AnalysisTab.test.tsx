@@ -235,4 +235,149 @@ describe('AnalysisTab', () => {
     const icon = screen.queryByTitle(/Requiere .* en el periodo restante para aprobar/);
     expect(icon).toBeNull();
   });
+
+  it('renders "Mín. P3" header when P4 is not active', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        rowsArea: [{ estudiante: 'Juan', area: 'Matemáticas', estado: { text: 'Ganado' } }],
+        rowsAsignatura: [],
+        viewMode: 'area',
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos'],
+        setGrupo: vi.fn(),
+        subjectWeights: {}
+      };
+      return selector(state);
+    });
+
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'TestJuan',
+        rows: [{
+          area: 'Math',
+          promActual: 3.5,
+          p4Min: 4.0,
+          tendencia: 'up',
+          estado: { text: 'Ganado', color: 'green' }
+        }],
+        aggregates: { promActual: 3.5 }
+      }],
+      kpis: { promedioGeneral: 3.5, statusDistribution: {} }
+    });
+
+    render(<AnalysisTab />);
+    fireEvent.click(screen.getByText('TestJuan'));
+    expect(screen.getByText(/Mín. P3/)).toBeDefined();
+  });
+
+  it('renders "Mín. P4" header when P4 is active', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        rowsArea: [{ estudiante: 'Juan', area: 'Matemáticas', estado: { text: 'Ganado' } }],
+        rowsAsignatura: [],
+        viewMode: 'area',
+        config: { P1: 25, P2: 25, P3: 25, P4: 25 },
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos'],
+        setGrupo: vi.fn(),
+        subjectWeights: {}
+      };
+      return selector(state);
+    });
+
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'TestJuan',
+        rows: [{
+          area: 'Math',
+          promActual: 3.5,
+          p4Min: 4.0,
+          tendencia: 'up',
+          estado: { text: 'Ganado', color: 'green' }
+        }],
+        aggregates: { promActual: 3.5 }
+      }],
+      kpis: { promedioGeneral: 3.5, statusDistribution: {} }
+    });
+
+    render(<AnalysisTab />);
+    fireEvent.click(screen.getByText('TestJuan'));
+    expect(screen.getByText(/Mín. P4/)).toBeDefined();
+  });
+
+  it('renders achievable grade as value and impossible as "-"', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        rowsArea: [{ estudiante: 'Juan', area: 'Matemáticas', estado: { text: 'Ganado' } }],
+        rowsAsignatura: [],
+        viewMode: 'area',
+        config: { P1: 25, P2: 25, P3: 25, P4: 25 },
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos'],
+        setGrupo: vi.fn(),
+        subjectWeights: {}
+      };
+      return selector(state);
+    });
+
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'TestGrades',
+        rows: [
+          {
+            area: 'Math',
+            promActual: 3.5,
+            p4Min: 4.20,
+            tendencia: 'up',
+            estado: { text: 'Ganado', color: 'green' }
+          },
+          {
+            area: 'Science',
+            promActual: 1.5,
+            p4Min: 5.50,
+            tendencia: 'down',
+            estado: { text: 'Perdido', color: 'red' }
+          }
+        ],
+        aggregates: { promActual: 2.5 }
+      }],
+      kpis: { promedioGeneral: 2.5, statusDistribution: {} }
+    });
+
+    render(<AnalysisTab />);
+    fireEvent.click(screen.getByText('TestGrades'));
+    expect(screen.getByText('4.20')).toBeDefined();
+    expect(screen.getAllByText('-').length).toBeGreaterThan(0); // Science cell has - or is rendered correctly
+  });
+
+  it('renders "Año Reprobado" badge when student is reprobado', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        rowsArea: [{ estudiante: 'Juan', area: 'Matemáticas', estado: { text: 'Ganado' } }],
+        rowsAsignatura: [],
+        viewMode: 'area',
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos'],
+        setGrupo: vi.fn(),
+        subjectWeights: {}
+      };
+      return selector(state);
+    });
+
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'Juan Reprobado',
+        rows: [],
+        aggregates: { promActual: 2.0 },
+        failedAreasCount: 3,
+        isReprobado: true
+      }],
+      kpis: { promedioGeneral: 2.0, statusDistribution: {} }
+    });
+
+    render(<AnalysisTab />);
+    expect(screen.getByText(/Año Reprobado \(3 Áreas\)/)).toBeDefined();
+  });
 });

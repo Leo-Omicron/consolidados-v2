@@ -380,4 +380,66 @@ describe('AnalysisTab', () => {
     render(<AnalysisTab />);
     expect(screen.getByText(/Año Reprobado \(3 Áreas\)/)).toBeDefined();
   });
+
+  it('allows expanding an Area row and rendering the nested sub-table with subjects', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        rowsArea: [{ estudiante: 'Juan', area: 'Ciencias Sociales', estado: { text: 'En riesgo' }, defP1: 3.5, defP2: 3.0, defP3: null, promActual: 3.25, p4Min: 2.5, CURSO: '6A', grupo: '6A' }],
+        rowsAsignatura: [
+          { estudiante: 'Juan', area: 'Ciencias Sociales', asignatura: 'Historia', p1: 4.0, p2: 3.5, p3: null, promActual: 3.75, p4Min: 2.0, estado: { text: 'Ganado', color: 'green' }, CURSO: '6A', grupo: '6A', tendencia: 'up' },
+          { estudiante: 'Juan', area: 'Ciencias Sociales', asignatura: 'Geografía', p1: 3.0, p2: 2.5, p3: null, promActual: 2.75, p4Min: 3.5, estado: { text: 'Recuperable', color: 'blue' }, CURSO: '6A', grupo: '6A', tendencia: 'flat' }
+        ],
+        viewMode: 'area',
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos'],
+        setGrupo: vi.fn(),
+        subjectWeights: {}
+      };
+      return selector(state);
+    });
+
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'Juan',
+        rows: [{
+          area: 'Ciencias Sociales',
+          defP1: 3.5,
+          defP2: 3.0,
+          defP3: null,
+          promActual: 3.25,
+          p4Min: 2.5,
+          tendencia: 'flat',
+          estado: { text: 'En riesgo', color: 'yellow' }
+        }],
+        aggregates: { promActual: 3.25 }
+      }],
+      kpis: { promedioGeneral: 3.25, statusDistribution: {} }
+    });
+
+    render(<AnalysisTab />);
+    
+    // First, expand the student group 'Juan' to see the Area row
+    fireEvent.click(screen.getByText('Juan'));
+    
+    // Now we should see the Area row for 'Ciencias Sociales'
+    expect(screen.getByRole('cell', { name: /Ciencias Sociales/ })).toBeDefined();
+    
+    // The subject 'Historia' should NOT be visible yet before expansion
+    expect(screen.queryByText('Historia')).toBeNull();
+    
+    // Find the folder icon/expander button next to the Area
+    const expandBtn = screen.getByRole('button', { name: 'Toggle subjects for Ciencias Sociales' });
+    expect(expandBtn).toBeDefined();
+    
+    // Click to expand the Area subjects
+    fireEvent.click(expandBtn);
+    
+    // Now the sub-table should be visible, displaying 'Historia' and 'Geografía'
+    expect(screen.getByText('Historia')).toBeDefined();
+    expect(screen.getByText('Geografía')).toBeDefined();
+    
+    // The expander button should now show '📂'
+    expect(expandBtn.textContent).toBe('📂');
+  });
 });

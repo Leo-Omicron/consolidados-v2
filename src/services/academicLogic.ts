@@ -142,6 +142,53 @@ export function applyAcademicLogic(students: Estudiante[], config: PeriodConfig,
   });
 }
 
+export function getPresetWeights(areaName: string, subjects: string[]): Record<string, number> | null {
+  const normArea = areaName.toUpperCase().trim();
+  const normSubjects = subjects.map(s => s.toUpperCase().trim());
+
+  if (normArea === 'MATEMATICAS' || normArea === 'MATEMÁTICAS') {
+    const hasEst = normSubjects.includes('ESTADISTICA') || normSubjects.includes('ESTADÍSTICA');
+    const hasGeo = normSubjects.includes('GEOMETRIA') || normSubjects.includes('GEOMETRÍA');
+    const hasMat = normSubjects.includes('MATEMATICAS') || normSubjects.includes('MATEMÁTICAS');
+    if (hasEst && hasGeo && hasMat) {
+      const estKey = subjects.find(s => s.toUpperCase().trim().includes('ESTADI')) || '';
+      const geoKey = subjects.find(s => s.toUpperCase().trim().includes('GEOME')) || '';
+      const matKey = subjects.find(s => s.toUpperCase().trim() === 'MATEMATICAS' || s.toUpperCase().trim() === 'MATEMÁTICAS') || '';
+      if (estKey && geoKey && matKey) {
+        return { [estKey]: 0.30, [geoKey]: 0.20, [matKey]: 0.50 };
+      }
+    }
+  }
+
+  if (normArea === 'CIENCIAS SOCIALES') {
+    const hasCatedra = normSubjects.some(s => s.includes('CATEDRA') || s.includes('CÁTEDRA'));
+    const hasGeo = normSubjects.includes('GEOGRAFIA') || normSubjects.includes('GEOGRAFÍA');
+    const hasHist = normSubjects.includes('HISTORIA') || normSubjects.includes('HISTORÍA');
+    if (hasCatedra && hasGeo && hasHist) {
+      const catKey = subjects.find(s => s.toUpperCase().trim().includes('CATEDRA') || s.toUpperCase().trim().includes('CÁTEDRA')) || '';
+      const geoKey = subjects.find(s => s.toUpperCase().trim() === 'GEOGRAFIA' || s.toUpperCase().trim() === 'GEOGRAFÍA') || '';
+      const histKey = subjects.find(s => s.toUpperCase().trim() === 'HISTORIA' || s.toUpperCase().trim() === 'HISTORÍA') || '';
+      if (catKey && geoKey && histKey) {
+        return { [catKey]: 0.25, [geoKey]: 0.25, [histKey]: 0.50 };
+      }
+    }
+  }
+
+  if (normArea === 'HUMANIDADES Y LENGUA CASTELLANA' || normArea === 'HUMANIDADES') {
+    const hasComp = normSubjects.some(s => s.includes('COMPRENSION') || s.includes('COMPRENSIÓN') || s.includes('LECTORA'));
+    const hasEsp = normSubjects.some(s => s.includes('ESPAÑOL') || s.includes('ESPANOL'));
+    if (hasComp && hasEsp) {
+      const compKey = subjects.find(s => s.toUpperCase().trim().includes('COMPRENSION') || s.toUpperCase().trim().includes('COMPRENSIÓN') || s.toUpperCase().trim().includes('LECTORA')) || '';
+      const espKey = subjects.find(s => s.toUpperCase().trim().includes('ESPAÑOL') || s.toUpperCase().trim().includes('ESPANOL')) || '';
+      if (compKey && espKey) {
+        return { [compKey]: 0.40, [espKey]: 0.60 };
+      }
+    }
+  }
+
+  return null;
+}
+
 export function inferSubjectWeights(students: Estudiante[], areaName: string): Record<string, number> {
   const subjects = new Set<string>();
   students.forEach(s => {
@@ -152,6 +199,9 @@ export function inferSubjectWeights(students: Estudiante[], areaName: string): R
   });
 
   const subjectList = Array.from(subjects);
+  const preset = getPresetWeights(areaName, subjectList);
+  if (preset) return preset;
+
   if (subjectList.length === 0) return { [areaName]: 1.0 };
   if (subjectList.length === 1) return { [subjectList[0]]: 1.0 };
 

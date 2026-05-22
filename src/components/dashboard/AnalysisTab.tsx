@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
 import type { AnalysisFilters } from '../../hooks/useAnalysisPipeline';
-import type { SortConfig } from '../../domain/types';
+import type { SortConfig, Trend } from '../../domain/types';
 
 export const AnalysisTab: React.FC = () => {
   const rowsArea = useDashboardStore(state => state.rowsArea);
@@ -44,6 +44,13 @@ export const AnalysisTab: React.FC = () => {
 
   const toggleGroup = (estudiante: string) => {
     setExpandedGroups(prev => ({ ...prev, [estudiante]: !prev[estudiante] }));
+  };
+
+  const [expandedAreas, setExpandedAreas] = useState<Record<string, boolean>>({});
+
+  const toggleArea = (estudiante: string, area: string) => {
+    const key = `${estudiante}_${area}`;
+    setExpandedAreas(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleSort = (key: any) => {
@@ -263,44 +270,142 @@ export const AnalysisTab: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {group.rows.map((row: any, idx) => (
-                          <tr key={idx} className="hover:bg-white">
-                            <td className="py-2 text-gray-700">{viewMode === 'area' ? row.area : row.asignatura}</td>
-                            <td className="py-2 text-center text-gray-600">{(viewMode === 'area' ? row.defP1 : row.p1)?.toFixed(2) ?? '-'}</td>
-                            <td className="py-2 text-center text-gray-600">{(viewMode === 'area' ? row.defP2 : row.p2)?.toFixed(2) ?? '-'}</td>
-                            <td className="py-2 text-center text-gray-600">{(viewMode === 'area' ? row.defP3 : row.p3)?.toFixed(2) ?? '-'}</td>
-                            {hasP4 && (
-                              <td className="py-2 text-center text-gray-600">{(viewMode === 'area' ? row.defP4 : row.p4)?.toFixed(2) ?? '-'}</td>
-                            )}
-                            <td className="py-2 text-center text-xl" title={`Tendencia: ${row.tendencia}`}>
-                              {row.tendencia === 'up' ? '↗️' : row.tendencia === 'down' ? '↘️' : row.tendencia === 'flat' ? '➡️' : '-'}
-                            </td>
-                             <td className="py-2 text-center font-medium text-gray-900">{row.promActual?.toFixed(2) ?? '-'}</td>
-                             <td className="py-2 text-center text-gray-600">
-                               {row.p4Min !== null && row.p4Min !== undefined && row.p4Min <= 5.0 ? row.p4Min.toFixed(2) : '-'}
-                             </td>
-                             <td className="py-2 text-center">
-                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                row.estado.color === 'green' ? 'bg-green-100 text-green-800' :
-                                row.estado.color === 'red' ? 'bg-red-100 text-red-800' :
-                                row.estado.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
-                                row.estado.color === 'blue' ? 'bg-blue-100 text-blue-800' :
-                                row.estado.color === 'cyan' ? 'bg-cyan-100 text-cyan-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
-                                {row.estado.text}
-                              </span>
-                              {row.p4Min !== null && row.p4Min > 5.0 && (
-                                <span 
-                                  className="ml-2 cursor-help" 
-                                  title={`Requiere ${row.p4Min} en el periodo restante para aprobar`}
-                                >
-                                  ⚠️
-                                </span>
+                        {group.rows.map((row: any, idx) => {
+                          const areaKey = `${group.estudiante}_${row.area}`;
+                          const isAreaExpanded = expandedAreas[areaKey];
+                          const subjects = rowsAsignatura.filter(asig => 
+                            asig.estudiante === group.estudiante && 
+                            asig.area === row.area
+                          );
+
+                          return (
+                            <React.Fragment key={idx}>
+                              <tr className="hover:bg-white">
+                                <td className="py-2 text-gray-700">
+                                  {viewMode === 'area' && (
+                                    <button
+                                      className="mr-2 text-gray-400 hover:text-indigo-600 focus:outline-none cursor-pointer"
+                                      onClick={() => toggleArea(group.estudiante, row.area)}
+                                      aria-label={`Toggle subjects for ${row.area}`}
+                                    >
+                                      {isAreaExpanded ? '📂' : '📁'}
+                                    </button>
+                                  )}
+                                  {viewMode === 'area' ? row.area : row.asignatura}
+                                </td>
+                                <td className="py-2 text-center text-gray-600">{(viewMode === 'area' ? row.defP1 : row.p1)?.toFixed(2) ?? '-'}</td>
+                                <td className="py-2 text-center text-gray-600">{(viewMode === 'area' ? row.defP2 : row.p2)?.toFixed(2) ?? '-'}</td>
+                                <td className="py-2 text-center text-gray-600">{(viewMode === 'area' ? row.defP3 : row.p3)?.toFixed(2) ?? '-'}</td>
+                                {hasP4 && (
+                                  <td className="py-2 text-center text-gray-600">{(viewMode === 'area' ? row.defP4 : row.p4)?.toFixed(2) ?? '-'}</td>
+                                )}
+                                <td className="py-2 text-center text-xl" title={`Tendencia: ${row.tendencia}`}>
+                                  {row.tendencia === 'up' ? '↗️' : row.tendencia === 'down' ? '↘️' : row.tendencia === 'flat' ? '➡️' : '-'}
+                                </td>
+                                <td className="py-2 text-center font-medium text-gray-900">{row.promActual?.toFixed(2) ?? '-'}</td>
+                                <td className="py-2 text-center text-gray-600">
+                                  {row.p4Min !== null && row.p4Min !== undefined && row.p4Min <= 5.0 ? row.p4Min.toFixed(2) : '-'}
+                                </td>
+                                <td className="py-2 text-center">
+                                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    row.estado.color === 'green' ? 'bg-green-100 text-green-800' :
+                                    row.estado.color === 'red' ? 'bg-red-100 text-red-800' :
+                                    row.estado.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                                    row.estado.color === 'blue' ? 'bg-blue-100 text-blue-800' :
+                                    row.estado.color === 'cyan' ? 'bg-cyan-100 text-cyan-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {row.estado.text}
+                                  </span>
+                                  {row.p4Min !== null && row.p4Min > 5.0 && (
+                                    <span 
+                                      className="ml-2 cursor-help" 
+                                      title={`Requiere ${row.p4Min} en el periodo restante para aprobar`}
+                                    >
+                                      ⚠️
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                              {viewMode === 'area' && isAreaExpanded && (
+                                <tr className="bg-gray-100/50">
+                                  <td colSpan={hasP4 ? 9 : 8} className="p-3 pl-8">
+                                    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                                      <table className="min-w-full text-xs">
+                                        <thead className="bg-gray-50 border-b border-gray-100">
+                                          <tr className="text-gray-500 text-left">
+                                            <th className="font-medium p-2 pl-4">Asignatura</th>
+                                            <th className="font-medium p-2 text-center">P1</th>
+                                            <th className="font-medium p-2 text-center">P2</th>
+                                            <th className="font-medium p-2 text-center">P3</th>
+                                            {hasP4 && <th className="font-medium p-2 text-center">P4</th>}
+                                            <th className="font-medium p-2 text-center">Tendencia</th>
+                                            <th className="font-medium p-2 text-center">Promedio</th>
+                                            <th className="font-medium p-2 text-center">{hasP4 ? 'Mín. P4' : 'Mín. P3'}</th>
+                                            <th className="font-medium p-2 text-center">Estado</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                          {subjects.map((sub, sIdx) => {
+                                            let subTendencia: Trend = 'none';
+                                            const p1 = sub.p1;
+                                            const p2 = sub.p2;
+                                            const p3 = sub.p3;
+                                            if (typeof p3 === 'number') {
+                                              if (typeof p1 === 'number') {
+                                                subTendencia = p3 > p1 ? 'up' : p3 < p1 ? 'down' : 'flat';
+                                              }
+                                            } else if (typeof p2 === 'number') {
+                                              if (typeof p1 === 'number') {
+                                                subTendencia = p2 > p1 ? 'up' : p2 < p1 ? 'down' : 'flat';
+                                              }
+                                            }
+
+                                            return (
+                                              <tr key={sIdx} className="hover:bg-gray-50">
+                                                <td className="p-2 pl-4 text-gray-700 font-medium">{sub.asignatura}</td>
+                                                <td className="p-2 text-center text-gray-600">{sub.p1?.toFixed(2) ?? '-'}</td>
+                                                <td className="p-2 text-center text-gray-600">{sub.p2?.toFixed(2) ?? '-'}</td>
+                                                <td className="p-2 text-center text-gray-600">{sub.p3?.toFixed(2) ?? '-'}</td>
+                                                {hasP4 && <td className="p-2 text-center text-gray-600">{sub.p4?.toFixed(2) ?? '-'}</td>}
+                                                <td className="p-2 text-center text-base" title={`Tendencia: ${subTendencia}`}>
+                                                  {subTendencia === 'up' ? '↗️' : subTendencia === 'down' ? '↘️' : subTendencia === 'flat' ? '➡️' : '-'}
+                                                </td>
+                                                <td className="p-2 text-center font-medium text-gray-900">{sub.promActual?.toFixed(2) ?? '-'}</td>
+                                                <td className="p-2 text-center text-gray-600">
+                                                  {sub.p4Min !== null && sub.p4Min !== undefined && sub.p4Min <= 5.0 ? sub.p4Min.toFixed(2) : '-'}
+                                                </td>
+                                                <td className="p-2 text-center">
+                                                  <span className={`px-2 inline-flex text-[10px] leading-5 font-semibold rounded-full ${
+                                                    sub.estado.color === 'green' ? 'bg-green-100 text-green-800' :
+                                                    sub.estado.color === 'red' ? 'bg-red-100 text-red-800' :
+                                                    sub.estado.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                                                    sub.estado.color === 'blue' ? 'bg-blue-100 text-blue-800' :
+                                                    sub.estado.color === 'cyan' ? 'bg-cyan-100 text-cyan-800' :
+                                                    'bg-gray-100 text-gray-800'
+                                                  }`}>
+                                                    {sub.estado.text}
+                                                  </span>
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                          {subjects.length === 0 && (
+                                            <tr>
+                                              <td colSpan={hasP4 ? 9 : 8} className="p-4 text-center text-gray-400">
+                                                No hay asignaturas para esta área.
+                                              </td>
+                                            </tr>
+                                          )}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </td>
+                                </tr>
                               )}
-                            </td>
-                          </tr>
-                        ))}
+                            </React.Fragment>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

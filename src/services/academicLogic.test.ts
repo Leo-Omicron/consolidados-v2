@@ -255,6 +255,73 @@ describe('academicLogic', () => {
       expect(weights['MATEMATICAS']).toBe(0.5);
       expect(weights['GEOMETRIA']).toBe(0.5);
     });
+
+    it('returns 30%, 20%, 50% for MATEMATICAS (Estadistica, Geometria, Matematica)', () => {
+      const students: Estudiante[] = [
+        {
+          id: '1', name: 'A', CURSO: '6A', grupo: '6A',
+          areas: {
+            'MATEMATICAS': {
+              DEF: { P1: null, P2: null, P3: null, P4: null },
+              asignaturas: {
+                'ESTADISTICA': { P1: null, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } },
+                'GEOMETRIA': { P1: null, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } },
+                'MATEMATICAS': { P1: null, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } }
+              }
+            }
+          }
+        }
+      ];
+
+      const weights = inferSubjectWeights(students, 'MATEMATICAS');
+      expect(weights['ESTADISTICA']).toBe(0.3);
+      expect(weights['GEOMETRIA']).toBe(0.2);
+      expect(weights['MATEMATICAS']).toBe(0.5);
+    });
+
+    it('returns 25%, 25%, 50% for CIENCIAS SOCIALES (Catedra, Geografia, Historia)', () => {
+      const students: Estudiante[] = [
+        {
+          id: '1', name: 'A', CURSO: '6A', grupo: '6A',
+          areas: {
+            'CIENCIAS SOCIALES': {
+              DEF: { P1: null, P2: null, P3: null, P4: null },
+              asignaturas: {
+                'CÁTEDRA PARA LA PAZ': { P1: null, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } },
+                'GEOGRAFÍA': { P1: null, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } },
+                'HISTORIA': { P1: null, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } }
+              }
+            }
+          }
+        }
+      ];
+
+      const weights = inferSubjectWeights(students, 'CIENCIAS SOCIALES');
+      expect(weights['CÁTEDRA PARA LA PAZ']).toBe(0.25);
+      expect(weights['GEOGRAFÍA']).toBe(0.25);
+      expect(weights['HISTORIA']).toBe(0.5);
+    });
+
+    it('returns 40%, 60% for HUMANIDADES Y LENGUA CASTELLANA (Comprension, Español)', () => {
+      const students: Estudiante[] = [
+        {
+          id: '1', name: 'A', CURSO: '6A', grupo: '6A',
+          areas: {
+            'HUMANIDADES Y LENGUA CASTELLANA': {
+              DEF: { P1: null, P2: null, P3: null, P4: null },
+              asignaturas: {
+                'COMPRENSIÓN LECTORA': { P1: null, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } },
+                'ESPAÑOL': { P1: null, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } }
+              }
+            }
+          }
+        }
+      ];
+
+      const weights = inferSubjectWeights(students, 'HUMANIDADES Y LENGUA CASTELLANA');
+      expect(weights['COMPRENSIÓN LECTORA']).toBe(0.4);
+      expect(weights['ESPAÑOL']).toBe(0.6);
+    });
   });
 });
 

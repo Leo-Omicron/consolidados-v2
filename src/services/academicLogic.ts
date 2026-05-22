@@ -3,6 +3,10 @@ import type { PeriodConfig, PeriodoNotas, EstadoAcademico, Estudiante, SubjectWe
 export const PASSING_GRADE = 3.0;
 export const MAX_GRADE = 5.0;
 
+export function roundToOneDecimal(val: number): number {
+  return Math.round(val * 10) / 10;
+}
+
 export function getAccumulatedWeightAndProduct(notas: PeriodoNotas, config: PeriodConfig) {
   let sumProduct = 0;
   let sumWeight = 0;
@@ -33,9 +37,8 @@ export function calcularPromedioActual(notas: PeriodoNotas, config: PeriodConfig
   
   if (sumWeight === 0) return 0;
   
-  // Format to 2 decimal places
   const prom = sumProduct / sumWeight;
-  return Math.round(prom * 100) / 100;
+  return roundToOneDecimal(prom);
 }
 
 export function calcularMinimoRequerido(notas: PeriodoNotas, config: PeriodConfig): number {
@@ -60,8 +63,8 @@ export function determinarEstado(notas: PeriodoNotas, config: PeriodConfig): Est
   const { sumWeight, totalWeight, sumProduct } = getAccumulatedWeightAndProduct(notas, config);
   const remainingWeight = totalWeight - sumWeight;
   
-  const acumuladoFinalProyectadoMax = (sumProduct + (MAX_GRADE * remainingWeight)) / totalWeight;
-  const acumuladoActual = sumProduct / totalWeight;
+  const acumuladoFinalProyectadoMax = roundToOneDecimal((sumProduct + (MAX_GRADE * remainingWeight)) / totalWeight);
+  const acumuladoActual = roundToOneDecimal(sumProduct / totalWeight);
   const minimoRequerido = calcularMinimoRequerido(notas, config);
   const promedioHistorico = calcularPromedioActual(notas, config);
 
@@ -127,7 +130,7 @@ export function applyAcademicLogic(students: Estudiante[], config: PeriodConfig,
             }
           });
           if (hasGrade) {
-            area.DEF[period] = Math.round(sum * 100) / 100;
+            area.DEF[period] = roundToOneDecimal(sum);
           }
         });
       }

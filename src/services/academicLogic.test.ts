@@ -1,10 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { calcularPromedioActual, calcularMinimoRequerido, determinarEstado, applyAcademicLogic, inferSubjectWeights } from './academicLogic';
+import { calcularPromedioActual, calcularMinimoRequerido, determinarEstado, applyAcademicLogic, inferSubjectWeights, roundToOneDecimal } from './academicLogic';
 import type { PeriodConfig, PeriodoNotas, Estudiante } from '../domain/types';
 
 describe('academicLogic', () => {
   const config3Periods: PeriodConfig = { P1: 33.3, P2: 33.3, P3: 33.4 };
   const config4Periods: PeriodConfig = { P1: 25, P2: 25, P3: 25, P4: 25 };
+
+  describe('roundToOneDecimal', () => {
+    it('applies standard mathematical half-up rounding', () => {
+      expect(roundToOneDecimal(2.95)).toBe(3.0);
+      expect(roundToOneDecimal(2.94)).toBe(2.9);
+      expect(roundToOneDecimal(3.45)).toBe(3.5);
+      expect(roundToOneDecimal(3.44)).toBe(3.4);
+      expect(roundToOneDecimal(4.05)).toBe(4.1);
+    });
+  });
 
   describe('calcularPromedioActual', () => {
     it('calculates average for 3 periods correctly with weights', () => {
@@ -15,8 +25,8 @@ describe('academicLogic', () => {
 
     it('calculates average for 4 periods correctly', () => {
       const notas: PeriodoNotas = { P1: 4.0, P2: 2.0, P3: 5.0, P4: null };
-      // (4*25 + 2*25 + 5*25) / 75 = 11*25 / 75 = 11/3 = 3.67
-      expect(calcularPromedioActual(notas, config4Periods)).toBeCloseTo(3.67, 2);
+      // (4*25 + 2*25 + 5*25) / 75 = 11*25 / 75 = 11/3 = 3.666... which rounds to 3.7
+      expect(calcularPromedioActual(notas, config4Periods)).toBe(3.7);
     });
 
     it('returns 0 if no grades are present', () => {
@@ -98,6 +108,14 @@ describe('academicLogic', () => {
     it('returns correctly when all periods are finished (Perdido)', () => {
       const notas: PeriodoNotas = { P1: 2.9, P2: 2.9, P3: 2.9 };
       expect(determinarEstado(notas, config3Periods).text).toBe('Perdido');
+    });
+
+    it('returns Ganado for an average of 2.95 after half-up rounding, and Perdido for 2.94', () => {
+      const notasPassing: PeriodoNotas = { P1: 2.95, P2: 2.95, P3: 2.95, P4: 2.95 };
+      expect(determinarEstado(notasPassing, config4Periods).text).toBe('Ganado');
+
+      const notasFailing: PeriodoNotas = { P1: 2.94, P2: 2.94, P3: 2.94, P4: 2.94 };
+      expect(determinarEstado(notasFailing, config4Periods).text).toBe('Perdido');
     });
   });
 
@@ -194,6 +212,46 @@ describe('academicLogic', () => {
 
       // Student 10: 4.0 * 0.5 + 2.0 * 0.5 = 2.0 + 1.0 = 3.0
       expect(student10.areas['CIENCIAS'].DEF.P1).toBe(3.0);
+    });
+
+    it('rounds subject-level averages, period Area DEF averages, and final averages to exactly 1 decimal place', () => {
+      const student: Estudiante = {
+        id: '1', name: 'JUAN', CURSO: '10A', grupo: '10A',
+        areas: {
+          'MATEMATICAS': {
+            DEF: { P1: null, P2: null, P3: null, P4: null },
+            asignaturas: {
+              'ALGEBRA': { 
+                P1: 2.95, P2: null, P3: null, P4: null,
+                promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' }
+              }
+            }
+          }
+        }
+      };
+
+      applyAcademicLogic([student], config3Periods);
+      const asig = student.areas['MATEMATICAS'].asignaturas['ALGEBRA'];
+      expect(asig.promedioActual).toBe(3.0);
+
+      const student2: Estudiante = {
+        id: '2', name: 'PEDRO', CURSO: '10A', grupo: '10A',
+        areas: {
+          'CIENCIAS': {
+            DEF: { P1: null, P2: null, P3: null, P4: null },
+            asignaturas: {
+              'FISICA': { P1: 2.9, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } },
+              'QUIMICA': { P1: 3.0, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } }
+            }
+          }
+        }
+      };
+
+      const weights = { 'CIENCIAS': { 'FISICA': 0.5, 'QUIMICA': 0.5 } };
+      applyAcademicLogic([student2], config3Periods, weights as any);
+
+      expect(student2.areas['CIENCIAS'].DEF.P1).toBe(3.0);
+      expect(student2.areas['CIENCIAS'].areaStats?.promedioActual).toBe(3.0);
     });
   });
 

@@ -21,6 +21,22 @@ export const AnalysisTab: React.FC = () => {
   const hasP4 = config.P4 !== undefined && config.P4 > 0;
   
   const activeRows = (viewMode === 'area' ? rowsArea : rowsAsignatura) || [];
+
+  const weightsToDisplay = useMemo(() => {
+    const firstVal = Object.values(subjectWeights)[0];
+    const isNested = firstVal && typeof firstVal === 'object' && Object.values(firstVal).some(v => v && typeof v === 'object');
+
+    if (!isNested) {
+      return { '': subjectWeights };
+    }
+
+    if (selectedGrupo === 'Todos') {
+      return subjectWeights;
+    }
+    return selectedGrupo && (subjectWeights as any)[selectedGrupo] 
+      ? { [selectedGrupo]: (subjectWeights as any)[selectedGrupo] } 
+      : {};
+  }, [subjectWeights, selectedGrupo]);
   
   const { groupedAndSorted, kpis } = useAnalysisPipeline(activeRows, selectedGrupo, filters, sortConfig, viewMode);
   
@@ -75,16 +91,28 @@ export const AnalysisTab: React.FC = () => {
       </div>
       
       {/* Inferred Weights */}
-      {Object.keys(subjectWeights).length > 0 && (
+      {Object.keys(weightsToDisplay).length > 0 && (
         <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
           <h3 className="text-sm font-semibold text-blue-800 mb-2">Pesos de Asignaturas Inferidos</h3>
-          <div className="flex flex-wrap gap-4">
-            {Object.entries(subjectWeights).map(([area, asigs]) => (
-              <div key={area} className="bg-white px-3 py-2 rounded shadow-sm text-sm border border-blue-100">
-                <span className="font-bold text-gray-700">{area}:</span>
-                <span className="ml-2 text-gray-600">
-                  {Object.entries(asigs).map(([asig, w]) => `${asig}: ${Math.round(w * 100)}%`).join(' | ')}
-                </span>
+          <div className="space-y-3">
+            {Object.entries(weightsToDisplay).map(([grupo, areas]) => (
+              <div key={grupo} className="flex flex-col space-y-1">
+                {grupo && (
+                  <span className="text-xs font-bold text-blue-600 uppercase">Grupo {grupo}:</span>
+                )}
+                <div className="flex flex-wrap gap-3">
+                  {Object.entries(areas).map(([area, asigs]) => (
+                    <div key={area} className="bg-white px-3 py-1.5 rounded shadow-sm text-sm border border-blue-100 flex items-center">
+                      <span className="font-bold text-gray-700">{area}:</span>
+                      <span className="ml-2 text-gray-600">
+                        {Object.entries(asigs as Record<string, number>).map(([asig, w]) => `${asig}: ${Math.round(w * 100)}%`).join(' | ')}
+                      </span>
+                    </div>
+                  ))}
+                  {Object.keys(areas).length === 0 && (
+                    <span className="text-sm text-gray-400">Sin pesos configurados</span>
+                  )}
+                </div>
               </div>
             ))}
           </div>

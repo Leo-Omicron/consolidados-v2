@@ -79,6 +79,46 @@ describe('excelParser', () => {
       const students = extractStudents(dataRows, headers, '10A');
       expect(students[0].areas['C1'].asignaturas['A1'].P1).toBeNull();
     });
+
+    it('dynamic DEF column detection: parses asignatura as core subject if a dedicated DEF column is present', () => {
+      const headers: HeaderComponent[] = [
+        { index: 2, area: 'MATEMATICAS', asignatura: 'MATEMATICAS', componente: 'P1' },
+        { index: 3, area: 'MATEMATICAS', asignatura: 'DEF', componente: 'P1' }
+      ];
+      const dataRows = [
+        [1, 'Juan Perez', 4.5, 3.8]
+      ];
+
+      const students = extractStudents(dataRows, headers, '10A', '10A');
+      expect(students.length).toBe(1);
+      const juan = students[0];
+
+      // Since there is a dedicated 'DEF' column under MATEMATICAS, 
+      // the MATEMATICAS column (where asignatura === area) must be parsed as a regular subject:
+      expect(juan.areas['MATEMATICAS'].asignaturas['MATEMATICAS']).toBeDefined();
+      expect(juan.areas['MATEMATICAS'].asignaturas['MATEMATICAS'].P1).toBe(4.5);
+
+      // And the 'DEF' column must be parsed as the area's DEF average:
+      expect(juan.areas['MATEMATICAS'].DEF.P1).toBe(3.8);
+    });
+
+    it('dynamic DEF column detection: treats asignatura as Area DEF if NO dedicated DEF column is present', () => {
+      const headers: HeaderComponent[] = [
+        { index: 2, area: 'ETICA', asignatura: 'ETICA', componente: 'P1' }
+      ];
+      const dataRows = [
+        [1, 'Juan Perez', 5.0]
+      ];
+
+      const students = extractStudents(dataRows, headers, '10A', '10A');
+      expect(students.length).toBe(1);
+      const juan = students[0];
+
+      // Since there is no dedicated 'DEF' column under ETICA,
+      // the ETICA column (where asignatura === area) must be treated as the Area's DEF:
+      expect(juan.areas['ETICA'].asignaturas['ETICA']).toBeUndefined();
+      expect(juan.areas['ETICA'].DEF.P1).toBe(5.0);
+    });
   });
 
   describe('flattenRows', () => {

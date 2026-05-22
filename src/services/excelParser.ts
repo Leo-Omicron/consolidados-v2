@@ -105,7 +105,10 @@ export function extractStudents(dataRows: any[][], headers: HeaderComponent[], c
       // Check if it's an expected component P1-P4
       const isPeriod = ['P1', 'P2', 'P3', 'P4'].includes(componente);
 
-      if (asignatura === 'DEF' || asignatura === area) {
+      const areaHasDefColumn = headers.some(h => h.area === area && h.asignatura === 'DEF');
+      const isAreaDef = asignatura === 'DEF' || (!areaHasDefColumn && asignatura === area);
+
+      if (isAreaDef) {
         // It's the area's DEF
         if (isPeriod) {
           (student.areas[area].DEF as any)[componente] = note;

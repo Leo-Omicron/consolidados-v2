@@ -4,7 +4,22 @@ import * as academicLogic from '../services/academicLogic';
 import * as excelParser from '../services/excelParser';
 
 vi.mock('../services/academicLogic', () => ({
-  applyAcademicLogic: vi.fn()
+  applyAcademicLogic: vi.fn(),
+  inferSubjectWeights: vi.fn((students: any[], _areaName: string) => {
+    const uniqueGroups = Array.from(new Set(students.map(s => s.grupo)));
+    if (uniqueGroups.length > 1) {
+      // Inconsistent/mixed group call
+      return { 'MIXED': 1.0 };
+    }
+    const grupo = students[0]?.grupo;
+    if (grupo === '6A') {
+      return { 'BIOLOGIA': 0.33, 'QUIMICA': 0.33, 'FISICA': 0.34 };
+    }
+    if (grupo === '10A') {
+      return { 'CIENCIAS_POLITICAS': 0.5, 'ECONOMIA': 0.5 };
+    }
+    return { 'DEFAULT': 1.0 };
+  })
 }));
 
 vi.mock('../services/excelParser', () => ({
@@ -62,20 +77,22 @@ describe('useDashboardStore', () => {
   it('provides default subjectWeights and updates them via updateSubjectWeight', () => {
     expect(useDashboardStore.getState().subjectWeights).toEqual({});
 
-    useDashboardStore.getState().updateSubjectWeight('Matemáticas', 'Álgebra', 0.6);
-    useDashboardStore.getState().updateSubjectWeight('Matemáticas', 'Geometría', 0.4);
+    useDashboardStore.getState().updateSubjectWeight('6A', 'Matemáticas', 'Álgebra', 0.6);
+    useDashboardStore.getState().updateSubjectWeight('6A', 'Matemáticas', 'Geometría', 0.4);
 
     const state = useDashboardStore.getState();
     expect(state.subjectWeights).toEqual({
-      'Matemáticas': {
-        'Álgebra': 0.6,
-        'Geometría': 0.4
+      '6A': {
+        'Matemáticas': {
+          'Álgebra': 0.6,
+          'Geometría': 0.4
+        }
       }
     });
 
     // Update existing
-    useDashboardStore.getState().updateSubjectWeight('Matemáticas', 'Álgebra', 0.5);
-    expect(useDashboardStore.getState().subjectWeights['Matemáticas']['Álgebra']).toBe(0.5);
+    useDashboardStore.getState().updateSubjectWeight('6A', 'Matemáticas', 'Álgebra', 0.5);
+    expect(useDashboardStore.getState().subjectWeights['6A']['Matemáticas']['Álgebra']).toBe(0.5);
   });
 
   it('provides setGrupo to update selectedGrupo', () => {
@@ -103,6 +120,30 @@ describe('useDashboardStore', () => {
     const state = useDashboardStore.getState();
     expect(state.availableGroups).toEqual(['Todos', 'A', 'B']);
     expect(state.selectedGrupo).toBe('Todos');
+  });
+
+  it('processFile infers weights isolated per group', async () => {
+    // Mock excelParser.parseWorkbook to return students from different groups with CIENCIAS area
+    vi.spyOn(excelParser, 'parseWorkbook' as any).mockReturnValue([
+      { id: '1', nombre: 'Juan', grupo: '6A', areas: { 'CIENCIAS': {} } },
+      { id: '2', nombre: 'Pedro', grupo: '10A', areas: { 'CIENCIAS': {} } }
+    ]);
+
+    const file = new File([''], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    await useDashboardStore.getState().processFile(file);
+
+    const state = useDashboardStore.getState();
+    
+    // Weight inference should run per group, keeping weights isolated:
+    expect(state.subjectWeights).toEqual({
+      '6A': {
+        'CIENCIAS': { 'BIOLOGIA': 0.33, 'QUIMICA': 0.33, 'FISICA': 0.34 }
+      },
+      '10A': {
+        'CIENCIAS': { 'CIENCIAS_POLITICAS': 0.5, 'ECONOMIA': 0.5 }
+      }
+    });
   });
 
   it('provides viewMode with default "area" and updates via setViewMode', () => {

@@ -112,7 +112,8 @@ export function applyAcademicLogic(students: Estudiante[], config: PeriodConfig,
       });
 
       // Dynamically calculate Area DEF if weights are provided
-      const weights = subjectWeights[areaName];
+      const groupWeights = (subjectWeights as any)[student.grupo] || {};
+      const weights = groupWeights[areaName] || (subjectWeights as any)[areaName];
       if (weights && Object.keys(weights).length > 0) {
         (['P1', 'P2', 'P3', 'P4'] as const).forEach(period => {
           let sum = 0;

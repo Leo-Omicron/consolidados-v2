@@ -109,9 +109,11 @@ describe('domain types', () =>
 
     // 10. SubjectWeightConfig valid structure
     const subjectWeightConfig: SubjectWeightConfig = {
-      'Ciencias': {
-        'Matemáticas': 0.5,
-        'Física': 0.5
+      '6A': {
+        'Ciencias': {
+          'Matemáticas': 0.5,
+          'Física': 0.5
+        }
       }
     };
 

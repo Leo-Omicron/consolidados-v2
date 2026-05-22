@@ -144,11 +144,56 @@ describe('academicLogic', () => {
         }
       };
 
-      applyAcademicLogic([student], config3Periods, { 'CIENCIAS': { 'FISICA': 0.7, 'QUIMICA': 0.3 } });
+      applyAcademicLogic([student], config3Periods, { 'CIENCIAS': { 'FISICA': 0.7, 'QUIMICA': 0.3 } } as any);
 
       // 4.0 * 0.7 + 2.0 * 0.3 = 2.8 + 0.6 = 3.4
       expect(student.areas['CIENCIAS'].DEF.P1).toBe(3.4);
       expect(student.areas['CIENCIAS'].areaStats?.promedioActual).toBe(3.4);
+    });
+
+    it('group-aware applyAcademicLogic: dynamically recalculates Area DEF using weights of the student\'s group', () => {
+      const student6: Estudiante = {
+        id: '1', name: 'JUAN', CURSO: 'Sexto', grupo: '6A',
+        areas: {
+          'CIENCIAS': {
+            DEF: { P1: null, P2: null, P3: null, P4: null },
+            asignaturas: {
+              'FISICA': { P1: 4.0, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } },
+              'QUIMICA': { P1: 2.0, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } }
+            }
+          }
+        }
+      };
+
+      const student10: Estudiante = {
+        id: '2', name: 'PEDRO', CURSO: 'Decimo', grupo: '10A',
+        areas: {
+          'CIENCIAS': {
+            DEF: { P1: null, P2: null, P3: null, P4: null },
+            asignaturas: {
+              'FISICA': { P1: 4.0, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } },
+              'QUIMICA': { P1: 2.0, P2: null, P3: null, P4: null, promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' } }
+            }
+          }
+        }
+      };
+
+      const weights: any = {
+        '6A': {
+          'CIENCIAS': { 'FISICA': 0.8, 'QUIMICA': 0.2 }
+        },
+        '10A': {
+          'CIENCIAS': { 'FISICA': 0.5, 'QUIMICA': 0.5 }
+        }
+      };
+
+      applyAcademicLogic([student6, student10], config3Periods, weights);
+
+      // Student 6: 4.0 * 0.8 + 2.0 * 0.2 = 3.2 + 0.4 = 3.6
+      expect(student6.areas['CIENCIAS'].DEF.P1).toBe(3.6);
+
+      // Student 10: 4.0 * 0.5 + 2.0 * 0.5 = 2.0 + 1.0 = 3.0
+      expect(student10.areas['CIENCIAS'].DEF.P1).toBe(3.0);
     });
   });
 

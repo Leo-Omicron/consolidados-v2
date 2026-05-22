@@ -18,7 +18,7 @@ export interface DashboardState {
   setConfig: (config: PeriodConfig) => void;
   setGrupo: (grupo: string) => void;
   setViewMode: (mode: 'area' | 'subject') => void;
-  updateSubjectWeight: (area: string, asignatura: string, weight: number) => void;
+  updateSubjectWeight: (grupo: string, area: string, asignatura: string, weight: number) => void;
   processFile: (file: File) => Promise<void>;
 }
 
@@ -44,10 +44,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   
   setViewMode: (mode: 'area' | 'subject') => set({ viewMode: mode }),
   
-  updateSubjectWeight: (area: string, asignatura: string, weight: number) => set((state) => {
-    const updatedWeights = { ...state.subjectWeights };
-    if (!updatedWeights[area]) updatedWeights[area] = {};
-    updatedWeights[area] = { ...updatedWeights[area], [asignatura]: weight };
+  updateSubjectWeight: (grupo: string, area: string, asignatura: string, weight: number) => set((state) => {
+    const updatedWeights = JSON.parse(JSON.stringify(state.subjectWeights)) as SubjectWeightConfig;
+    if (!updatedWeights[grupo]) updatedWeights[grupo] = {};
+    if (!updatedWeights[grupo][area]) updatedWeights[grupo][area] = {};
+    updatedWeights[grupo][area][asignatura] = weight;
     
     // Re-apply logic with new weights
     let newEstudiantes = [...state.estudiantes];
@@ -111,12 +112,21 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       });
       const availableGroups = ['Todos', ...Array.from(uniqueGroupsSet).sort()];
 
-      // Infer subject weights across all unique areas
-      const uniqueAreas = new Set<string>();
-      students.forEach(s => Object.keys(s.areas).forEach(a => uniqueAreas.add(a)));
+      // Infer subject weights isolated per group
+      const groups = Array.from(uniqueGroupsSet);
       const inferredWeights: SubjectWeightConfig = {};
-      uniqueAreas.forEach(areaName => {
-        inferredWeights[areaName] = inferSubjectWeights(students, areaName);
+
+      groups.forEach(grupo => {
+        inferredWeights[grupo] = {};
+        const groupStudents = students.filter(s => s.grupo === grupo);
+        
+        // Find all unique areas for students of this group
+        const groupAreas = new Set<string>();
+        groupStudents.forEach(s => Object.keys(s.areas).forEach(a => groupAreas.add(a)));
+        
+        groupAreas.forEach(areaName => {
+          inferredWeights[grupo][areaName] = inferSubjectWeights(groupStudents, areaName);
+        });
       });
 
       // Call logic with current config and inferred weights

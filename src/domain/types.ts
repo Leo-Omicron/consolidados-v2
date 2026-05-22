@@ -112,8 +112,10 @@ export type SortConfig = {
 } | null;
 
 export interface SubjectWeightConfig {
-  [area: string]: {
-    [asignatura: string]: number;
+  [grupo: string]: {
+    [area: string]: {
+      [asignatura: string]: number;
+    };
   };
 }
 

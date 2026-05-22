@@ -4,10 +4,15 @@ import type {
   EstadoAcademico,
   Asignatura,
   Area,
-  Estudiante
+  Estudiante,
+  RowArea,
+  RowAsignatura,
+  StudentGroup,
+  SubjectWeightConfig
 } from './types';
 
-describe('domain types', () => {
+describe('domain types', () =>
+ {
   it('validates types statically', () => {
     // 1. PeriodConfig - 3 periods
     const config3Periods: PeriodConfig = {
@@ -73,8 +78,40 @@ describe('domain types', () => {
       id: '123',
       name: 'Juan Perez',
       CURSO: '10A',
+      grupo: '6A',
       areas: {
         'Ciencias Exactas': areaData
+      }
+    };
+
+    // 8. RowArea and RowAsignatura valid structures
+    const rowArea: RowArea = {
+      id: '1', CURSO: '10A', estudiante: 'Juan', area: 'Ciencias',
+      defP1: 3, defP2: 3, defP3: 3, defP4: null, promActual: 3, p4Min: 3,
+      estado: validStatus, CURSO_NORM: '10A', AREA_NORM: 'CIENCIAS', EST_NORM: 'JUAN',
+      grupo: '6A'
+    };
+
+    const rowAsignatura: RowAsignatura = {
+      id: '2', CURSO: '10A', estudiante: 'Juan', area: 'Ciencias', asignatura: 'Mat',
+      p1: 3, p2: 3, p3: 3, p4: null, promActual: 3, p4Min: 3,
+      estado: validStatus, CURSO_NORM: '10A', AREA_NORM: 'CIENCIAS', ASIG_NORM: 'MAT', EST_NORM: 'JUAN',
+      grupo: '6A'
+    };
+
+    // 9. StudentGroup valid structure
+    const studentGroup: StudentGroup = {
+      estudiante: 'Juan',
+      grupo: '6A',
+      rows: [], // AugmentedRowArea list
+      aggregates: { defP1: 3, defP2: 3, defP3: 3, promActual: 3 }
+    };
+
+    // 10. SubjectWeightConfig valid structure
+    const subjectWeightConfig: SubjectWeightConfig = {
+      'Ciencias': {
+        'Matemáticas': 0.5,
+        'Física': 0.5
       }
     };
 
@@ -84,5 +121,9 @@ describe('domain types', () => {
     expect(asignatura4P).toBeDefined();
     expect(areaData).toBeDefined();
     expect(estudianteData).toBeDefined();
+    expect(rowArea).toBeDefined();
+    expect(rowAsignatura).toBeDefined();
+    expect(studentGroup).toBeDefined();
+    expect(subjectWeightConfig).toBeDefined();
   });
 });

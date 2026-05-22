@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { parseHeaders, extractStudents, flattenRows } from './excelParser';
+import { describe, it, expect, vi } from 'vitest';
+import * as XLSX from 'xlsx';
+import { parseHeaders, extractStudents, flattenRows, parseWorkbook } from './excelParser';
 import type { HeaderComponent } from './excelParser';
 import type { Estudiante } from '../domain/types';
 
@@ -87,6 +88,7 @@ describe('excelParser', () => {
           id: '1',
           name: 'JUAN',
           CURSO: '10A',
+          grupo: '10A',
           areas: {
             'MATEMATICAS': {
               DEF: { P1: 4.0, P2: null, P3: null },
@@ -112,6 +114,58 @@ describe('excelParser', () => {
       expect(rowsAsignatura.length).toBe(1);
       expect(rowsAsignatura[0].asignatura).toBe('ALGEBRA');
       expect(rowsAsignatura[0].p1).toBe(4.0);
+    });
+  });
+
+  describe('parseWorkbook', () => {
+    it('iterates through all sheets except Resumen and assigns sheet name to grupo', () => {
+      const mockWorkbook = {
+        SheetNames: ['6A', 'Resumen', '6B'],
+        Sheets: {
+          '6A': {},
+          'Resumen': {},
+          '6B': {}
+        }
+      };
+
+      const spy = vi.spyOn(XLSX.utils, 'sheet_to_json').mockImplementation((sheet) => {
+        if (sheet === mockWorkbook.Sheets['6A']) {
+          return [
+            ['No', 'Estudiante', 'CIENCIAS', undefined],
+            ['', '', 'BIOLOGIA', 'DEF'],
+            ['', '', 'P1', 'P1'],
+            [1, 'Alice', 4.0, 4.0]
+          ];
+        }
+        if (sheet === mockWorkbook.Sheets['6B']) {
+          return [
+            ['No', 'Estudiante', 'CIENCIAS', undefined],
+            ['', '', 'BIOLOGIA', 'DEF'],
+            ['', '', 'P1', 'P1'],
+            [2, 'Bob', 3.0, 3.0]
+          ];
+        }
+        return [];
+      });
+
+      const students = parseWorkbook(mockWorkbook as any, 'Sexto');
+      
+      expect(students.length).toBe(2);
+      
+      const alice = students.find((s: Estudiante) => s.name === 'ALICE');
+      expect(alice).toBeDefined();
+      expect(alice?.grupo).toBe('6A');
+      expect(alice?.CURSO).toBe('Sexto');
+
+      const bob = students.find((s: Estudiante) => s.name === 'BOB');
+      expect(bob).toBeDefined();
+      expect(bob?.grupo).toBe('6B');
+      expect(bob?.CURSO).toBe('Sexto');
+
+      // Resumen sheet should be ignored
+      expect(spy).toHaveBeenCalledTimes(2); // Only called for 6A and 6B
+      
+      spy.mockRestore();
     });
   });
 });

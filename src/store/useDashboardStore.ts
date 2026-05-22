@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import * as XLSX from 'xlsx';
-import type { Estudiante, PeriodConfig, RowArea, RowAsignatura } from '../domain/types';
-import { parseHeaders, extractStudents, flattenRows } from '../services/excelParser';
-import { applyAcademicLogic } from '../services/academicLogic';
+import type { Estudiante, PeriodConfig, RowArea, RowAsignatura, SubjectWeightConfig } from '../domain/types';
+import { flattenRows, parseWorkbook } from '../services/excelParser';
+import { applyAcademicLogic, inferSubjectWeights } from '../services/academicLogic';
 
 export interface DashboardState {
   estudiantes: Estudiante[];
@@ -11,7 +11,14 @@ export interface DashboardState {
   loading: boolean;
   error: string | null;
   config: PeriodConfig;
+  subjectWeights: SubjectWeightConfig;
+  selectedGrupo: string;
+  availableGroups: string[];
+  viewMode: 'area' | 'subject';
   setConfig: (config: PeriodConfig) => void;
+  setGrupo: (grupo: string) => void;
+  setViewMode: (mode: 'area' | 'subject') => void;
+  updateSubjectWeight: (area: string, asignatura: string, weight: number) => void;
   processFile: (file: File) => Promise<void>;
 }
 
@@ -28,14 +35,47 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   loading: false,
   error: null,
   config: DEFAULT_CONFIG,
+  subjectWeights: {},
+  selectedGrupo: 'Todos',
+  availableGroups: [],
+  viewMode: 'area',
   
-  setConfig: (config) => set((state) => {
-    let newEstudiantes = state.estudiantes;
+  setGrupo: (grupo: string) => set({ selectedGrupo: grupo }),
+  
+  setViewMode: (mode: 'area' | 'subject') => set({ viewMode: mode }),
+  
+  updateSubjectWeight: (area: string, asignatura: string, weight: number) => set((state) => {
+    const updatedWeights = { ...state.subjectWeights };
+    if (!updatedWeights[area]) updatedWeights[area] = {};
+    updatedWeights[area] = { ...updatedWeights[area], [asignatura]: weight };
+    
+    // Re-apply logic with new weights
+    let newEstudiantes = [...state.estudiantes];
     let newRowsArea = state.rowsArea;
     let newRowsAsignatura = state.rowsAsignatura;
 
     if (newEstudiantes.length > 0) {
-      applyAcademicLogic(newEstudiantes, config);
+      applyAcademicLogic(newEstudiantes, state.config, updatedWeights);
+      const flattened = flattenRows(newEstudiantes);
+      newRowsArea = flattened.rowsArea;
+      newRowsAsignatura = flattened.rowsAsignatura;
+    }
+
+    return { 
+      subjectWeights: updatedWeights,
+      estudiantes: newEstudiantes,
+      rowsArea: newRowsArea,
+      rowsAsignatura: newRowsAsignatura
+    };
+  }),
+  
+  setConfig: (config) => set((state) => {
+    let newEstudiantes = [...state.estudiantes];
+    let newRowsArea = state.rowsArea;
+    let newRowsAsignatura = state.rowsAsignatura;
+
+    if (newEstudiantes.length > 0) {
+      applyAcademicLogic(newEstudiantes, config, state.subjectWeights);
       const flattened = flattenRows(newEstudiantes);
       newRowsArea = flattened.rowsArea;
       newRowsAsignatura = flattened.rowsAsignatura;
@@ -56,28 +96,31 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'array' });
       
-      // Assume first sheet for now
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const rows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-      
-      if (rows.length < 4) {
-        throw new Error("El archivo no tiene suficientes filas para ser procesado.");
-      }
-
-      // Headers are usually in the first 3 rows
-      const headerRows = rows.slice(0, 3);
-      const dataRows = rows.slice(3);
-      
-      const { headers } = parseHeaders(headerRows);
-      
       // Use filename as curso for now, stripping extension
       const curso = file.name.replace(/\.[^/.]+$/, "");
       
-      const students = extractStudents(dataRows, headers, curso);
+      const students = parseWorkbook(workbook, curso);
       
-      // Call logic with current config
-      applyAcademicLogic(students, get().config);
+      if (students.length === 0) {
+        throw new Error("No se encontraron estudiantes válidos en el archivo.");
+      }
+
+      const uniqueGroupsSet = new Set<string>();
+      students.forEach(s => {
+        if (s.grupo) uniqueGroupsSet.add(s.grupo);
+      });
+      const availableGroups = ['Todos', ...Array.from(uniqueGroupsSet).sort()];
+
+      // Infer subject weights across all unique areas
+      const uniqueAreas = new Set<string>();
+      students.forEach(s => Object.keys(s.areas).forEach(a => uniqueAreas.add(a)));
+      const inferredWeights: SubjectWeightConfig = {};
+      uniqueAreas.forEach(areaName => {
+        inferredWeights[areaName] = inferSubjectWeights(students, areaName);
+      });
+
+      // Call logic with current config and inferred weights
+      applyAcademicLogic(students, get().config, inferredWeights);
       
       const { rowsArea, rowsAsignatura } = flattenRows(students);
       
@@ -85,6 +128,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         estudiantes: students,
         rowsArea,
         rowsAsignatura,
+        subjectWeights: inferredWeights,
+        availableGroups,
+        selectedGrupo: 'Todos',
         loading: false
       });
     } catch (err: any) {

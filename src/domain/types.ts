@@ -38,6 +38,7 @@ export interface Estudiante {
   id: string;
   name: string;
   CURSO: string;
+  grupo: string;
   areas: Record<string, Area>;
 }
 
@@ -46,6 +47,7 @@ export interface RowArea {
   CURSO: string;
   estudiante: string;
   area: string;
+  grupo: string;
   defP1: number | null;
   defP2: number | null;
   defP3: number | null;
@@ -64,6 +66,7 @@ export interface RowAsignatura {
   estudiante: string;
   area: string;
   asignatura: string;
+  grupo: string;
   p1: number | null;
   p2: number | null;
   p3: number | null;
@@ -83,9 +86,16 @@ export interface AugmentedRowArea extends RowArea {
   tendencia: Trend;
 }
 
-export interface StudentGroup {
+export interface AugmentedRowAsignatura extends RowAsignatura {
+  tendencia: Trend;
+}
+
+export type PipelineRow = AugmentedRowArea | AugmentedRowAsignatura;
+
+export interface StudentGroup<T = PipelineRow> {
   estudiante: string;
-  rows: AugmentedRowArea[];
+  grupo: string;
+  rows: T[];
   aggregates: {
     defP1: number | null;
     defP2: number | null;
@@ -95,7 +105,13 @@ export interface StudentGroup {
 }
 
 export type SortConfig = {
-  key: keyof AugmentedRowArea | 'aggregates.promActual';
+  key: keyof AugmentedRowArea | keyof AugmentedRowAsignatura | 'aggregates.promActual' | string;
   direction: 'asc' | 'desc';
 } | null;
+
+export interface SubjectWeightConfig {
+  [area: string]: {
+    [asignatura: string]: number;
+  };
+}
 

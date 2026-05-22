@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { RowArea, AugmentedRowArea, StudentGroup, SortConfig, Trend } from '../domain/types';
+import type { StudentGroup, SortConfig, Trend, PipelineRow } from '../domain/types';
 
 export interface AnalysisFilters {
   search: string;
@@ -8,18 +8,20 @@ export interface AnalysisFilters {
 }
 
 export function useAnalysisPipeline(
-  rows: RowArea[],
+  rows: any[],
+  selectedGrupo: string,
   filters: AnalysisFilters,
-  sortConfig: SortConfig
+  sortConfig: SortConfig | null,
+  viewMode: 'area' | 'subject' = 'area'
 ) {
   // 1. Augmentation
   const augmentedRows = useMemo(() => {
     return rows.map((row) => {
       let tendencia: Trend = 'none';
       
-      const p1 = row.defP1;
-      const p2 = row.defP2;
-      const p3 = row.defP3;
+      const p1 = viewMode === 'area' ? row.defP1 : row.p1;
+      const p2 = viewMode === 'area' ? row.defP2 : row.p2;
+      const p3 = viewMode === 'area' ? row.defP3 : row.p3;
       
       if (typeof p3 === 'number') {
         if (typeof p1 === 'number') {
@@ -36,23 +38,29 @@ export function useAnalysisPipeline(
         tendencia
       };
     });
-  }, [rows]);
+  }, [rows, viewMode]);
 
   // 2. Filtering
   const filteredRows = useMemo(() => {
     return augmentedRows.filter(row => {
+      if (selectedGrupo !== 'Todos' && row.grupo !== selectedGrupo) {
+        return false;
+      }
       if (filters.search && !row.estudiante.toLowerCase().includes(filters.search.toLowerCase())) {
         return false;
       }
-      if (filters.area && row.area !== filters.area) {
-        return false;
+      if (filters.area) {
+        const rowAreaVal = viewMode === 'area' ? row.area : row.asignatura;
+        if (rowAreaVal !== filters.area) {
+          return false;
+        }
       }
       if (filters.status && row.estado.text !== filters.status) {
         return false;
       }
       return true;
     });
-  }, [augmentedRows, filters]);
+  }, [augmentedRows, filters, selectedGrupo, viewMode]);
 
   // 3. KPIs
   const kpis = useMemo(() => {
@@ -77,25 +85,27 @@ export function useAnalysisPipeline(
 
   // 4. Grouping
   const grouped = useMemo(() => {
-    const groups: Record<string, StudentGroup> = {};
+    const groups: Record<string, StudentGroup<PipelineRow>> = {};
 
     filteredRows.forEach(row => {
       if (!groups[row.estudiante]) {
         groups[row.estudiante] = {
           estudiante: row.estudiante,
+          grupo: row.grupo,
           rows: [],
           aggregates: { defP1: null, defP2: null, defP3: null, promActual: null }
         };
       }
-      groups[row.estudiante].rows.push(row);
+      groups[row.estudiante].rows.push(row as PipelineRow);
     });
 
     // Calculate aggregates safe for nulls
     return Object.values(groups).map(group => {
-      const calcAvg = (key: keyof Pick<AugmentedRowArea, 'defP1' | 'defP2' | 'defP3' | 'promActual'>) => {
+      const calcAvg = (keyArea: string, keySubject: string) => {
+        const key = viewMode === 'area' ? keyArea : keySubject;
         let s = 0;
         let c = 0;
-        group.rows.forEach(r => {
+        group.rows.forEach((r: any) => {
           const val = r[key];
           if (typeof val === 'number') {
             s += val;
@@ -106,15 +116,15 @@ export function useAnalysisPipeline(
       };
 
       group.aggregates = {
-        defP1: calcAvg('defP1'),
-        defP2: calcAvg('defP2'),
-        defP3: calcAvg('defP3'),
-        promActual: calcAvg('promActual')
+        defP1: calcAvg('defP1', 'p1'),
+        defP2: calcAvg('defP2', 'p2'),
+        defP3: calcAvg('defP3', 'p3'),
+        promActual: calcAvg('promActual', 'promActual')
       };
       
       return group;
     });
-  }, [filteredRows]);
+  }, [filteredRows, viewMode]);
 
   // 5. Final Sorting
   const groupedAndSorted = useMemo(() => {
@@ -148,9 +158,16 @@ export function useAnalysisPipeline(
     // Now sort rows inside each group
     sortedGroups.forEach(group => {
       group.rows.sort((a, b) => {
-        const rowKey = key === 'aggregates.promActual' ? 'promActual' : key;
-        const valA = a[rowKey as keyof AugmentedRowArea];
-        const valB = b[rowKey as keyof AugmentedRowArea];
+        let rowKey: string = key === 'aggregates.promActual' ? 'promActual' : key;
+        
+        if (viewMode === 'subject') {
+          if (rowKey === 'defP1') rowKey = 'p1';
+          if (rowKey === 'defP2') rowKey = 'p2';
+          if (rowKey === 'defP3') rowKey = 'p3';
+        }
+
+        const valA = (a as any)[rowKey];
+        const valB = (b as any)[rowKey];
 
         if (valA === valB) return 0;
         if (valA === null || valA === undefined) return 1;
@@ -162,7 +179,7 @@ export function useAnalysisPipeline(
     });
 
     return sortedGroups;
-  }, [grouped, sortConfig]);
+  }, [grouped, sortConfig, viewMode]);
 
   return { groupedAndSorted, kpis };
 }

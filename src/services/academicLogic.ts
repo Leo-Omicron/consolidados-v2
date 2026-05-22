@@ -1,4 +1,4 @@
-import type { PeriodConfig, PeriodoNotas, EstadoAcademico, Estudiante } from '../domain/types';
+import type { PeriodConfig, PeriodoNotas, EstadoAcademico, Estudiante, SubjectWeightConfig } from '../domain/types';
 
 export const PASSING_GRADE = 3.0;
 export const MAX_GRADE = 5.0;
@@ -63,6 +63,7 @@ export function determinarEstado(notas: PeriodoNotas, config: PeriodConfig): Est
   const acumuladoFinalProyectadoMax = (sumProduct + (MAX_GRADE * remainingWeight)) / totalWeight;
   const acumuladoActual = sumProduct / totalWeight;
   const minimoRequerido = calcularMinimoRequerido(notas, config);
+  const promedioHistorico = calcularPromedioActual(notas, config);
 
   // Ya se terminó de evaluar todo el año
   if (remainingWeight <= 0) {
@@ -84,13 +85,15 @@ export function determinarEstado(notas: PeriodoNotas, config: PeriodConfig): Est
     return { text: 'Perdido', color: 'red' };
   }
 
-  if (minimoRequerido > 4.0) {
-    // Se requiere un promedio en los cortes restantes mayor a 4.0 (difícil)
+  // Dynamic Risk Evaluation: High Risk when required significantly exceeds historical
+  // Using +1.0 as the heuristic for "significant"
+  if (minimoRequerido > (promedioHistorico + 1.0) || minimoRequerido > 4.5) {
+    // Se requiere un esfuerzo significativamente mayor a su rendimiento histórico
     return { text: 'En riesgo', color: 'yellow' };
   }
   
   if (minimoRequerido > PASSING_GRADE) {
-    // Se requiere más de 3.0 pero menos de 4.0
+    // Se requiere más de 3.0 pero está dentro de lo esperable (<= historico + 1.0)
     return { text: 'Recuperable', color: 'blue' };
   }
 
@@ -98,15 +101,35 @@ export function determinarEstado(notas: PeriodoNotas, config: PeriodConfig): Est
   return { text: 'Ganable', color: 'cyan' };
 }
 
-export function applyAcademicLogic(students: Estudiante[], config: PeriodConfig): void {
+export function applyAcademicLogic(students: Estudiante[], config: PeriodConfig, subjectWeights: SubjectWeightConfig = {}): void {
   students.forEach(student => {
-    Object.values(student.areas).forEach(area => {
+    Object.entries(student.areas).forEach(([areaName, area]) => {
       // Calculate each asignatura
-      Object.values(area.asignaturas).forEach(asig => {
+      Object.values(area.asignaturas).forEach((asig) => {
         asig.promedioActual = calcularPromedioActual(asig, config);
         asig.p4Min = calcularMinimoRequerido(asig, config);
         asig.estado = determinarEstado(asig, config);
       });
+
+      // Dynamically calculate Area DEF if weights are provided
+      const weights = subjectWeights[areaName];
+      if (weights && Object.keys(weights).length > 0) {
+        (['P1', 'P2', 'P3', 'P4'] as const).forEach(period => {
+          let sum = 0;
+          let hasGrade = false;
+          Object.entries(area.asignaturas).forEach(([asigName, asig]) => {
+            const grade = asig[period];
+            if (typeof grade === 'number') {
+              const w = weights[asigName] || 0;
+              sum += grade * w;
+              hasGrade = true;
+            }
+          });
+          if (hasGrade) {
+            area.DEF[period] = Math.round(sum * 100) / 100;
+          }
+        });
+      }
 
       // Calculate area stats based on area DEF
       area.areaStats = {
@@ -116,5 +139,91 @@ export function applyAcademicLogic(students: Estudiante[], config: PeriodConfig)
       };
     });
   });
+}
+
+export function inferSubjectWeights(students: Estudiante[], areaName: string): Record<string, number> {
+  const subjects = new Set<string>();
+  students.forEach(s => {
+    const area = s.areas[areaName];
+    if (area) {
+      Object.keys(area.asignaturas).forEach(asig => subjects.add(asig));
+    }
+  });
+
+  const subjectList = Array.from(subjects);
+  if (subjectList.length === 0) return { [areaName]: 1.0 };
+  if (subjectList.length === 1) return { [subjectList[0]]: 1.0 };
+
+  const equalWeights: Record<string, number> = {};
+  subjectList.forEach(s => equalWeights[s] = 1 / subjectList.length);
+
+  // We only support inference for 2 or 3 subjects via grid search
+  if (subjectList.length > 3) return equalWeights;
+
+  const validStudents = students.filter(s => {
+    const area = s.areas[areaName];
+    if (!area || area.DEF.P1 === null) return false;
+    for (const sub of subjectList) {
+      if (area.asignaturas[sub]?.P1 == null) return false;
+    }
+    return true;
+  });
+
+  if (validStudents.length === 0) return equalWeights;
+
+  let bestWeights: number[] = [];
+  let minError = Infinity;
+
+  const STEP = 0.01;
+
+  if (subjectList.length === 2) {
+    for (let w1 = 0.01; w1 < 1.0; w1 += STEP) {
+      const w2 = 1 - w1;
+      let error = 0;
+      for (const s of validStudents) {
+        const area = s.areas[areaName];
+        const p1 = area.asignaturas[subjectList[0]].P1!;
+        const p2 = area.asignaturas[subjectList[1]].P1!;
+        const pred = p1 * w1 + p2 * w2;
+        error += Math.abs(pred - area.DEF.P1!);
+      }
+      if (error < minError) {
+        minError = error;
+        bestWeights = [w1, w2];
+      }
+    }
+  } else if (subjectList.length === 3) {
+    for (let w1 = 0.01; w1 < 1.0; w1 += STEP) {
+      for (let w2 = 0.01; w2 < 1.0 - w1; w2 += STEP) {
+        const w3 = 1 - w1 - w2;
+        if (w3 <= 0) continue;
+        let error = 0;
+        for (const s of validStudents) {
+          const area = s.areas[areaName];
+          const p1 = area.asignaturas[subjectList[0]].P1!;
+          const p2 = area.asignaturas[subjectList[1]].P1!;
+          const p3 = area.asignaturas[subjectList[2]].P1!;
+          const pred = p1 * w1 + p2 * w2 + p3 * w3;
+          error += Math.abs(pred - area.DEF.P1!);
+        }
+        if (error < minError) {
+          minError = error;
+          bestWeights = [w1, w2, w3];
+        }
+      }
+    }
+  }
+
+  const avgError = minError / validStudents.length;
+
+  if (avgError > 0.1) {
+    return equalWeights;
+  }
+
+  const result: Record<string, number> = {};
+  subjectList.forEach((sub, i) => {
+    result[sub] = Math.round(bestWeights[i] * 100) / 100;
+  });
+  return result;
 }
 

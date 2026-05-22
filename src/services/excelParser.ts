@@ -1,4 +1,5 @@
 import type { Estudiante, RowArea, RowAsignatura } from '../domain/types';
+import * as XLSX from 'xlsx';
 
 export interface HeaderComponent {
   index: number;
@@ -65,7 +66,7 @@ export function parseHeaders(headerRows: any[][]): { headers: HeaderComponent[],
   return { headers: structuredHeaders, totalPeriods: hasP4 ? 4 : 3 };
 }
 
-export function extractStudents(dataRows: any[][], headers: HeaderComponent[], curso: string): Estudiante[] {
+export function extractStudents(dataRows: any[][], headers: HeaderComponent[], curso: string, grupo: string = ''): Estudiante[] {
   const students: Estudiante[] = [];
 
   dataRows.forEach(row => {
@@ -78,6 +79,7 @@ export function extractStudents(dataRows: any[][], headers: HeaderComponent[], c
       id: id || name,
       name,
       CURSO: curso,
+      grupo: grupo || curso,
       areas: {}
     };
 
@@ -139,6 +141,7 @@ export function flattenRows(students: Estudiante[]): { rowsArea: RowArea[], rows
           CURSO: student.CURSO,
           estudiante: student.name,
           area: areaName,
+          grupo: student.grupo,
           defP1: areaData.DEF.P1,
           defP2: areaData.DEF.P2,
           defP3: areaData.DEF.P3,
@@ -152,28 +155,80 @@ export function flattenRows(students: Estudiante[]): { rowsArea: RowArea[], rows
         });
       }
 
-      Object.entries(areaData.asignaturas).forEach(([asigName, asigData]) => {
+      const asigEntries = Object.entries(areaData.asignaturas);
+      
+      if (asigEntries.length > 0) {
+        asigEntries.forEach(([asigName, asigData]) => {
+          rowsAsignatura.push({
+            id: `${student.id}_${areaName}_${asigName}`,
+            CURSO: student.CURSO,
+            estudiante: student.name,
+            area: areaName,
+            asignatura: asigName,
+            grupo: student.grupo,
+            p1: asigData.P1,
+            p2: asigData.P2,
+            p3: asigData.P3,
+            p4: asigData.P4,
+            promActual: asigData.promedioActual,
+            p4Min: asigData.p4Min,
+            estado: asigData.estado,
+            CURSO_NORM: student.CURSO.toUpperCase(),
+            AREA_NORM: areaName.toUpperCase(),
+            ASIG_NORM: asigName.toUpperCase(),
+            EST_NORM: student.name.toUpperCase()
+          });
+        });
+      } else if (areaData.areaStats) {
         rowsAsignatura.push({
-          id: `${student.id}_${areaName}_${asigName}`,
+          id: `${student.id}_${areaName}_${areaName}`,
           CURSO: student.CURSO,
           estudiante: student.name,
           area: areaName,
-          asignatura: asigName,
-          p1: asigData.P1,
-          p2: asigData.P2,
-          p3: asigData.P3,
-          p4: asigData.P4,
-          promActual: asigData.promedioActual,
-          p4Min: asigData.p4Min,
-          estado: asigData.estado,
+          asignatura: areaName,
+          grupo: student.grupo,
+          p1: areaData.DEF.P1,
+          p2: areaData.DEF.P2,
+          p3: areaData.DEF.P3,
+          p4: areaData.DEF.P4,
+          promActual: areaData.areaStats.promedioActual,
+          p4Min: areaData.areaStats.p4Min,
+          estado: areaData.areaStats.estado,
           CURSO_NORM: student.CURSO.toUpperCase(),
           AREA_NORM: areaName.toUpperCase(),
-          ASIG_NORM: asigName.toUpperCase(),
+          ASIG_NORM: areaName.toUpperCase(),
           EST_NORM: student.name.toUpperCase()
         });
-      });
+      }
     });
   });
 
   return { rowsArea, rowsAsignatura };
+}
+
+export function parseWorkbook(workbook: XLSX.WorkBook, curso: string): Estudiante[] {
+  let allStudents: Estudiante[] = [];
+
+  workbook.SheetNames.forEach(sheetName => {
+    if (normalizeText(sheetName) === 'RESUMEN') {
+      return;
+    }
+
+    const worksheet = workbook.Sheets[sheetName];
+    const rows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+    if (rows.length < 4) {
+      return; // Skip invalid sheets
+    }
+
+    const headerRows = rows.slice(0, 3);
+    const dataRows = rows.slice(3);
+
+    const { headers } = parseHeaders(headerRows);
+    const students = extractStudents(dataRows, headers, curso, sheetName);
+    
+    allStudents = allStudents.concat(students);
+  });
+
+  return allStudents;
 }

@@ -442,4 +442,52 @@ describe('AnalysisTab', () => {
     // The expander button should now show '📂'
     expect(expandBtn.textContent).toBe('📂');
   });
+
+  it('applies premium styling, sticky blur-headers, and soft badges', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        rowsArea: [{ estudiante: 'Juan', area: 'Matemáticas', estado: { text: 'Ganado', color: 'green' } }],
+        rowsAsignatura: [],
+        viewMode: 'area',
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos'],
+        setGrupo: vi.fn(),
+        subjectWeights: {}
+      };
+      return selector(state);
+    });
+
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'Test3',
+        rows: [{
+          area: 'Math',
+          promActual: 3.5,
+          tendencia: 'up',
+          estado: { text: 'Ganado', color: 'green' }
+        }],
+        aggregates: { promActual: 3.5 }
+      }],
+      kpis: { promedioGeneral: 3.5, statusDistribution: {} }
+    });
+
+    const { container } = render(<AnalysisTab />);
+    
+    const tableWrapper = container.querySelector('.max-h-\\[600px\\]');
+    expect(tableWrapper?.className).toContain('overflow-auto');
+    expect(tableWrapper?.className).toContain('rounded-lg');
+    expect(tableWrapper?.className).toContain('border-slate-200/50');
+
+    const header = container.querySelector('.sticky');
+    expect(header?.className).toContain('backdrop-blur-md');
+    expect(header?.className).toContain('bg-slate-50/90');
+
+    fireEvent.click(screen.getByText('Test3'));
+    
+    const badge = container.querySelector('.rounded-full');
+    expect(badge?.className).toContain('bg-emerald-50');
+    expect(badge?.className).toContain('text-emerald-700');
+    expect(badge?.className).toContain('border-emerald-200/50');
+  });
 });

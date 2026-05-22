@@ -4,6 +4,37 @@ import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
 import type { AnalysisFilters } from '../../hooks/useAnalysisPipeline';
 import type { SortConfig, Trend } from '../../domain/types';
 
+interface StatusBadgeProps {
+  text: string;
+  color: string;
+  isMini?: boolean;
+}
+
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ text, color, isMini = false }) => {
+  const badgeClasses = useMemo(() => {
+    switch (color) {
+      case 'green':
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-200/50';
+      case 'yellow':
+        return 'bg-amber-50 text-amber-700 border border-amber-200/50';
+      case 'red':
+        return 'bg-rose-50 text-rose-700 border border-rose-200/50';
+      case 'cyan':
+        return 'bg-cyan-50 text-cyan-700 border border-cyan-200/50';
+      case 'blue':
+        return 'bg-blue-50 text-blue-700 border border-blue-200/50';
+      default:
+        return 'bg-slate-50 text-slate-700 border border-slate-200/50';
+    }
+  }, [color]);
+
+  return (
+    <span className={`px-2 py-0.5 inline-flex ${isMini ? 'text-[10px]' : 'text-xs'} leading-5 font-bold rounded-full transition-premium ${badgeClasses}`}>
+      {text}
+    </span>
+  );
+};
+
 export const AnalysisTab: React.FC = () => {
   const rowsArea = useDashboardStore(state => state.rowsArea);
   const rowsAsignatura = useDashboardStore(state => state.rowsAsignatura);
@@ -198,8 +229,8 @@ export const AnalysisTab: React.FC = () => {
       </div>
 
       {/* Grouped Table List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="bg-gray-100 px-4 py-3 border-b flex font-semibold text-sm text-gray-700">
+      <div className="bg-white max-h-[600px] overflow-auto shadow-sm rounded-lg border border-slate-200/50 transition-premium">
+        <div className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-md px-4 py-3 border-b border-slate-200/50 flex font-semibold text-sm text-slate-700 transition-premium shadow-sm">
           <div className="w-1/3 cursor-pointer select-none" onClick={() => handleSort('estudiante')}>
             Estudiante {getSortIcon('estudiante')}
           </div>
@@ -209,7 +240,7 @@ export const AnalysisTab: React.FC = () => {
           </div>
         </div>
         
-        <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
+        <div className="divide-y divide-slate-100">
           {groupedAndSorted.length === 0 && (
             <div className="p-8 text-center text-gray-500">No se encontraron resultados.</div>
           )}
@@ -219,15 +250,17 @@ export const AnalysisTab: React.FC = () => {
             return (
               <div key={group.estudiante} className="flex flex-col">
                 <div 
-                  className="px-4 py-3 flex items-center justify-between bg-white hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="px-4 py-3 flex items-center justify-between bg-white hover:bg-slate-50/50 cursor-pointer transition-premium"
                   onClick={() => toggleGroup(group.estudiante)}
                 >
-                  <div className="w-1/3 font-medium text-gray-900 flex items-center">
-                    <span className="mr-2 text-gray-400">{isExpanded ? '▼' : '▶'}</span>
+                  <div className="w-1/3 font-semibold text-slate-900 flex items-center">
+                    <span className={`mr-2.5 text-slate-400 transform transition-transform duration-300 inline-block ${isExpanded ? 'rotate-90' : ''}`}>
+                      ▶
+                    </span>
                     {group.estudiante}
                     {group.isReprobado && (
-                      <span className="ml-2 bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold">
-                        Año Reprobado ({group.failedAreasCount} Áreas)
+                      <span className="ml-2 bg-rose-50 text-rose-700 border border-rose-200/50 text-xs px-2 py-0.5 rounded-full font-bold">
+                        Año Reprobado ({group.failedAreasCount} {group.failedAreasCount === 1 ? 'Área' : 'Áreas'})
                       </span>
                     )}
                   </div>
@@ -240,36 +273,36 @@ export const AnalysisTab: React.FC = () => {
                 </div>
                 
                 {isExpanded && (
-                  <div className="bg-gray-50 px-4 py-3 border-t border-b border-gray-100">
-                    <table className="min-w-full divide-y divide-gray-200 text-sm">
-                      <thead>
-                        <tr className="text-gray-500 text-left">
-                          <th className="font-medium pb-2 w-1/4">{viewMode === 'area' ? 'Área' : 'Asignatura'}</th>
-                          <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort(viewMode === 'area' ? 'defP1' : 'p1')}>
+                  <div className="bg-slate-50/50 px-4 py-3 border-t border-b border-slate-100">
+                    <table className="min-w-full divide-y divide-slate-100 text-sm">
+                      <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-md border-b border-slate-200/50">
+                        <tr className="text-slate-600 text-left">
+                          <th className="font-semibold pb-2 w-1/4">{viewMode === 'area' ? 'Área' : 'Asignatura'}</th>
+                          <th className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort(viewMode === 'area' ? 'defP1' : 'p1')}>
                             P1 {getSortIcon(viewMode === 'area' ? 'defP1' : 'p1')}
                           </th>
-                          <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort(viewMode === 'area' ? 'defP2' : 'p2')}>
+                          <th className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort(viewMode === 'area' ? 'defP2' : 'p2')}>
                             P2 {getSortIcon(viewMode === 'area' ? 'defP2' : 'p2')}
                           </th>
-                          <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort(viewMode === 'area' ? 'defP3' : 'p3')}>
+                          <th className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort(viewMode === 'area' ? 'defP3' : 'p3')}>
                             P3 {getSortIcon(viewMode === 'area' ? 'defP3' : 'p3')}
                           </th>
                           {hasP4 && (
-                            <th className="font-medium pb-2 w-1/12 text-center">P4</th>
+                            <th className="font-semibold pb-2 w-1/12 text-center">P4</th>
                           )}
-                          <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('tendencia')}>
+                          <th className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('tendencia')}>
                             Tendencia {getSortIcon('tendencia')}
                           </th>
-                          <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('promActual')}>
+                          <th className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('promActual')}>
                             Prom {getSortIcon('promActual')}
                           </th>
-                          <th className="font-medium pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('p4Min')}>
+                          <th className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('p4Min')}>
                             {hasP4 ? 'Mín. P4' : 'Mín. P3'} {getSortIcon('p4Min')}
                           </th>
-                          <th className="font-medium pb-2 w-1/4 text-center">Estado</th>
+                          <th className="font-semibold pb-2 w-1/4 text-center">Estado</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody className="divide-y divide-slate-100">
                         {group.rows.map((row: any, idx) => {
                           const areaKey = `${group.estudiante}_${row.area}`;
                           const isAreaExpanded = expandedAreas[areaKey];
@@ -281,10 +314,10 @@ export const AnalysisTab: React.FC = () => {
                           return (
                             <React.Fragment key={idx}>
                               <tr className="hover:bg-white">
-                                <td className="py-2 text-gray-700">
+                                <td className="py-2 text-slate-700">
                                   {viewMode === 'area' && (
                                     <button
-                                      className="mr-2 text-gray-400 hover:text-indigo-600 focus:outline-none cursor-pointer"
+                                      className="mr-2 text-slate-400 hover:text-indigo-600 focus:outline-none cursor-pointer"
                                       onClick={() => toggleArea(group.estudiante, row.area)}
                                       aria-label={`Toggle subjects for ${row.area}`}
                                     >
@@ -293,30 +326,21 @@ export const AnalysisTab: React.FC = () => {
                                   )}
                                   {viewMode === 'area' ? row.area : row.asignatura}
                                 </td>
-                                <td className="py-2 text-center text-gray-600">{(viewMode === 'area' ? row.defP1 : row.p1)?.toFixed(2) ?? '-'}</td>
-                                <td className="py-2 text-center text-gray-600">{(viewMode === 'area' ? row.defP2 : row.p2)?.toFixed(2) ?? '-'}</td>
-                                <td className="py-2 text-center text-gray-600">{(viewMode === 'area' ? row.defP3 : row.p3)?.toFixed(2) ?? '-'}</td>
+                                <td className="py-2 text-center text-slate-600">{(viewMode === 'area' ? row.defP1 : row.p1)?.toFixed(2) ?? '-'}</td>
+                                <td className="py-2 text-center text-slate-600">{(viewMode === 'area' ? row.defP2 : row.p2)?.toFixed(2) ?? '-'}</td>
+                                <td className="py-2 text-center text-slate-600">{(viewMode === 'area' ? row.defP3 : row.p3)?.toFixed(2) ?? '-'}</td>
                                 {hasP4 && (
-                                  <td className="py-2 text-center text-gray-600">{(viewMode === 'area' ? row.defP4 : row.p4)?.toFixed(2) ?? '-'}</td>
+                                  <td className="py-2 text-center text-slate-600">{(viewMode === 'area' ? row.defP4 : row.p4)?.toFixed(2) ?? '-'}</td>
                                 )}
                                 <td className="py-2 text-center text-xl" title={`Tendencia: ${row.tendencia}`}>
                                   {row.tendencia === 'up' ? '↗️' : row.tendencia === 'down' ? '↘️' : row.tendencia === 'flat' ? '➡️' : '-'}
                                 </td>
-                                <td className="py-2 text-center font-medium text-gray-900">{row.promActual?.toFixed(2) ?? '-'}</td>
-                                <td className="py-2 text-center text-gray-600">
+                                <td className="py-2 text-center font-semibold text-slate-900">{row.promActual?.toFixed(2) ?? '-'}</td>
+                                <td className="py-2 text-center text-slate-600">
                                   {row.p4Min !== null && row.p4Min !== undefined && row.p4Min <= 5.0 ? row.p4Min.toFixed(2) : '-'}
                                 </td>
                                 <td className="py-2 text-center">
-                                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                    row.estado.color === 'green' ? 'bg-green-100 text-green-800' :
-                                    row.estado.color === 'red' ? 'bg-red-100 text-red-800' :
-                                    row.estado.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
-                                    row.estado.color === 'blue' ? 'bg-blue-100 text-blue-800' :
-                                    row.estado.color === 'cyan' ? 'bg-cyan-100 text-cyan-800' :
-                                    'bg-gray-100 text-gray-800'
-                                  }`}>
-                                    {row.estado.text}
-                                  </span>
+                                  <StatusBadge text={row.estado.text} color={row.estado.color} />
                                   {row.p4Min !== null && row.p4Min > 5.0 && (
                                     <span 
                                       className="ml-2 cursor-help" 
@@ -328,24 +352,24 @@ export const AnalysisTab: React.FC = () => {
                                 </td>
                               </tr>
                               {viewMode === 'area' && isAreaExpanded && (
-                                <tr className="bg-gray-100/50">
+                                <tr className="bg-slate-100/40">
                                   <td colSpan={hasP4 ? 9 : 8} className="p-3 pl-8">
-                                    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                                    <div className="border border-slate-200/50 rounded-xl overflow-hidden bg-white shadow-sm transition-premium">
                                       <table className="min-w-full text-xs">
-                                        <thead className="bg-gray-50 border-b border-gray-100">
-                                          <tr className="text-gray-500 text-left">
-                                            <th className="font-medium p-2 pl-4">Asignatura</th>
-                                            <th className="font-medium p-2 text-center">P1</th>
-                                            <th className="font-medium p-2 text-center">P2</th>
-                                            <th className="font-medium p-2 text-center">P3</th>
-                                            {hasP4 && <th className="font-medium p-2 text-center">P4</th>}
-                                            <th className="font-medium p-2 text-center">Tendencia</th>
-                                            <th className="font-medium p-2 text-center">Promedio</th>
-                                            <th className="font-medium p-2 text-center">{hasP4 ? 'Mín. P4' : 'Mín. P3'}</th>
-                                            <th className="font-medium p-2 text-center">Estado</th>
+                                        <thead className="bg-slate-50/80 border-b border-slate-100">
+                                          <tr className="text-slate-500 text-left">
+                                            <th className="font-semibold p-2 pl-4">Asignatura</th>
+                                            <th className="font-semibold p-2 text-center">P1</th>
+                                            <th className="font-semibold p-2 text-center">P2</th>
+                                            <th className="font-semibold p-2 text-center">P3</th>
+                                            {hasP4 && <th className="font-semibold p-2 text-center">P4</th>}
+                                            <th className="font-semibold p-2 text-center">Tendencia</th>
+                                            <th className="font-semibold p-2 text-center">Promedio</th>
+                                            <th className="font-semibold p-2 text-center">{hasP4 ? 'Mín. P4' : 'Mín. P3'}</th>
+                                            <th className="font-semibold p-2 text-center">Estado</th>
                                           </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-100">
+                                        <tbody className="divide-y divide-slate-100">
                                           {subjects.map((sub, sIdx) => {
                                             let subTendencia: Trend = 'none';
                                             const p1 = sub.p1;
@@ -362,37 +386,28 @@ export const AnalysisTab: React.FC = () => {
                                             }
 
                                             return (
-                                              <tr key={sIdx} className="hover:bg-gray-50">
-                                                <td className="p-2 pl-4 text-gray-700 font-medium">{sub.asignatura}</td>
-                                                <td className="p-2 text-center text-gray-600">{sub.p1?.toFixed(2) ?? '-'}</td>
-                                                <td className="p-2 text-center text-gray-600">{sub.p2?.toFixed(2) ?? '-'}</td>
-                                                <td className="p-2 text-center text-gray-600">{sub.p3?.toFixed(2) ?? '-'}</td>
-                                                {hasP4 && <td className="p-2 text-center text-gray-600">{sub.p4?.toFixed(2) ?? '-'}</td>}
+                                              <tr key={sIdx} className="hover:bg-slate-50/50">
+                                                <td className="p-2 pl-4 text-slate-700 font-semibold">{sub.asignatura}</td>
+                                                <td className="p-2 text-center text-slate-600">{sub.p1?.toFixed(2) ?? '-'}</td>
+                                                <td className="p-2 text-center text-slate-600">{sub.p2?.toFixed(2) ?? '-'}</td>
+                                                <td className="p-2 text-center text-slate-600">{sub.p3?.toFixed(2) ?? '-'}</td>
+                                                {hasP4 && <td className="p-2 text-center text-slate-600">{sub.p4?.toFixed(2) ?? '-'}</td>}
                                                 <td className="p-2 text-center text-base" title={`Tendencia: ${subTendencia}`}>
                                                   {subTendencia === 'up' ? '↗️' : subTendencia === 'down' ? '↘️' : subTendencia === 'flat' ? '➡️' : '-'}
                                                 </td>
-                                                <td className="p-2 text-center font-medium text-gray-900">{sub.promActual?.toFixed(2) ?? '-'}</td>
-                                                <td className="p-2 text-center text-gray-600">
+                                                <td className="p-2 text-center font-semibold text-slate-900">{sub.promActual?.toFixed(2) ?? '-'}</td>
+                                                <td className="p-2 text-center text-slate-600">
                                                   {sub.p4Min !== null && sub.p4Min !== undefined && sub.p4Min <= 5.0 ? sub.p4Min.toFixed(2) : '-'}
                                                 </td>
                                                 <td className="p-2 text-center">
-                                                  <span className={`px-2 inline-flex text-[10px] leading-5 font-semibold rounded-full ${
-                                                    sub.estado.color === 'green' ? 'bg-green-100 text-green-800' :
-                                                    sub.estado.color === 'red' ? 'bg-red-100 text-red-800' :
-                                                    sub.estado.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
-                                                    sub.estado.color === 'blue' ? 'bg-blue-100 text-blue-800' :
-                                                    sub.estado.color === 'cyan' ? 'bg-cyan-100 text-cyan-800' :
-                                                    'bg-gray-100 text-gray-800'
-                                                  }`}>
-                                                    {sub.estado.text}
-                                                  </span>
+                                                  <StatusBadge text={sub.estado.text} color={sub.estado.color} isMini />
                                                 </td>
                                               </tr>
                                             );
                                           })}
                                           {subjects.length === 0 && (
                                             <tr>
-                                              <td colSpan={hasP4 ? 9 : 8} className="p-4 text-center text-gray-400">
+                                              <td colSpan={hasP4 ? 9 : 8} className="p-4 text-center text-slate-400">
                                                 No hay asignaturas para esta área.
                                               </td>
                                             </tr>

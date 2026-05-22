@@ -23,6 +23,17 @@ describe('Header', () => {
     expect(screen.getByText('Reports')).toBeDefined();
   });
 
+  it('applies premium styling, transitions and glassmorphism', () => {
+    render(<Header activeTab="analysis" setActiveTab={() => {}} />);
+    const header = screen.getByRole('banner');
+    expect(header.className).toContain('bg-slate-50/50');
+    expect(header.className).toContain('backdrop-blur-md');
+    
+    const activeTab = screen.getByText('Analysis');
+    expect(activeTab.className).toContain('text-violet-700');
+    expect(activeTab.className).toContain('bg-violet-50');
+  });
+
   it('calls setActiveTab when a tab is clicked', () => {
     const setActiveTab = vi.fn();
     render(<Header activeTab="analysis" setActiveTab={setActiveTab} />);

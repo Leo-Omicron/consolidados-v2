@@ -26,6 +26,16 @@ describe('MainLayout', () => {
     expect(screen.getByTestId('analysis-tab')).toBeDefined();
   });
 
+  it('applies premium layout styling and container classes', () => {
+    const { container } = render(<MainLayout />);
+    const mainDiv = container.firstChild as HTMLElement;
+    expect(mainDiv.className).toContain('bg-slate-50/50');
+    
+    const cardContainer = container.querySelector('.print-card-flat');
+    expect(cardContainer?.className).toContain('rounded-xl');
+    expect(cardContainer?.className).toContain('border-slate-200/50');
+  });
+
   it('changes active tab when header tab is clicked', () => {
     render(<MainLayout />);
     

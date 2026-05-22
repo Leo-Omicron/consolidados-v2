@@ -4,4 +4,56 @@
   --color-primary-50: #eff6ff;
   --color-primary-500: #3b82f6;
   --color-primary-900: #1e3a8a;
+  
+  /* Premium Transition, Shadows & Letter Spacing */
+  --transition-premium: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-premium: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  --tracking-premium: -0.01em;
+}
+
+/* Custom Utilities */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility transition-premium {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Global improvements and default tracking */
+body {
+  letter-spacing: -0.0125em;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Global Print Stylesheet */
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+    font-size: 11pt !important;
+  }
+
+  /* Hide interactive controls globally */
+  .no-print,
+  header select,
+  header nav,
+  button,
+  select,
+  nav,
+  input,
+  [role="tablist"],
+  [data-testid="file-upload-area"] {
+    display: none !important;
+  }
+
+  /* Standard card print adjustments */
+  .print-card-flat {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+    background: white !important;
+  }
 }

@@ -63,6 +63,59 @@ describe('FileUploadArea', () => {
     expect(screen.getByText('Test error message')).toBeDefined();
   });
 
+  it('toggles isDragging state on dragOver and dragLeave', () => {
+    render(<FileUploadArea />);
+    const container = screen.getByTestId('file-upload-area-container');
+    
+    expect(container.className).toContain('border-dashed');
+    expect(container.className).not.toContain('border-violet-500');
+
+    fireEvent.dragOver(container);
+    expect(container.className).toContain('border-violet-500');
+    expect(container.className).toContain('bg-violet-50/40');
+
+    fireEvent.dragLeave(container);
+    expect(container.className).not.toContain('border-violet-500');
+    expect(container.className).not.toContain('bg-violet-50/40');
+  });
+
+  it('handles drop event, processes excel files, and resets drag state', () => {
+    render(<FileUploadArea />);
+    const container = screen.getByTestId('file-upload-area-container');
+    
+    fireEvent.dragOver(container);
+    expect(container.className).toContain('border-violet-500');
+
+    const file = new File(['dummy xlsx'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+    fireEvent.drop(container, {
+      dataTransfer: {
+        files: [file]
+      }
+    });
+
+    expect(processFileMock).toHaveBeenCalledWith(file);
+    expect(container.className).not.toContain('border-violet-500');
+  });
+
+  it('handles drop event for JSON config and triggers setConfig', async () => {
+    render(<FileUploadArea />);
+    const container = screen.getByTestId('file-upload-area-container');
+    
+    const configData = { periods: [] };
+    const file = new File([JSON.stringify(configData)], 'config.json', { type: 'application/json' });
+    
+    fireEvent.drop(container, {
+      dataTransfer: {
+        files: [file]
+      }
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(setConfigMock).toHaveBeenCalledWith(configData);
+    expect(container.className).not.toContain('border-violet-500');
+  });
+
   it('calls processFile when excel file is selected', () => {
     render(<FileUploadArea />);
     

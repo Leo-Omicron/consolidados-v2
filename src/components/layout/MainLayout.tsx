@@ -22,12 +22,12 @@ export const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50/50 transition-premium">
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <FileUploadArea />
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[500px]">
+        <div className="bg-white rounded-xl shadow-premium border border-slate-200/50 min-h-[500px] transition-premium print-card-flat">
           {renderActiveTab()}
         </div>
       </main>

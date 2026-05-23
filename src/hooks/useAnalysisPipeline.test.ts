@@ -2,7 +2,7 @@ import { renderHook } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { useAnalysisPipeline } from './useAnalysisPipeline';
 import { useDashboardStore } from '../store/useDashboardStore';
-import type { RowArea, SortConfig } from '../domain/types';
+import type { RowArea, RowAsignatura, SortConfig } from '../domain/types';
 
 describe('useAnalysisPipeline', () => {
   const createMockRow = (
@@ -268,7 +268,7 @@ describe('useAnalysisPipeline', () => {
       ];
 
       const { result } = renderHook(() =>
-        useAnalysisPipeline(mockAsignaturas, 'Todos', { search: '', area: '', status: '' }, null, 'subject')
+        useAnalysisPipeline(mockAsignaturas as RowAsignatura[], 'Todos', { search: '', area: '', status: '' }, null, 'subject')
       );
 
       const aliceGroup = result.current.groupedAndSorted.find(g => g.estudiante === 'Alice');

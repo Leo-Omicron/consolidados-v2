@@ -99,7 +99,7 @@ export const ChartsTab: React.FC = () => {
     let reprobados = 0;
 
     filteredRows.forEach(row => {
-      const key = viewMode === 'area' ? row.area : row.asignatura;
+      const key = viewMode === 'area' ? (row as RowArea).area : (row as RowAsignatura).asignatura;
       if (key) {
         if (!itemAverages[key]) {
           itemAverages[key] = { total: 0, count: 0 };

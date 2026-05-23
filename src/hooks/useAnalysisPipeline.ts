@@ -32,9 +32,9 @@ export function useAnalysisPipeline(
     return rows.map((row) => {
       let tendencia: Trend = 'none';
       
-      const p1 = viewMode === 'area' ? row.defP1 : row.p1;
-      const p2 = viewMode === 'area' ? row.defP2 : row.p2;
-      const p3 = viewMode === 'area' ? row.defP3 : row.p3;
+      const p1 = viewMode === 'area' ? (row as RowArea).defP1 : (row as RowAsignatura).p1;
+      const p2 = viewMode === 'area' ? (row as RowArea).defP2 : (row as RowAsignatura).p2;
+      const p3 = viewMode === 'area' ? (row as RowArea).defP3 : (row as RowAsignatura).p3;
       
       if (typeof p3 === 'number') {
         if (typeof p1 === 'number') {
@@ -63,7 +63,7 @@ export function useAnalysisPipeline(
         return false;
       }
       if (filters.area) {
-        const rowAreaVal = viewMode === 'area' ? row.area : row.asignatura;
+        const rowAreaVal = viewMode === 'area' ? (row as RowArea).area : (row as RowAsignatura).asignatura;
         if (rowAreaVal !== filters.area) {
           return false;
         }

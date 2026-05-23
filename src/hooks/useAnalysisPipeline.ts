@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { StudentGroup, SortConfig, Trend, PipelineRow } from '../domain/types';
+import type { StudentGroup, SortConfig, Trend, PipelineRow, RowArea, RowAsignatura } from '../domain/types';
 import { useDashboardStore } from '../store/useDashboardStore';
 
 export interface AnalysisFilters {
@@ -9,7 +9,7 @@ export interface AnalysisFilters {
 }
 
 export function useAnalysisPipeline(
-  rows: any[],
+  rows: (RowArea | RowAsignatura)[],
   selectedGrupo: string,
   filters: AnalysisFilters,
   sortConfig: SortConfig | null,
@@ -118,8 +118,8 @@ export function useAnalysisPipeline(
         const key = viewMode === 'area' ? keyArea : keySubject;
         let s = 0;
         let c = 0;
-        group.rows.forEach((r: any) => {
-          const val = r[key];
+        group.rows.forEach((r) => {
+          const val = (r as unknown as Record<string, unknown>)[key];
           if (typeof val === 'number') {
             s += val;
             c++;
@@ -152,24 +152,26 @@ export function useAnalysisPipeline(
     const modifier = isDesc ? -1 : 1;
 
     const sortedGroups = [...grouped].sort((a, b) => {
-      let valA: any, valB: any;
+      let valA: string | number | null = null;
+      let valB: string | number | null = null;
       
       const groupKey = key === 'aggregates.promActual' ? 'promActual' : key;
       
       if (['defP1', 'defP2', 'defP3', 'promActual'].includes(groupKey)) {
-        valA = (a.aggregates as any)[groupKey];
-        valB = (b.aggregates as any)[groupKey];
+        valA = (a.aggregates as Record<string, number | null>)[groupKey];
+        valB = (b.aggregates as Record<string, number | null>)[groupKey];
       } else {
         valA = a.estudiante;
         valB = b.estudiante;
       }
 
       if (valA === valB) return 0;
-      if (valA === null) return 1;
-      if (valB === null) return -1;
-      if (valA < valB) return -1 * modifier;
-      if (valA > valB) return 1 * modifier;
-      return 0;
+      if (valA === null || valA === undefined) return 1;
+      if (valB === null || valB === undefined) return -1;
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return (valA - valB) * modifier;
+      }
+      return String(valA).localeCompare(String(valB)) * modifier;
     });
 
     // Now sort rows inside each group
@@ -183,15 +185,16 @@ export function useAnalysisPipeline(
           if (rowKey === 'defP3') rowKey = 'p3';
         }
 
-        const valA = (a as any)[rowKey];
-        const valB = (b as any)[rowKey];
+        const valA = (a as unknown as Record<string, unknown>)[rowKey];
+        const valB = (b as unknown as Record<string, unknown>)[rowKey];
 
         if (valA === valB) return 0;
         if (valA === null || valA === undefined) return 1;
         if (valB === null || valB === undefined) return -1;
-        if (valA < valB) return -1 * modifier;
-        if (valA > valB) return 1 * modifier;
-        return 0;
+        if (typeof valA === 'number' && typeof valB === 'number') {
+          return (valA - valB) * modifier;
+        }
+        return String(valA).localeCompare(String(valB)) * modifier;
       });
     });
 

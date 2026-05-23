@@ -8,7 +8,7 @@ export interface HeaderComponent {
   componente: string;
 }
 
-export function normalizeText(t: any): string {
+export function normalizeText(t: unknown): string {
   if (typeof t !== 'string') return t ? String(t).trim() : '';
   return t.trim().replace(/\s+/g, ' ').toUpperCase();
 }
@@ -18,7 +18,7 @@ export function normalizeText(t: any): string {
  * Implements forward-filling for merged cells in Excel.
  * Detects whether we have 3 or 4 periods dynamically.
  */
-export function parseHeaders(headerRows: any[][]): { headers: HeaderComponent[], totalPeriods: number } {
+export function parseHeaders(headerRows: unknown[][]): { headers: HeaderComponent[], totalPeriods: number } {
   // Ensure same length
   const maxLen = Math.max(...headerRows.map(r => r.length));
   const [rawAreas, rawAsignaturas, rawComponentes] = headerRows.map(row => {
@@ -66,7 +66,7 @@ export function parseHeaders(headerRows: any[][]): { headers: HeaderComponent[],
   return { headers: structuredHeaders, totalPeriods: hasP4 ? 4 : 3 };
 }
 
-export function extractStudents(dataRows: any[][], headers: HeaderComponent[], curso: string, grupo: string = ''): Estudiante[] {
+export function extractStudents(dataRows: unknown[][], headers: HeaderComponent[], curso: string, grupo: string = ''): Estudiante[] {
   const students: Estudiante[] = [];
 
   dataRows.forEach(row => {
@@ -111,7 +111,8 @@ export function extractStudents(dataRows: any[][], headers: HeaderComponent[], c
       if (isAreaDef) {
         // It's the area's DEF
         if (isPeriod) {
-          (student.areas[area].DEF as any)[componente] = note;
+          const compKey = componente as 'P1' | 'P2' | 'P3' | 'P4';
+          student.areas[area].DEF[compKey] = note;
         }
       } else {
         if (!student.areas[area].asignaturas[asignatura]) {
@@ -121,7 +122,8 @@ export function extractStudents(dataRows: any[][], headers: HeaderComponent[], c
           };
         }
         if (isPeriod) {
-          (student.areas[area].asignaturas[asignatura] as any)[componente] = note;
+          const compKey = componente as 'P1' | 'P2' | 'P3' | 'P4';
+          student.areas[area].asignaturas[asignatura][compKey] = note;
         }
       }
     });
@@ -218,7 +220,7 @@ export function parseWorkbook(workbook: XLSX.WorkBook, curso: string): Estudiant
     }
 
     const worksheet = workbook.Sheets[sheetName];
-    const rows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    const rows: unknown[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
     if (rows.length < 4) {
       return; // Skip invalid sheets

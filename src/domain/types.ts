@@ -119,3 +119,116 @@ export interface SubjectWeightConfig {
   };
 }
 
+// Sub-types for Institutional Reports
+export interface CriticalAreaInfo {
+  area: string;
+  failuresCount: number;
+}
+
+export interface OutstandingStudent {
+  id: string;
+  name: string;
+  average: number;
+  percentile: number;
+}
+
+export interface AcademicRiskStudent {
+  id: string;
+  name: string;
+  average: number;
+  failedAreasCount: number;
+  failedAreas: string[];
+  impossibilityMathAreas: string[]; // required grade > 5.0
+}
+
+export interface SubjectMetric {
+  asignatura: string;
+  average: number;
+  failuresCount: number;
+  failuresRate: number;
+}
+
+export interface GroupComparisonMetrics {
+  grupo: string;
+  totalStudents: number;
+  average: number;
+  standardDeviation: number;
+  failuresCount: number;
+  reprobadosCount: number;
+}
+
+export interface HeatmapCell {
+  grade: number | null;
+  color: EstadoAcademicoColor;
+}
+
+export interface HeatmapRow {
+  studentId: string;
+  studentName: string;
+  grades: Record<string, HeatmapCell>;
+  promActual: number;
+}
+
+export interface OfficialRecordRow {
+  studentId: string;
+  studentName: string;
+  grades: Record<string, number | null>;
+  promActual: number;
+  ranking: number;
+  failedAreasCount: number;
+  decision: 'Aprobado' | 'Compromisos' | 'Reprobado';
+}
+
+// 8 Core Reports
+export interface GroupPerformanceReport {
+  grupo: string;
+  totalStudents: number;
+  average: number;
+  standardDeviation: number;
+  promotionRate: number;
+  criticalAreas: CriticalAreaInfo[];
+}
+
+export interface OutstandingStudentsReport {
+  grupo: string;
+  students: OutstandingStudent[];
+}
+
+export interface AcademicRiskReport {
+  grupo: string;
+  criticalStudents: AcademicRiskStudent[];
+}
+
+export interface SubjectAnalyticsReport {
+  grupo: string;
+  subjects: SubjectMetric[];
+}
+
+export interface GroupComparisonReport {
+  groups: GroupComparisonMetrics[];
+}
+
+export interface HeatmapReport {
+  grupo: string;
+  areasList: string[];
+  rows: HeatmapRow[];
+}
+
+export interface TeacherFeedbackReport {
+  studentId: string;
+  studentName: string;
+  grupo: string;
+  overallStatus: 'Aprobado' | 'Compromisos' | 'Reprobado';
+  strengths: string[];
+  weaknesses: string[];
+  adviceText: string;
+}
+
+export interface OfficialRecordsReport {
+  grupo: string;
+  period: string;
+  director: string;
+  rows: OfficialRecordRow[];
+}
+
+

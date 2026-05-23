@@ -143,8 +143,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         selectedGrupo: 'Todos',
         loading: false
       });
-    } catch (err: any) {
-      set({ loading: false, error: err.message || "Error processing file" });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Error processing file";
+      set({ loading: false, error: errorMessage });
     }
   }
 }));

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import type { RowArea, RowAsignatura } from '../../domain/types';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
 import { roundToOneDecimal } from '../../services/academicLogic';
@@ -27,7 +28,7 @@ ChartJS.register(
 // Threshold line custom plugin drawing a horizontal dashed line at 3.0 passing grade
 const thresholdLinePlugin = {
   id: 'thresholdLine',
-  afterDraw: (chart: any) => {
+  afterDraw: (chart: ChartJS) => {
     const { ctx, chartArea: { left, right }, scales: { y } } = chart;
     const yVal = y.getPixelForValue(3.0);
     
@@ -56,7 +57,7 @@ export const ChartsTab: React.FC = () => {
   const viewMode = useDashboardStore(state => state.viewMode);
 
   // Active dataset for the pipeline
-  const activeRows: any[] = viewMode === 'area' ? rowsArea : rowsAsignatura;
+  const activeRows: (RowArea | RowAsignatura)[] = viewMode === 'area' ? rowsArea : rowsAsignatura;
 
   // Empty filters as we want full group-isolated aggregation in the dashboard view
   const emptyFilters = useMemo(() => ({ search: '', area: '', status: '' }), []);

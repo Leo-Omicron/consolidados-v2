@@ -25,7 +25,6 @@ export const ReportsTab: React.FC = () => {
   const estudiantes = useDashboardStore(state => state.estudiantes);
   const config = useDashboardStore(state => state.config);
   const selectedGrupo = useDashboardStore(state => state.selectedGrupo);
-  const setGrupo = useDashboardStore(state => state.setGrupo);
   const availableGroups = useDashboardStore(state => state.availableGroups);
 
   const [activeTab, setActiveTab] = useState<ReportCategory>('group-performance');

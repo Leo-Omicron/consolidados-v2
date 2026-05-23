@@ -48,10 +48,13 @@ export const AnalysisTab: React.FC = () => {
   
   const [filters, setFilters] = useState<AnalysisFilters>({ search: '', area: '', status: '' });
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [isWeightsExpanded, setIsWeightsExpanded] = useState(false);
   
   const hasP4 = config.P4 !== undefined && config.P4 > 0;
   
-  const activeRows = (viewMode === 'area' ? rowsArea : rowsAsignatura) || [];
+  const activeRows = useMemo(() => {
+    return (viewMode === 'area' ? rowsArea : rowsAsignatura) || [];
+  }, [viewMode, rowsArea, rowsAsignatura]);
 
   const weightsToDisplay = useMemo(() => {
     const firstVal = Object.values(subjectWeights)[0];
@@ -128,32 +131,46 @@ export const AnalysisTab: React.FC = () => {
         </button>
       </div>
       
-      {/* Inferred Weights */}
+      {/* Inferred Weights Collapsible Accordion */}
       {Object.keys(weightsToDisplay).length > 0 && (
-        <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <h3 className="text-sm font-semibold text-blue-800 mb-2">Pesos de Asignaturas Inferidos</h3>
-          <div className="space-y-3">
-            {Object.entries(weightsToDisplay).map(([grupo, areas]) => (
-              <div key={grupo} className="flex flex-col space-y-1">
-                {grupo && (
-                  <span className="text-xs font-bold text-blue-600 uppercase">Grupo {grupo}:</span>
-                )}
-                <div className="flex flex-wrap gap-3">
-                  {Object.entries(areas).map(([area, asigs]) => (
-                    <div key={area} className="bg-white px-3 py-1.5 rounded shadow-sm text-sm border border-blue-100 flex items-center">
-                      <span className="font-bold text-gray-700">{area}:</span>
-                      <span className="ml-2 text-gray-600">
-                        {Object.entries(asigs as Record<string, number>).map(([asig, w]) => `${asig}: ${Math.round(w * 100)}%`).join(' | ')}
-                      </span>
+        <div className="mb-6 bg-white rounded-2xl border border-slate-200/60 shadow-premium overflow-hidden transition-all duration-300">
+          <button
+            onClick={() => setIsWeightsExpanded(!isWeightsExpanded)}
+            className="w-full px-5 py-4 flex items-center justify-between bg-slate-50/70 hover:bg-slate-50 transition-colors font-bold text-slate-800 text-sm border-b border-slate-100 cursor-pointer"
+          >
+            <span className="flex items-center gap-2">
+              <span>📋</span> {isWeightsExpanded ? 'Ocultar Pesos de Asignaturas Inferidos' : 'Ver Pesos de Asignaturas Inferidos'}
+            </span>
+            <span className={`transform transition-transform duration-300 ${isWeightsExpanded ? 'rotate-180' : 'rotate-0'}`}>
+              ▼
+            </span>
+          </button>
+          {isWeightsExpanded && (
+            <div className="p-5 border-t border-slate-100 transition-all duration-300">
+              <div className="space-y-4">
+                {Object.entries(weightsToDisplay).map(([grupo, areas]) => (
+                  <div key={grupo} className="flex flex-col space-y-1">
+                    {grupo && (
+                      <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Grupo {grupo}:</span>
+                    )}
+                    <div className="flex flex-wrap gap-3">
+                      {Object.entries(areas).map(([area, asigs]) => (
+                        <div key={area} className="bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-100 text-xs flex items-center">
+                          <span className="font-bold text-slate-700">{area}:</span>
+                          <span className="ml-2 text-slate-500 font-medium">
+                            {Object.entries(asigs as Record<string, number>).map(([asig, w]) => `${asig}: ${Math.round(w * 100)}%`).join(' | ')}
+                          </span>
+                        </div>
+                      ))}
+                      {Object.keys(areas).length === 0 && (
+                        <span className="text-sm text-gray-400">Sin pesos configurados</span>
+                      )}
                     </div>
-                  ))}
-                  {Object.keys(areas).length === 0 && (
-                    <span className="text-sm text-gray-400">Sin pesos configurados</span>
-                  )}
-                </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 

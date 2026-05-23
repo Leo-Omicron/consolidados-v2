@@ -134,7 +134,7 @@ describe('AnalysisTab', () => {
     expect(screen.getAllByText('Math').length).toBeGreaterThan(0);
   });
 
-  it('renders inferred subject weights', () => {
+  it('renders inferred subject weights panel collapsed by default with correct title', () => {
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
         rowsArea: [{ estudiante: 'Juan', area: 'Matemáticas', estado: { text: 'Ganado' } }],
@@ -152,9 +152,78 @@ describe('AnalysisTab', () => {
     });
 
     render(<AnalysisTab />);
-    expect(screen.getByText('Pesos de Asignaturas Inferidos')).toBeDefined();
+    
+    // Collapsed by default: button should have title "Ver Pesos de Asignaturas Inferidos"
+    const toggleButton = screen.getByRole('button', { name: /Ver Pesos de Asignaturas Inferidos/ });
+    expect(toggleButton).toBeDefined();
+    
+    // The panel contents should be hidden
+    expect(screen.queryByText('Ciencias:')).toBeNull();
+  });
+
+  it('toggles weights panel expansion on click', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        rowsArea: [{ estudiante: 'Juan', area: 'Matemáticas', estado: { text: 'Ganado' } }],
+        rowsAsignatura: [],
+        viewMode: 'area',
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos', '9A'],
+        setGrupo: vi.fn(),
+        subjectWeights: {
+          'Ciencias': { 'Física': 0.5, 'Química': 0.5 }
+        }
+      };
+      return selector(state);
+    });
+
+    render(<AnalysisTab />);
+    
+    const toggleButton = screen.getByRole('button', { name: /Ver Pesos de Asignaturas Inferidos/ });
+    fireEvent.click(toggleButton);
+    
+    // Now expanded: button text should change and content should be visible
+    expect(screen.getByRole('button', { name: /Ocultar Pesos de Asignaturas Inferidos/ })).toBeDefined();
     expect(screen.getByText('Ciencias:')).toBeDefined();
     expect(screen.getByText(/Física: 50% \| Química: 50%/)).toBeDefined();
+    
+    // Click again to collapse
+    fireEvent.click(toggleButton);
+    expect(screen.getByRole('button', { name: /Ver Pesos de Asignaturas Inferidos/ })).toBeDefined();
+  });
+
+  it('displays only selected group weights when filtered', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        rowsArea: [{ estudiante: 'Juan', area: 'Matemáticas', estado: { text: 'Ganado' } }],
+        rowsAsignatura: [],
+        viewMode: 'area',
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: '9A',
+        availableGroups: ['Todos', '9A', '9B'],
+        setGrupo: vi.fn(),
+        subjectWeights: {
+          '9A': { 'Ciencias': { 'Física': 0.5, 'Química': 0.5 } },
+          '9B': { 'Ciencias': { 'Biología': 1.0 } }
+        }
+      };
+      return selector(state);
+    });
+
+    render(<AnalysisTab />);
+    
+    // Expand the panel
+    const toggleButton = screen.getByRole('button', { name: /Ver Pesos de Asignaturas Inferidos/ });
+    fireEvent.click(toggleButton);
+    
+    // Should display 9A weights
+    expect(screen.getByText('Grupo 9A:')).toBeDefined();
+    expect(screen.getByText(/Física: 50% \| Química: 50%/)).toBeDefined();
+    
+    // Should NOT display 9B weights
+    expect(screen.queryByText('Grupo 9B:')).toBeNull();
+    expect(screen.queryByText(/Biología: 100%/)).toBeNull();
   });
 
   it('renders high-risk danger icon with tooltip if p4Min > 5.0', () => {

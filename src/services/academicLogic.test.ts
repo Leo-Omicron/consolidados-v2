@@ -23,6 +23,16 @@ describe('academicLogic', () => {
       expect(calcularPromedioActual(notas, config3Periods)).toBe(3.5);
     });
 
+    it('treats missing/null grade in an evaluated period as 0.0', () => {
+      const notas: PeriodoNotas = { P1: 4.0, P2: null, P3: null };
+      const evaluated = { P1: true, P2: true, P3: false, P4: false };
+      // P1 (4.0) is evaluated, P2 (null) is evaluated -> counts as 0.0. P3 is future.
+      // Weighted product: 4.0 * 33.3 + 0 * 33.3 = 133.2
+      // Weighted weight: 33.3 + 33.3 = 66.6
+      // Average: 133.2 / 66.6 = 2.0
+      expect(calcularPromedioActual(notas, config3Periods, evaluated)).toBe(2.0);
+    });
+
     it('calculates average for 4 periods correctly', () => {
       const notas: PeriodoNotas = { P1: 4.0, P2: 2.0, P3: 5.0, P4: null };
       // (4*25 + 2*25 + 5*25) / 75 = 11*25 / 75 = 11/3 = 3.666... which rounds to 3.7

@@ -10,6 +10,7 @@ import {
   generateTeacherFeedbackReport,
   generateOfficialRecordsReport,
 } from '../../services/reportEngine';
+import { ExcelExportServiceImpl } from '../../services/excelExport';
 
 type ReportCategory =
   | 'group-performance'
@@ -29,7 +30,46 @@ export const ReportsTab: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<ReportCategory>('group-performance');
   const [directorName, setDirectorName] = useState<string>('Director de Curso');
-  const [periodName, setPeriodName] = useState<string>('Periodo Final');
+  const [periodName, setPeriodName] = useState<string>('');
+
+  // Dynamically detect the highest period with active grades across the loaded dataset
+  const detectedPeriod = useMemo(() => {
+    if (estudiantes.length === 0) return 'Periodo Final';
+    
+    let hasP1 = false;
+    let hasP2 = false;
+    let hasP3 = false;
+    let hasP4 = false;
+
+    estudiantes.forEach(student => {
+      Object.values(student.areas).forEach(area => {
+        // Check Area-level DEF grades
+        if (area.DEF.P1 !== null && area.DEF.P1 !== undefined) hasP1 = true;
+        if (area.DEF.P2 !== null && area.DEF.P2 !== undefined) hasP2 = true;
+        if (area.DEF.P3 !== null && area.DEF.P3 !== undefined) hasP3 = true;
+        if (area.DEF.P4 !== null && area.DEF.P4 !== undefined) hasP4 = true;
+
+        // Check Subject-level grades
+        Object.values(area.asignaturas).forEach(asig => {
+          if (asig.P1 !== null && asig.P1 !== undefined) hasP1 = true;
+          if (asig.P2 !== null && asig.P2 !== undefined) hasP2 = true;
+          if (asig.P3 !== null && asig.P3 !== undefined) hasP3 = true;
+          if (asig.P4 !== null && asig.P4 !== undefined) hasP4 = true;
+        });
+      });
+    });
+
+    if (hasP4) return 'Periodo 4';
+    if (hasP3) return 'Periodo 3';
+    if (hasP2) return 'Periodo 2';
+    if (hasP1) return 'Periodo 1';
+    return 'Periodo Final';
+  }, [estudiantes]);
+
+  // Sync state with detected period
+  React.useEffect(() => {
+    setPeriodName(detectedPeriod);
+  }, [detectedPeriod]);
 
   const hasP4 = config.P4 !== undefined && config.P4 > 0;
 
@@ -102,12 +142,111 @@ export const ReportsTab: React.FC = () => {
     return generateOfficialRecordsReport(estudiantes, activeGroupToUse, config, periodName, directorName);
   }, [estudiantes, activeGroupToUse, config, periodName, directorName]);
 
+  const printLayoutClass = useMemo(() => {
+    if (activeTab === 'heatmap' || activeTab === 'official' || activeTab === 'group-comparison') {
+      return 'print-landscape';
+    }
+    return 'print-portrait';
+  }, [activeTab]);
+
   if (estudiantes.length === 0) {
     return <div className="p-8 text-center text-gray-500">No hay datos para generar reportes. Cargue un archivo Excel.</div>;
   }
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExportExcel = () => {
+    switch (activeTab) {
+      case 'group-performance':
+        if (groupPerformanceData) {
+          ExcelExportServiceImpl.exportGroupPerformance(groupPerformanceData);
+        } else {
+          alert('No hay datos de Rendimiento Grupal disponibles para exportar.');
+        }
+        break;
+      case 'outstanding':
+        if (outstandingStudentsData) {
+          ExcelExportServiceImpl.exportOutstandingStudents(outstandingStudentsData);
+        } else {
+          alert('No hay datos de Estudiantes Destacados disponibles para exportar.');
+        }
+        break;
+      case 'academic-risk':
+        if (academicRiskData) {
+          ExcelExportServiceImpl.exportAcademicRisk(academicRiskData);
+        } else {
+          alert('No hay datos de Riesgo Académico disponibles para exportar.');
+        }
+        break;
+      case 'subject-analytics':
+        if (subjectAnalyticsData) {
+          ExcelExportServiceImpl.exportSubjectAnalytics(subjectAnalyticsData);
+        } else {
+          alert('No hay datos de Análisis de Asignaturas disponibles para exportar.');
+        }
+        break;
+      case 'group-comparison':
+        if (groupComparisonData) {
+          ExcelExportServiceImpl.exportGroupComparison(groupComparisonData);
+        } else {
+          alert('No hay datos de Comparativa de Grupos disponibles para exportar.');
+        }
+        break;
+      case 'heatmap':
+        if (heatmapData) {
+          ExcelExportServiceImpl.exportHeatmap(heatmapData);
+        } else {
+          alert('No hay datos de Mapa de Calor disponibles para exportar.');
+        }
+        break;
+      case 'feedback':
+        if (teacherFeedbackData && teacherFeedbackData.length > 0) {
+          ExcelExportServiceImpl.exportTeacherFeedback(teacherFeedbackData);
+        } else {
+          alert('No hay datos de Retroalimentación disponibles para exportar.');
+        }
+        break;
+      case 'official':
+        if (officialRecordsData) {
+          ExcelExportServiceImpl.exportOfficialRecords(officialRecordsData);
+        } else {
+          alert('No hay datos de Registro Oficial disponibles para exportar.');
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleExportConsolidadoCompleto = () => {
+    if (activeTab === 'group-comparison') return;
+
+    if (
+      !groupPerformanceData ||
+      !outstandingStudentsData ||
+      !academicRiskData ||
+      !subjectAnalyticsData ||
+      !heatmapData ||
+      !teacherFeedbackData ||
+      !officialRecordsData ||
+      !activeGroupToUse
+    ) {
+      alert("Por favor, espere a que se carguen los datos de todos los reportes para este grupo.");
+      return;
+    }
+
+    ExcelExportServiceImpl.exportConsolidadoCompleto({
+      groupPerformance: groupPerformanceData,
+      outstandingStudents: outstandingStudentsData,
+      academicRisk: academicRiskData,
+      subjectAnalytics: subjectAnalyticsData,
+      heatmap: heatmapData,
+      teacherFeedback: teacherFeedbackData,
+      officialRecords: officialRecordsData,
+      grupo: activeGroupToUse
+    });
   };
 
   const menuItems = [
@@ -122,7 +261,7 @@ export const ReportsTab: React.FC = () => {
   ] as const;
 
   return (
-    <div className="p-6 transition-premium max-w-7xl mx-auto print:p-0">
+    <div className={`p-6 transition-premium max-w-7xl mx-auto print:p-0 ${printLayoutClass}`}>
       {/* Top action bar: hidden when printing */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 no-print print:hidden">
         <div>
@@ -145,6 +284,20 @@ export const ReportsTab: React.FC = () => {
               </select>
             </div>
           )}
+          <button 
+            onClick={handleExportExcel}
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer"
+          >
+            📊 Exportar Excel
+          </button>
+          <button 
+            onClick={handleExportConsolidadoCompleto}
+            disabled={activeTab === 'group-comparison' || !activeGroupToUse || !groupPerformanceData}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:hover:bg-blue-600 text-white font-semibold text-sm rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            title={activeTab === 'group-comparison' ? "Consolidado Completo no disponible para Comparativa de Grupos" : "Descarga los 7 reportes del grupo en un único archivo de Excel"}
+          >
+            📦 Consolidado Completo
+          </button>
           <button 
             onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
@@ -183,7 +336,9 @@ export const ReportsTab: React.FC = () => {
           
           {/* Header for Printed Paper */}
           <div className="hidden print:block text-center border-b border-slate-300 pb-4 mb-6">
-            <h1 className="text-2xl font-bold uppercase tracking-wide text-slate-950">IEEC - Consolidado Institucional</h1>
+            <h1 className="text-2xl font-bold uppercase tracking-wide text-slate-950">
+              IEEC - Consolidado Institucional {periodName && `(${periodName.toUpperCase()})`}
+            </h1>
             <p className="text-sm text-slate-600 mt-1">Soporte de Calificaciones Académicas y Comités de Evaluación</p>
             <div className="flex justify-between items-center text-xs text-slate-500 mt-3 px-2">
               <span>Grupo: {activeTab === 'group-comparison' ? 'Todos los grupos' : activeGroupToUse}</span>
@@ -402,11 +557,36 @@ export const ReportsTab: React.FC = () => {
                   <thead className="bg-slate-50 print:bg-slate-100">
                     <tr>
                       <th className="px-4 py-3 text-left font-bold text-slate-600">Grupo</th>
-                      <th className="px-4 py-3 text-center font-bold text-slate-600 w-24">Estudiantes</th>
-                      <th className="px-4 py-3 text-center font-bold text-slate-600 w-28">Promedio General</th>
-                      <th className="px-4 py-3 text-center font-bold text-slate-600 w-28">Desv. Estándar</th>
-                      <th className="px-4 py-3 text-center font-bold text-slate-600 w-28">Total Pérdidas</th>
-                      <th className="px-4 py-3 text-center font-bold text-slate-600 w-28">Estudiantes Reprobados</th>
+                      <th 
+                        className="px-4 py-3 text-center font-bold text-slate-600 w-24 cursor-help" 
+                        title="Cantidad total de estudiantes activos evaluados en este grupo."
+                      >
+                        Estudiantes ℹ️
+                      </th>
+                      <th 
+                        className="px-4 py-3 text-center font-bold text-slate-600 w-28 cursor-help" 
+                        title="Rendimiento promedio de todo el grupo (suma de promedios de estudiantes dividida por la cantidad de estudiantes)."
+                      >
+                        Promedio General ℹ️
+                      </th>
+                      <th 
+                        className="px-4 py-3 text-center font-bold text-slate-600 w-28 cursor-help" 
+                        title="DESVIACIÓN ESTÁNDAR&#10;&#10;Mide qué tan dispersos están los promedios de los alumnos en comparación con el promedio general del grupo.&#10;&#10;• Desviación ALTA (&gt; 1.0): Grupo HETEROGÉNEO. Coexisten alumnos con rendimiento sobresaliente y otros con graves dificultades. Requiere apoyo diferenciado.&#10;• Desviación BAJA (&lt; 0.5): Grupo HOMOGÉNEO. Los niveles de rendimiento de los alumnos son muy uniformes y parejos.&#10;&#10;No es 'buena' ni 'mala' de por sí, pero una desviación alta alerta al docente sobre una gran brecha de aprendizaje en el salón de clases."
+                      >
+                        Desv. Estándar ℹ️
+                      </th>
+                      <th 
+                        className="px-4 py-3 text-center font-bold text-slate-600 w-28 cursor-help" 
+                        title="Suma acumulada de todas las áreas reprobadas (calificación menor a 3.0) por todos los estudiantes del grupo."
+                      >
+                        Total Pérdidas ℹ️
+                      </th>
+                      <th 
+                        className="px-4 py-3 text-center font-bold text-slate-600 w-28 cursor-help" 
+                        title="Cantidad de estudiantes que reprueban la promoción del año bajo la Regla de Oro (tienen 3 o más áreas con promedio reprobatorio)."
+                      >
+                        Estudiantes Reprobados ℹ️
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -547,23 +727,29 @@ export const ReportsTab: React.FC = () => {
               </div>
 
               {/* Input details for Director/Period: hidden when printing */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 no-print print:hidden">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4 bg-slate-50 rounded-2xl border border-slate-200/60 no-print print:hidden">
                 <div className="flex flex-col">
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-1">Nombre del Director de Curso:</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase mb-1.5 flex items-center gap-1">
+                    👤 Nombre del Director de Curso:
+                  </label>
                   <input
                     type="text"
                     value={directorName}
                     onChange={e => setDirectorName(e.target.value)}
-                    className="border border-slate-200 bg-white rounded-xl px-3 py-2 text-sm"
+                    placeholder="Ej. Prof. María Clara Gómez"
+                    className="border border-slate-200 hover:border-slate-300 bg-white rounded-xl px-4 py-2.5 text-sm text-slate-800 font-medium shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all duration-200"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-1">Nombre del Periodo Académico:</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase mb-1.5 flex items-center gap-1">
+                    📅 Nombre del Periodo Académico:
+                  </label>
                   <input
                     type="text"
                     value={periodName}
                     onChange={e => setPeriodName(e.target.value)}
-                    className="border border-slate-200 bg-white rounded-xl px-3 py-2 text-sm"
+                    placeholder="Ej. Periodo 1, Primer Trimestre"
+                    className="border border-slate-200 hover:border-slate-300 bg-white rounded-xl px-4 py-2.5 text-sm text-slate-800 font-medium shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all duration-200"
                   />
                 </div>
               </div>

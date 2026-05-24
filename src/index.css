@@ -31,10 +31,53 @@ body {
 
 /* Global Print Stylesheet */
 @media print {
+  /* Define Named Pages for Automatic Browser Orientation */
+  @page portrait-layout {
+    size: portrait;
+    margin: 1cm;
+  }
+  
+  @page landscape-layout {
+    size: landscape;
+    margin: 1cm;
+  }
+
+  /* Assign Layout Classes to their respective Print Elements */
+  .print-portrait {
+    page: portrait-layout;
+  }
+
+  .print-landscape {
+    page: landscape-layout;
+  }
+
+  /* Repeat Table Headers across Page Boundaries */
+  thead {
+    display: table-header-group !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Protect cards from getting chopped in half */
+  .break-inside-avoid {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Premium High-Contrast and Flat Layout Settings */
   body {
     background-color: white !important;
     color: black !important;
-    font-size: 11pt !important;
+    font-size: 9pt !important;
+  }
+
+  /* Force table contents to scale gracefully without overflowing standard margins */
+  table {
+    width: 100% !important;
+    font-size: 9pt !important;
   }
 
   /* Hide interactive controls globally */

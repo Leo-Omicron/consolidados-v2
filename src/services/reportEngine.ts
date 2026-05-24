@@ -268,19 +268,33 @@ export function generateSubjectAnalyticsReport(students: Estudiante[], grupo: st
   const subjectFailures: Record<string, number> = {};
   
   groupStudents.forEach(student => {
-    Object.values(student.areas).forEach(area => {
-      Object.entries(area.asignaturas).forEach(([subName, asig]) => {
-        if (typeof asig.promedioActual === 'number') {
-          if (!subjectGrades[subName]) {
-            subjectGrades[subName] = [];
+    Object.entries(student.areas).forEach(([areaName, area]) => {
+      const asigEntries = Object.entries(area.asignaturas);
+      if (asigEntries.length > 0) {
+        asigEntries.forEach(([subName, asig]) => {
+          if (typeof asig.promedioActual === 'number') {
+            if (!subjectGrades[subName]) {
+              subjectGrades[subName] = [];
+            }
+            subjectGrades[subName].push(asig.promedioActual);
+            
+            if (asig.promedioActual < 3.0) {
+              subjectFailures[subName] = (subjectFailures[subName] || 0) + 1;
+            }
           }
-          subjectGrades[subName].push(asig.promedioActual);
-          
-          if (asig.promedioActual < 3.0) {
-            subjectFailures[subName] = (subjectFailures[subName] || 0) + 1;
-          }
+        });
+      } else if (area.areaStats && typeof area.areaStats.promedioActual === 'number') {
+        // Fallback for single-subject areas (the Area itself behaves as the subject)
+        const subName = areaName;
+        if (!subjectGrades[subName]) {
+          subjectGrades[subName] = [];
         }
-      });
+        subjectGrades[subName].push(area.areaStats.promedioActual);
+        
+        if (area.areaStats.promedioActual < 3.0) {
+          subjectFailures[subName] = (subjectFailures[subName] || 0) + 1;
+        }
+      }
     });
   });
   

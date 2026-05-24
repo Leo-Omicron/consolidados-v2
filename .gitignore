@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Local Pi runtime state
+.atl/
+.engram/
+.pi/
+*.xlsx
+inspect_excel.js
+

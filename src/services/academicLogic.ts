@@ -7,33 +7,42 @@ export function roundToOneDecimal(val: number): number {
   return Math.round(val * 10) / 10;
 }
 
-export function getAccumulatedWeightAndProduct(notas: PeriodoNotas, config: PeriodConfig) {
+export function getAccumulatedWeightAndProduct(
+  notas: PeriodoNotas,
+  config: PeriodConfig,
+  evaluated = { P1: false, P2: false, P3: false, P4: false }
+) {
   let sumProduct = 0;
   let sumWeight = 0;
   const totalWeight = config.P1 + config.P2 + config.P3 + (config.P4 || 0);
 
-  if (notas.P1 !== null && notas.P1 !== undefined && config.P1) {
-    sumProduct += notas.P1 * config.P1;
-    sumWeight += config.P1;
-  }
-  if (notas.P2 !== null && notas.P2 !== undefined && config.P2) {
-    sumProduct += notas.P2 * config.P2;
-    sumWeight += config.P2;
-  }
-  if (notas.P3 !== null && notas.P3 !== undefined && config.P3) {
-    sumProduct += notas.P3 * config.P3;
-    sumWeight += config.P3;
-  }
-  if (notas.P4 !== null && notas.P4 !== undefined && config.P4) {
-    sumProduct += notas.P4 * config.P4;
-    sumWeight += config.P4;
-  }
+  const processPeriod = (grade: number | null | undefined, weight: number, isEvaluated: boolean) => {
+    if (weight > 0) {
+      if (grade !== null && grade !== undefined) {
+        sumProduct += grade * weight;
+        sumWeight += weight;
+      } else if (isEvaluated) {
+        // Evaluated but missing -> treat as 0.0
+        sumProduct += 0 * weight;
+        sumWeight += weight;
+      }
+    }
+  };
+
+  processPeriod(notas.P1, config.P1, evaluated.P1);
+  processPeriod(notas.P2, config.P2, evaluated.P2);
+  processPeriod(notas.P3, config.P3, evaluated.P3);
+  processPeriod(notas.P4, config.P4 || 0, evaluated.P4);
 
   return { sumProduct, sumWeight, totalWeight };
 }
 
-export function calcularPromedioActual(notas: PeriodoNotas, config: PeriodConfig): number {
-  const { sumProduct, sumWeight } = getAccumulatedWeightAndProduct(notas, config);
+export function calcularPromedioActual(
+  notas: PeriodoNotas,
+  config: PeriodConfig,
+  evaluated = { P1: false, P2: false, P3: false, P4: false }
+): number {
+  const { sumProduct, sumWeight } = getAccumulatedWeightAndProduct(notas, config, evaluated);
   
   if (sumWeight === 0) return 0;
   
@@ -41,8 +50,12 @@ export function calcularPromedioActual(notas: PeriodoNotas, config: PeriodConfig
   return roundToOneDecimal(prom);
 }
 
-export function calcularMinimoRequerido(notas: PeriodoNotas, config: PeriodConfig): number {
-  const { sumProduct, sumWeight, totalWeight } = getAccumulatedWeightAndProduct(notas, config);
+export function calcularMinimoRequerido(
+  notas: PeriodoNotas,
+  config: PeriodConfig,
+  evaluated = { P1: false, P2: false, P3: false, P4: false }
+): number {
+  const { sumProduct, sumWeight, totalWeight } = getAccumulatedWeightAndProduct(notas, config, evaluated);
   
   const remainingWeight = totalWeight - sumWeight;
   
@@ -59,14 +72,18 @@ export function calcularMinimoRequerido(notas: PeriodoNotas, config: PeriodConfi
   return Math.round(requiredGrade * 100) / 100;
 }
 
-export function determinarEstado(notas: PeriodoNotas, config: PeriodConfig): EstadoAcademico {
-  const { sumWeight, totalWeight, sumProduct } = getAccumulatedWeightAndProduct(notas, config);
+export function determinarEstado(
+  notas: PeriodoNotas,
+  config: PeriodConfig,
+  evaluated = { P1: false, P2: false, P3: false, P4: false }
+): EstadoAcademico {
+  const { sumWeight, totalWeight, sumProduct } = getAccumulatedWeightAndProduct(notas, config, evaluated);
   const remainingWeight = totalWeight - sumWeight;
   
   const acumuladoFinalProyectadoMax = roundToOneDecimal((sumProduct + (MAX_GRADE * remainingWeight)) / totalWeight);
   const acumuladoActual = roundToOneDecimal(sumProduct / totalWeight);
-  const minimoRequerido = calcularMinimoRequerido(notas, config);
-  const promedioHistorico = calcularPromedioActual(notas, config);
+  const minimoRequerido = calcularMinimoRequerido(notas, config, evaluated);
+  const promedioHistorico = calcularPromedioActual(notas, config, evaluated);
 
   // Ya se terminó de evaluar todo el año
   if (remainingWeight <= 0) {
@@ -104,14 +121,42 @@ export function determinarEstado(notas: PeriodoNotas, config: PeriodConfig): Est
   return { text: 'Ganable', color: 'cyan' };
 }
 
+export function getEvaluatedPeriods(students: Estudiante[]) {
+  let hasP1 = false;
+  let hasP2 = false;
+  let hasP3 = false;
+  let hasP4 = false;
+
+  students.forEach(student => {
+    Object.values(student.areas).forEach(area => {
+      // Check Area-level DEF
+      if (area.DEF.P1 !== null && area.DEF.P1 !== undefined) hasP1 = true;
+      if (area.DEF.P2 !== null && area.DEF.P2 !== undefined) hasP2 = true;
+      if (area.DEF.P3 !== null && area.DEF.P3 !== undefined) hasP3 = true;
+      if (area.DEF.P4 !== null && area.DEF.P4 !== undefined) hasP4 = true;
+
+      // Check Subject-level grades
+      Object.values(area.asignaturas).forEach(asig => {
+        if (asig.P1 !== null && asig.P1 !== undefined) hasP1 = true;
+        if (asig.P2 !== null && asig.P2 !== undefined) hasP2 = true;
+        if (asig.P3 !== null && asig.P3 !== undefined) hasP3 = true;
+        if (asig.P4 !== null && asig.P4 !== undefined) hasP4 = true;
+      });
+    });
+  });
+
+  return { P1: hasP1, P2: hasP2, P3: hasP3, P4: hasP4 };
+}
+
 export function applyAcademicLogic(students: Estudiante[], config: PeriodConfig, subjectWeights: SubjectWeightConfig = {}): void {
+  const evaluated = getEvaluatedPeriods(students);
   students.forEach(student => {
     Object.entries(student.areas).forEach(([areaName, area]) => {
       // Calculate each asignatura
       Object.values(area.asignaturas).forEach((asig) => {
-        asig.promedioActual = calcularPromedioActual(asig, config);
-        asig.p4Min = calcularMinimoRequerido(asig, config);
-        asig.estado = determinarEstado(asig, config);
+        asig.promedioActual = calcularPromedioActual(asig, config, evaluated);
+        asig.p4Min = calcularMinimoRequerido(asig, config, evaluated);
+        asig.estado = determinarEstado(asig, config, evaluated);
       });
 
       // Dynamically calculate Area DEF if weights are provided
@@ -127,6 +172,11 @@ export function applyAcademicLogic(students: Estudiante[], config: PeriodConfig,
               const w = weights[asigName] || 0;
               sum += grade * w;
               hasGrade = true;
+            } else if (evaluated[period]) {
+              // Evaluated but missing grade -> treat as 0.0
+              const w = weights[asigName] || 0;
+              sum += 0 * w;
+              hasGrade = true;
             }
           });
           if (hasGrade) {
@@ -137,9 +187,9 @@ export function applyAcademicLogic(students: Estudiante[], config: PeriodConfig,
 
       // Calculate area stats based on area DEF
       area.areaStats = {
-        promedioActual: calcularPromedioActual(area.DEF, config),
-        p4Min: calcularMinimoRequerido(area.DEF, config),
-        estado: determinarEstado(area.DEF, config),
+        promedioActual: calcularPromedioActual(area.DEF, config, evaluated),
+        p4Min: calcularMinimoRequerido(area.DEF, config, evaluated),
+        estado: determinarEstado(area.DEF, config, evaluated),
       };
     });
   });

@@ -26,10 +26,11 @@ describe('FileUploadArea', () => {
     });
   });
 
-  it('renders upload buttons', () => {
+  it('renders the upload surface as an accessible dashboard region', () => {
     render(<FileUploadArea />);
-    expect(screen.getByText('Cargar Excel')).toBeDefined();
-    expect(screen.getByText('Cargar Configuración')).toBeDefined();
+    expect(screen.getByRole('region', { name: /Cargar Datos de Estudiantes/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Cargar Excel' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Cargar Configuración' })).toBeDefined();
   });
 
   it('shows loading state', () => {
@@ -60,32 +61,25 @@ describe('FileUploadArea', () => {
     });
 
     render(<FileUploadArea />);
-    expect(screen.getByText('Test error message')).toBeDefined();
+    expect(screen.getByRole('alert').textContent).toContain('Test error message');
   });
 
-  it('toggles isDragging state on dragOver and dragLeave', () => {
+  it('keeps upload instructions available while drag state changes', () => {
     render(<FileUploadArea />);
     const container = screen.getByTestId('file-upload-area-container');
-    
-    expect(container.className).toContain('border-dashed');
-    expect(container.className).not.toContain('border-violet-500');
 
     fireEvent.dragOver(container);
-    expect(container.className).toContain('border-violet-500');
-    expect(container.className).toContain('bg-violet-50/40');
+    expect(screen.getByText('Cargar Datos de Estudiantes')).toBeDefined();
+    expect((screen.getByRole('button', { name: 'Cargar Excel' }) as HTMLButtonElement).disabled).toBe(false);
 
     fireEvent.dragLeave(container);
-    expect(container.className).not.toContain('border-violet-500');
-    expect(container.className).not.toContain('bg-violet-50/40');
+    expect(screen.getByText(/Arrastr/)).toBeDefined();
   });
 
   it('handles drop event, processes excel files, and resets drag state', () => {
     render(<FileUploadArea />);
     const container = screen.getByTestId('file-upload-area-container');
     
-    fireEvent.dragOver(container);
-    expect(container.className).toContain('border-violet-500');
-
     const file = new File(['dummy xlsx'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     
     fireEvent.drop(container, {
@@ -95,7 +89,7 @@ describe('FileUploadArea', () => {
     });
 
     expect(processFileMock).toHaveBeenCalledWith(file);
-    expect(container.className).not.toContain('border-violet-500');
+    expect((screen.getByRole('button', { name: 'Cargar Excel' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('handles drop event for JSON config and triggers setConfig', async () => {
@@ -113,7 +107,7 @@ describe('FileUploadArea', () => {
 
     await new Promise(resolve => setTimeout(resolve, 50));
     expect(setConfigMock).toHaveBeenCalledWith(configData);
-    expect(container.className).not.toContain('border-violet-500');
+    expect(screen.getByText(/Arrastr/)).toBeDefined();
   });
 
   it('calls processFile when excel file is selected', () => {

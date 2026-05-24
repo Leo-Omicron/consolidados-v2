@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
+import { useUIStore } from '../../store/useUIStore';
 import {
   generateGroupPerformanceReport,
   generateOutstandingStudentsReport,
@@ -28,9 +29,16 @@ export const ReportsTab: React.FC = () => {
   const selectedGrupo = useDashboardStore(state => state.selectedGrupo);
   const availableGroups = useDashboardStore(state => state.availableGroups);
 
-  const [activeTab, setActiveTab] = useState<ReportCategory>('group-performance');
-  const [directorName, setDirectorName] = useState<string>('Director de Curso');
-  const [periodName, setPeriodName] = useState<string>('');
+  const activeTab = useUIStore(state => state.reportsActiveTab) as ReportCategory;
+  const setActiveTab = useUIStore(state => state.setReportsActiveTab);
+  const localGroup = useUIStore(state => state.reportsLocalGroup);
+  const setLocalGroup = useUIStore(state => state.setReportsLocalGroup);
+  const directorName = useUIStore(state => state.reportsDirectorName);
+  const setDirectorName = useUIStore(state => state.setReportsDirectorName);
+  const periodName = useUIStore(state => state.reportsPeriodName);
+  const setPeriodName = useUIStore(state => state.setReportsPeriodName);
+
+  const [lastDetectedPeriod, setLastDetectedPeriod] = useState<string>('');
 
   // Dynamically detect the highest period with active grades across the loaded dataset
   const detectedPeriod = useMemo(() => {
@@ -66,10 +74,10 @@ export const ReportsTab: React.FC = () => {
     return 'Periodo Final';
   }, [estudiantes]);
 
-  // Sync state with detected period
-  React.useEffect(() => {
+  if (detectedPeriod !== lastDetectedPeriod) {
     setPeriodName(detectedPeriod);
-  }, [detectedPeriod]);
+    setLastDetectedPeriod(detectedPeriod);
+  }
 
   const hasP4 = config.P4 !== undefined && config.P4 > 0;
 
@@ -82,16 +90,16 @@ export const ReportsTab: React.FC = () => {
     return filtered[0] || '';
   }, [selectedGrupo, availableGroups]);
 
-  const [localGroup, setLocalGroup] = useState<string>(defaultReportGroup);
+  const [lastSelectedGrupo, setLastSelectedGrupo] = useState<string>('');
 
-  // Sync local selection when global selectedGrupo changes
-  React.useEffect(() => {
+  if (selectedGrupo !== lastSelectedGrupo) {
     if (selectedGrupo && selectedGrupo !== 'Todos') {
       setLocalGroup(selectedGrupo);
     }
-  }, [selectedGrupo]);
+    setLastSelectedGrupo(selectedGrupo);
+  }
 
-  const activeGroupToUse = selectedGrupo === 'Todos' ? localGroup : selectedGrupo;
+  const activeGroupToUse = selectedGrupo === 'Todos' ? (localGroup || defaultReportGroup) : selectedGrupo;
 
   // 1. Group Performance
   const groupPerformanceData = useMemo(() => {
@@ -150,7 +158,7 @@ export const ReportsTab: React.FC = () => {
   }, [activeTab]);
 
   if (estudiantes.length === 0) {
-    return <div className="p-8 text-center text-gray-500">No hay datos para generar reportes. Cargue un archivo Excel.</div>;
+    return <div className="p-8 text-center app-text-muted">No hay datos para generar reportes. Cargue un archivo Excel.</div>;
   }
 
   const handlePrint = () => {
@@ -261,22 +269,23 @@ export const ReportsTab: React.FC = () => {
   ] as const;
 
   return (
-    <div className={`p-6 transition-premium max-w-7xl mx-auto print:p-0 ${printLayoutClass}`}>
+    <div className={`p-6 transition-premium max-w-7xl mx-auto app-text print:p-0 ${printLayoutClass}`}>
       {/* Top action bar: hidden when printing */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 no-print print:hidden">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Reportes Institucionales de Calificaciones</h2>
-          <p className="text-sm text-slate-500 mt-1">Análisis robustos, listados de riesgo y plantillas listas para impresión física.</p>
+          <h2 className="text-2xl font-bold app-text tracking-tight">Reportes Institucionales de Calificaciones</h2>
+          <p className="text-sm app-text-muted mt-1">Análisis robustos, listados de riesgo y plantillas listas para impresión física.</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
           {selectedGrupo === 'Todos' && activeTab !== 'group-comparison' && (
             <div className="flex items-center gap-2">
-              <label className="text-xs font-bold text-slate-500 uppercase">Filtrar Grupo:</label>
+              <label htmlFor="reports-group-filter" className="text-xs font-bold app-text-muted uppercase">Filtrar Grupo:</label>
               <select
+                id="reports-group-filter"
                 value={activeGroupToUse}
                 onChange={e => setLocalGroup(e.target.value)}
-                className="border border-slate-200 bg-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                className="border app-control app-focus rounded-xl px-3 py-2 text-sm"
               >
                 {availableGroups.filter(g => g !== 'Todos').map(g => (
                   <option key={g} value={g}>{g}</option>
@@ -310,17 +319,18 @@ export const ReportsTab: React.FC = () => {
       <div className="flex flex-col lg:flex-row gap-6 print:block">
         {/* Left Interactive Sidebar: hidden when printing */}
         <div className="w-full lg:w-64 shrink-0 no-print print:hidden">
-          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-sm">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-2">Categorías de Reporte</h3>
+          <div className="app-surface border app-border rounded-2xl p-4 shadow-sm">
+            <h3 className="text-xs font-bold app-text-muted uppercase tracking-wider mb-3 px-2">Categorías de Reporte</h3>
             <nav className="flex flex-col gap-1">
               {menuItems.map(item => (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
+                  aria-pressed={activeTab === item.id}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm font-semibold rounded-xl transition-all cursor-pointer ${
                     activeTab === item.id
-                      ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-600'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-l-4 border-transparent'
+                      ? 'app-tab-active border-l-4'
+                      : 'app-tab-inactive border-l-4 border-transparent'
                   }`}
                 >
                   <span className="text-base">{item.icon}</span>
@@ -332,10 +342,19 @@ export const ReportsTab: React.FC = () => {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm print:border-none print:shadow-none print:p-0 print:bg-white">
+        <section
+          className="flex-1 app-surface border app-border rounded-2xl p-6 shadow-sm print:border-none print:shadow-none print:p-0 print:bg-white"
+          role="region"
+          aria-label="Vista previa del reporte"
+          data-report-preview
+        >
           
           {/* Header for Printed Paper */}
-          <div className="hidden print:block text-center border-b border-slate-300 pb-4 mb-6">
+          <div
+            className="hidden print:block text-center border-b border-slate-300 pb-4 mb-6"
+            role="region"
+            aria-label="Encabezado imprimible"
+          >
             <h1 className="text-2xl font-bold uppercase tracking-wide text-slate-950">
               IEEC - Consolidado Institucional {periodName && `(${periodName.toUpperCase()})`}
             </h1>
@@ -822,7 +841,7 @@ export const ReportsTab: React.FC = () => {
             </div>
           )}
 
-        </div>
+        </section>
       </div>
     </div>
   );

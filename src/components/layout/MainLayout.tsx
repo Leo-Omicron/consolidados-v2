@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Header } from './Header';
 import { FileUploadArea } from '../dashboard/FileUploadArea';
 import { AnalysisTab } from '../dashboard/AnalysisTab';
 import { ChartsTab } from '../dashboard/ChartsTab';
 import { ReportsTab } from '../dashboard/ReportsTab';
+import { useThemeStore } from '../../store/useThemeStore';
 
 export const MainLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('analysis');
+  const mode = useThemeStore((state) => state.mode);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', mode);
+  }, [mode]);
 
   const renderActiveTab = () => {
     switch (activeTab) {
@@ -22,7 +28,7 @@ export const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 transition-premium">
+    <div className="min-h-screen app-bg app-text transition-premium">
       <div className="no-print">
         <Header activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
@@ -31,7 +37,7 @@ export const MainLayout: React.FC = () => {
         <div className="no-print">
           <FileUploadArea />
         </div>
-        <div className="bg-white rounded-xl shadow-premium border border-slate-200/50 min-h-[500px] transition-premium print-card-flat">
+        <div className="app-surface rounded-xl shadow-premium border app-border min-h-[500px] transition-premium print-card-flat">
           {renderActiveTab()}
         </div>
       </main>

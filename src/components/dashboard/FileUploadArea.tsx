@@ -72,21 +72,23 @@ export const FileUploadArea: React.FC = () => {
   return (
     <div
       data-testid="file-upload-area-container"
+      role="region"
+      aria-labelledby="file-upload-area-title"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={`relative p-8 rounded-2xl border-2 mb-6 transition-all duration-300 ${
         isDragging
-          ? 'border-violet-500 bg-violet-50/40 shadow-md scale-[1.01] animate-pulse'
-          : 'border-dashed border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+          ? 'app-tab-active shadow-md scale-[1.01] animate-pulse'
+          : 'border-dashed app-border app-surface app-surface-hover hover:shadow-sm'
       }`}
     >
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center space-x-4">
           <div className={`p-3.5 rounded-xl transition-premium ${
             isDragging 
-              ? 'bg-violet-100 text-violet-600 scale-110' 
-              : 'bg-slate-100 text-slate-500'
+              ? 'app-tab-active scale-110' 
+              : 'app-surface-muted app-text-muted'
           }`}>
             <svg
               className={`w-8 h-8 ${isDragging ? 'animate-bounce' : 'transition-transform duration-300'}`}
@@ -103,8 +105,8 @@ export const FileUploadArea: React.FC = () => {
             </svg>
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900 tracking-premium">Cargar Datos de Estudiantes</h2>
-            <p className="text-xs text-slate-500">Arrastrá y soltá tu planilla Excel (.xlsx, .xls) o archivo JSON aquí</p>
+            <h2 id="file-upload-area-title" className="text-lg font-bold app-text tracking-premium">Cargar Datos de Estudiantes</h2>
+            <p className="text-xs app-text-muted">Arrastrá y soltá tu planilla Excel (.xlsx, .xls) o archivo JSON aquí</p>
           </div>
         </div>
 
@@ -120,11 +122,11 @@ export const FileUploadArea: React.FC = () => {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={loading}
-              className="w-full flex items-center justify-center space-x-2 py-2.5 px-5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-50 transition-premium cursor-pointer"
+              className="w-full flex items-center justify-center space-x-2 py-2.5 px-5 border app-control app-control-hover app-focus font-semibold text-sm rounded-xl shadow-sm disabled:opacity-50 transition-premium cursor-pointer"
             >
               {loading ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-violet-600" fill="none" viewBox="0 0 24 24" data-testid="loading-spinner">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" data-testid="loading-spinner">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.126 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
@@ -146,7 +148,7 @@ export const FileUploadArea: React.FC = () => {
             />
             <button
               onClick={() => configInputRef.current?.click()}
-              className="w-full flex items-center justify-center py-2.5 px-5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 transition-premium cursor-pointer"
+              className="w-full flex items-center justify-center py-2.5 px-5 border app-control app-control-hover app-focus font-semibold text-sm rounded-xl shadow-sm transition-premium cursor-pointer"
             >
               Cargar Configuración
             </button>
@@ -155,8 +157,8 @@ export const FileUploadArea: React.FC = () => {
       </div>
 
       {error && (
-        <div className="mt-4 bg-rose-50 border border-rose-200/50 text-rose-700 px-4 py-3 rounded-xl text-sm transition-premium animate-fade-in flex items-center space-x-2">
-          <svg className="w-5 h-5 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div role="alert" className="mt-4 app-error border px-4 py-3 rounded-xl text-sm transition-premium animate-fade-in flex items-center space-x-2">
+          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>{error}</span>

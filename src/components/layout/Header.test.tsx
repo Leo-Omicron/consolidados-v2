@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Header } from './Header';
 import { useDashboardStore } from '../../store/useDashboardStore';
+import { THEME_STORAGE_KEY, useThemeStore } from '../../store/useThemeStore';
 
 vi.mock('../../store/useDashboardStore', () => ({
   useDashboardStore: vi.fn()
@@ -9,6 +10,8 @@ vi.mock('../../store/useDashboardStore', () => ({
 
 describe('Header', () => {
   beforeEach(() => {
+    localStorage.clear();
+    useThemeStore.getState().setMode('light');
     (useDashboardStore as any).mockReturnValue({
       availableGroups: [],
       selectedGrupo: 'Todos',
@@ -23,15 +26,11 @@ describe('Header', () => {
     expect(screen.getByText('Reports')).toBeDefined();
   });
 
-  it('applies premium styling, transitions and glassmorphism', () => {
+  it('exposes the active tab to assistive technology', () => {
     render(<Header activeTab="analysis" setActiveTab={() => {}} />);
-    const header = screen.getByRole('banner');
-    expect(header.className).toContain('bg-slate-50/50');
-    expect(header.className).toContain('backdrop-blur-md');
-    
-    const activeTab = screen.getByText('Analysis');
-    expect(activeTab.className).toContain('text-violet-700');
-    expect(activeTab.className).toContain('bg-violet-50');
+
+    expect(screen.getByRole('button', { name: 'Analysis' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('button', { name: 'Charts' }).getAttribute('aria-current')).toBeNull();
   });
 
   it('calls setActiveTab when a tab is clicked', () => {
@@ -40,6 +39,35 @@ describe('Header', () => {
     
     fireEvent.click(screen.getByText('Charts'));
     expect(setActiveTab).toHaveBeenCalledWith('charts');
+  });
+
+  it('renders a theme toggle with the current light mode state', () => {
+    render(<Header activeTab="analysis" setActiveTab={() => {}} />);
+
+    const toggle = screen.getByRole('button', { name: 'Switch to dark mode' });
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.textContent).toContain('Light');
+  });
+
+  it('toggles to dark mode and persists the user preference', () => {
+    render(<Header activeTab="analysis" setActiveTab={() => {}} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to dark mode' }));
+
+    const toggle = screen.getByRole('button', { name: 'Switch to light mode' });
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle.textContent).toContain('Dark');
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+  });
+
+  it('keeps keyboard focus visible on the theme toggle', () => {
+    render(<Header activeTab="analysis" setActiveTab={() => {}} />);
+
+    const toggle = screen.getByRole('button', { name: 'Switch to dark mode' });
+    toggle.focus();
+
+    expect(document.activeElement).toBe(toggle);
+    expect(toggle.className).toContain('app-focus');
   });
 
   it('does not render group selector if availableGroups has 1 or fewer elements', () => {

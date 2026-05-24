@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { AnalysisTab } from './AnalysisTab';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
+import { useUIStore } from '../../store/useUIStore';
 
 vi.mock('../../store/useDashboardStore', () => ({
   useDashboardStore: vi.fn()
@@ -14,6 +15,15 @@ vi.mock('../../hooks/useAnalysisPipeline', () => ({
 
 describe('AnalysisTab', () => {
   beforeEach(() => {
+    useUIStore.setState({
+      analysisFilters: { search: '', area: '', status: '' },
+      analysisSortConfig: null,
+      reportsActiveTab: 'group-performance',
+      reportsLocalGroup: '',
+      reportsDirectorName: 'Director de Curso',
+      reportsPeriodName: '',
+    });
+
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
         rowsArea: [],
@@ -90,9 +100,35 @@ describe('AnalysisTab', () => {
     
     expect(areaBtn).toBeDefined();
     expect(subjBtn).toBeDefined();
+    expect(areaBtn.getAttribute('aria-pressed')).toBe('true');
+    expect(subjBtn.getAttribute('aria-pressed')).toBe('false');
 
     fireEvent.click(subjBtn);
     expect(setViewModeMock).toHaveBeenCalledWith('subject');
+  });
+
+  it('exposes analysis filters with accessible labels', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        rowsArea: [{ area: 'Matemáticas', estado: { text: 'Ganado' } }],
+        rowsAsignatura: [],
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos', '9A'],
+        viewMode: 'area',
+        setGrupo: vi.fn(),
+        setViewMode: vi.fn(),
+        subjectWeights: {}
+      };
+      return selector(state);
+    });
+
+    render(<AnalysisTab />);
+
+    expect(screen.getByLabelText('Grupo')).toBeDefined();
+    expect(screen.getByLabelText('Buscar estudiante')).toBeDefined();
+    expect(screen.getByLabelText('Área')).toBeDefined();
+    expect(screen.getByLabelText('Estado')).toBeDefined();
   });
 
   it('renders table headers according to viewMode', () => {
@@ -512,7 +548,7 @@ describe('AnalysisTab', () => {
     expect(expandBtn.textContent).toBe('📂');
   });
 
-  it('applies premium styling, sticky blur-headers, and soft badges', () => {
+  it('exposes status badges and table content semantically without relying on CSS classes', () => {
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
         rowsArea: [{ estudiante: 'Juan', area: 'Matemáticas', estado: { text: 'Ganado', color: 'green' } }],
@@ -541,22 +577,11 @@ describe('AnalysisTab', () => {
       kpis: { promedioGeneral: 3.5, statusDistribution: {} }
     });
 
-    const { container } = render(<AnalysisTab />);
-    
-    const tableWrapper = container.querySelector('.max-h-\\[600px\\]');
-    expect(tableWrapper?.className).toContain('overflow-auto');
-    expect(tableWrapper?.className).toContain('rounded-lg');
-    expect(tableWrapper?.className).toContain('border-slate-200/50');
-
-    const header = container.querySelector('.sticky');
-    expect(header?.className).toContain('backdrop-blur-md');
-    expect(header?.className).toContain('bg-slate-50/90');
+    render(<AnalysisTab />);
 
     fireEvent.click(screen.getByText('Test3'));
-    
-    const badge = container.querySelector('.rounded-full');
-    expect(badge?.className).toContain('bg-emerald-50');
-    expect(badge?.className).toContain('text-emerald-700');
-    expect(badge?.className).toContain('border-emerald-200/50');
+
+    expect(screen.getByRole('table')).toBeDefined();
+    expect(screen.getByRole('status', { name: 'Estado: Ganado' })).toBeDefined();
   });
 });

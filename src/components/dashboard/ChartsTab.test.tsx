@@ -2,16 +2,25 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ChartsTab } from './ChartsTab';
 import { useDashboardStore } from '../../store/useDashboardStore';
+import { useThemeStore } from '../../store/useThemeStore';
 
 // Mock react-chartjs-2 to capture props and check isolated datasets
 vi.mock('react-chartjs-2', () => ({
   Bar: (props: any) => (
-    <div data-testid="bar-chart" data-data={JSON.stringify(props.data)}>
+    <div
+      data-testid="bar-chart"
+      data-data={JSON.stringify(props.data)}
+      data-options={JSON.stringify(props.options)}
+    >
       Bar Chart: {props.data?.datasets?.[0]?.label}
     </div>
   ),
   Pie: (props: any) => (
-    <div data-testid="pie-chart" data-data={JSON.stringify(props.data)}>
+    <div
+      data-testid="pie-chart"
+      data-data={JSON.stringify(props.data)}
+      data-options={JSON.stringify(props.options)}
+    >
       Pie Chart
     </div>
   )
@@ -50,6 +59,7 @@ describe('ChartsTab', () => {
     ];
 
     beforeEach(() => {
+      useThemeStore.setState({ mode: 'light' });
       useDashboardStore.setState({
         estudiantes: testStudents as any,
         rowsArea: testRowsArea as any,
@@ -128,17 +138,35 @@ describe('ChartsTab', () => {
       expect(pieData.datasets[0].data).toEqual([1, 0]);
     });
 
-    it('applies premium styling and transitions to KPI cards', () => {
-      const { container } = render(<ChartsTab />);
-      
-      const cards = container.querySelectorAll('.shadow-premium');
-      expect(cards.length).toBe(3);
-      
-      cards.forEach(card => {
-        expect(card.className).toContain('transition-all');
-        expect(card.className).toContain('duration-300');
-        expect(card.className).toContain('hover:scale-');
-      });
+    it('labels the chart panels so chart surfaces remain navigable', () => {
+      render(<ChartsTab />);
+
+      expect(screen.getByRole('region', { name: 'Promedio General por Área' })).toBeTruthy();
+      expect(screen.getByRole('region', { name: 'Distribución de Estados Por Área' })).toBeTruthy();
+    });
+
+    it('passes readable light-theme text and grid colors to Chart.js options', () => {
+      useThemeStore.setState({ mode: 'light' });
+      render(<ChartsTab />);
+
+      const barOptions = JSON.parse(screen.getByTestId('bar-chart').getAttribute('data-options') || '{}');
+      const pieOptions = JSON.parse(screen.getByTestId('pie-chart').getAttribute('data-options') || '{}');
+
+      expect(barOptions.scales.y.ticks.color).toBe('#475569');
+      expect(barOptions.scales.y.grid.color).toBe('rgba(148, 163, 184, 0.28)');
+      expect(pieOptions.plugins.legend.labels.color).toBe('#475569');
+    });
+
+    it('passes readable dark-theme text and grid colors to Chart.js options', () => {
+      useThemeStore.setState({ mode: 'dark' });
+      render(<ChartsTab />);
+
+      const barOptions = JSON.parse(screen.getByTestId('bar-chart').getAttribute('data-options') || '{}');
+      const pieOptions = JSON.parse(screen.getByTestId('pie-chart').getAttribute('data-options') || '{}');
+
+      expect(barOptions.scales.y.ticks.color).toBe('#cbd5e1');
+      expect(barOptions.scales.y.grid.color).toBe('rgba(148, 163, 184, 0.22)');
+      expect(pieOptions.plugins.legend.labels.color).toBe('#cbd5e1');
     });
   });
 });

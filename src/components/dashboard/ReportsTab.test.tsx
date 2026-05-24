@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReportsTab } from './ReportsTab';
 import { useDashboardStore } from '../../store/useDashboardStore';
+import { useUIStore } from '../../store/useUIStore';
 
 vi.mock('../../store/useDashboardStore', () => ({
   useDashboardStore: vi.fn()
@@ -54,6 +55,15 @@ const mockStudents = [
 
 describe('ReportsTab', () => {
   beforeEach(() => {
+    useUIStore.setState({
+      analysisFilters: { search: '', area: '', status: '' },
+      analysisSortConfig: null,
+      reportsActiveTab: 'group-performance',
+      reportsLocalGroup: '',
+      reportsDirectorName: 'Director de Curso',
+      reportsPeriodName: '',
+    });
+
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
         estudiantes: [],
@@ -95,6 +105,50 @@ describe('ReportsTab', () => {
     expect(screen.getByText('Mapa de Calor')).toBeDefined();
     expect(screen.getByText('Retroalimentación')).toBeDefined();
     expect(screen.getByText('Registro Oficial')).toBeDefined();
+  });
+
+  it('exposes active report navigation state without relying on visual classes', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        estudiantes: mockStudents,
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: '10A',
+        availableGroups: ['Todos', '10A'],
+        setGrupo: vi.fn()
+      };
+      return selector(state);
+    });
+
+    render(<ReportsTab />);
+
+    expect(screen.getByRole('button', { name: /Rendimiento Grupal/i }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: /Estudiantes Destacados/i }).getAttribute('aria-pressed')).toBe('false');
+
+    fireEvent.click(screen.getByRole('button', { name: /Estudiantes Destacados/i }));
+
+    expect(screen.getByRole('button', { name: /Rendimiento Grupal/i }).getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByRole('button', { name: /Estudiantes Destacados/i }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('keeps a dedicated printable report header available when dark mode is active', () => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        estudiantes: mockStudents,
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: '10A',
+        availableGroups: ['Todos', '10A'],
+        setGrupo: vi.fn()
+      };
+      return selector(state);
+    });
+
+    render(<ReportsTab />);
+
+    const printableHeader = screen.getByRole('region', { name: /encabezado imprimible/i });
+    expect(printableHeader.textContent).toContain('IEEC - Consolidado Institucional');
+    expect(printableHeader.textContent).toContain('Grupo: 10A');
+    expect(printableHeader.textContent).toContain('Reporte: Rendimiento Grupal');
   });
 
   it('toggles between different report types on selection', () => {

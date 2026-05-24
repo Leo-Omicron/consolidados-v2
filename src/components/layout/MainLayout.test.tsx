@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MainLayout } from './MainLayout';
+import { useThemeStore } from '../../store/useThemeStore';
 
 vi.mock('../dashboard/FileUploadArea', () => ({
   FileUploadArea: () => <div data-testid="file-upload-area" />
@@ -19,6 +20,12 @@ vi.mock('../dashboard/ReportsTab', () => ({
 }));
 
 describe('MainLayout', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    document.documentElement.removeAttribute('data-theme');
+    useThemeStore.getState().setMode('light');
+  });
+
   it('renders default layout structure', () => {
     render(<MainLayout />);
     expect(screen.getByText('Dashboard de Consolidados')).toBeDefined();
@@ -26,14 +33,20 @@ describe('MainLayout', () => {
     expect(screen.getByTestId('analysis-tab')).toBeDefined();
   });
 
-  it('applies premium layout styling and container classes', () => {
-    const { container } = render(<MainLayout />);
-    const mainDiv = container.firstChild as HTMLElement;
-    expect(mainDiv.className).toContain('bg-slate-50/50');
-    
-    const cardContainer = container.querySelector('.print-card-flat');
-    expect(cardContainer?.className).toContain('rounded-xl');
-    expect(cardContainer?.className).toContain('border-slate-200/50');
+  it('applies light mode to the document root by default', () => {
+    render(<MainLayout />);
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(screen.getByRole('main')).toBeDefined();
+  });
+
+  it('applies the selected dark mode to the document root', () => {
+    useThemeStore.getState().setMode('dark');
+
+    render(<MainLayout />);
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(screen.getByText('Dashboard de Consolidados')).toBeDefined();
   });
 
   it('changes active tab when header tab is clicked', () => {

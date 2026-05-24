@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import type { RowArea, RowAsignatura } from '../../domain/types';
 import { useDashboardStore } from '../../store/useDashboardStore';
+import { useThemeStore, type ThemeMode } from '../../store/useThemeStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
 import { roundToOneDecimal } from '../../services/academicLogic';
 import {
@@ -49,12 +50,25 @@ const thresholdLinePlugin = {
   }
 };
 
+const chartThemeByMode: Record<ThemeMode, { text: string; grid: string }> = {
+  light: {
+    text: '#475569',
+    grid: 'rgba(148, 163, 184, 0.28)',
+  },
+  dark: {
+    text: '#cbd5e1',
+    grid: 'rgba(148, 163, 184, 0.22)',
+  },
+};
+
 export const ChartsTab: React.FC = () => {
   const estudiantes = useDashboardStore(state => state.estudiantes);
   const rowsArea = useDashboardStore(state => state.rowsArea);
   const rowsAsignatura = useDashboardStore(state => state.rowsAsignatura);
   const selectedGrupo = useDashboardStore(state => state.selectedGrupo);
   const viewMode = useDashboardStore(state => state.viewMode);
+  const themeMode = useThemeStore(state => state.mode);
+  const chartTheme = chartThemeByMode[themeMode];
 
   // Active dataset for the pipeline
   const activeRows: (RowArea | RowAsignatura)[] = viewMode === 'area' ? rowsArea : rowsAsignatura;
@@ -158,66 +172,90 @@ export const ChartsTab: React.FC = () => {
   }, [filteredRows, viewMode]);
 
   if (estudiantes.length === 0) {
-    return <div className="p-8 text-center text-gray-500">No hay datos para visualizar. Cargue un archivo Excel.</div>;
+    return <div className="p-8 text-center app-text-muted">No hay datos para visualizar. Cargue un archivo Excel.</div>;
   }
 
+  const barChartTitle = viewMode === 'area' ? 'Promedio General por Área' : 'Promedio General por Asignatura';
+  const statusChartTitle = `Distribución de Estados ${viewMode === 'area' ? 'Por Área' : 'Por Asignatura'}`;
+  const commonChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: chartTheme.text,
+        },
+      },
+    },
+  };
+
   return (
-    <div className="p-6">
-      <h2 className="text-lg font-medium mb-6">Visualización de Rendimiento</h2>
+    <div className="p-6 app-text">
+      <h2 className="text-lg font-medium mb-6 app-text">Visualización de Rendimiento</h2>
 
       {/* KPI Cards Panel */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-premium flex flex-col justify-between transition-all duration-300 hover:scale-[1.025] hover:shadow-md hover:border-slate-300/50">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Promedio Grupal</span>
-          <span className="text-4xl font-extrabold text-slate-900 mt-3 tracking-premium">{roundToOneDecimal(kpis.promedioGeneral).toFixed(1)}</span>
-          <span className="text-[11px] font-semibold text-slate-400 mt-2">Media aritmética del grupo activo</span>
+        <div className="app-surface p-6 rounded-2xl border app-border shadow-premium flex flex-col justify-between transition-all duration-300 hover:scale-[1.025] hover:shadow-md">
+          <span className="text-xs font-bold app-text-muted uppercase tracking-wider">Promedio Grupal</span>
+          <span className="text-4xl font-extrabold app-text mt-3 tracking-premium">{roundToOneDecimal(kpis.promedioGeneral).toFixed(1)}</span>
+          <span className="text-[11px] font-semibold app-text-muted mt-2">Media aritmética del grupo activo</span>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-premium flex flex-col justify-between transition-all duration-300 hover:scale-[1.025] hover:shadow-md hover:border-slate-300/50">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Aprobados</span>
+        <div className="app-surface p-6 rounded-2xl border app-border shadow-premium flex flex-col justify-between transition-all duration-300 hover:scale-[1.025] hover:shadow-md">
+          <span className="text-xs font-bold app-text-muted uppercase tracking-wider">Aprobados</span>
           <span className="text-4xl font-extrabold text-emerald-600 mt-3 tracking-premium">{aprobadosPorcentaje.toFixed(1)}%</span>
-          <span className="text-[11px] font-semibold text-slate-400 mt-2">{aprobadosCount} de {totalStudents} alumnos con promedio ≥ 3.0</span>
+          <span className="text-[11px] font-semibold app-text-muted mt-2">{aprobadosCount} de {totalStudents} alumnos con promedio ≥ 3.0</span>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-premium flex flex-col justify-between transition-all duration-300 hover:scale-[1.025] hover:shadow-md hover:border-slate-300/50">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Alumnos Críticos</span>
+        <div className="app-surface p-6 rounded-2xl border app-border shadow-premium flex flex-col justify-between transition-all duration-300 hover:scale-[1.025] hover:shadow-md">
+          <span className="text-xs font-bold app-text-muted uppercase tracking-wider">Alumnos Críticos</span>
           <span className="text-4xl font-extrabold text-rose-600 mt-3 tracking-premium">{alumnosCriticosCount}</span>
-          <span className="text-[11px] font-semibold text-slate-400 mt-2">Con 3 o más áreas perdidas (Regla de Oro)</span>
+          <span className="text-[11px] font-semibold app-text-muted mt-2">Con 3 o más áreas perdidas (Regla de Oro)</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-700 mb-4 text-center">
-            {viewMode === 'area' ? 'Promedio General por Área' : 'Promedio General por Asignatura'}
+        <section className="app-surface p-4 rounded-lg border app-border shadow-sm" role="region" aria-label={barChartTitle}>
+          <h3 className="text-sm font-medium app-text mb-4 text-center">
+            {barChartTitle}
           </h3>
           <div className="h-64">
             <Bar 
               data={areaChartData} 
               options={{ 
-                responsive: true, 
-                maintainAspectRatio: false,
+                ...commonChartOptions,
                 scales: {
                   y: {
                     beginAtZero: true,
-                    max: 5
+                    max: 5,
+                    ticks: {
+                      color: chartTheme.text,
+                    },
+                    grid: {
+                      color: chartTheme.grid,
+                    },
+                  },
+                  x: {
+                    ticks: {
+                      color: chartTheme.text,
+                    },
+                    grid: {
+                      color: chartTheme.grid,
+                    },
                   }
                 }
               }} 
               plugins={[thresholdLinePlugin]}
             />
           </div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-700 mb-4 text-center">Distribución de Estados ({viewMode === 'area' ? 'Por Área' : 'Por Asignatura'})</h3>
+        </section>
+        <section className="app-surface p-4 rounded-lg border app-border shadow-sm" role="region" aria-label={statusChartTitle}>
+          <h3 className="text-sm font-medium app-text mb-4 text-center">Distribución de Estados ({viewMode === 'area' ? 'Por Área' : 'Por Asignatura'})</h3>
           <div className="h-64 flex justify-center">
             <Pie 
               data={statusChartData} 
-              options={{ 
-                responsive: true, 
-                maintainAspectRatio: false 
-              }} 
+              options={commonChartOptions} 
             />
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

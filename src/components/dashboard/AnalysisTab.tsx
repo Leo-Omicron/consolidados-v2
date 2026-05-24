@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
-import type { Trend } from '../../domain/types';
+import type { Trend, SubjectWeightConfig } from '../../domain/types';
 import { useUIStore } from '../../store/useUIStore';
 
 interface StatusBadgeProps {
@@ -73,8 +73,8 @@ export const AnalysisTab: React.FC = () => {
     if (selectedGrupo === 'Todos') {
       return subjectWeights;
     }
-    return selectedGrupo && (subjectWeights as Record<string, unknown>)[selectedGrupo] 
-      ? { [selectedGrupo]: (subjectWeights as Record<string, unknown>)[selectedGrupo] } 
+    return selectedGrupo && (subjectWeights as SubjectWeightConfig)[selectedGrupo] 
+      ? { [selectedGrupo]: (subjectWeights as SubjectWeightConfig)[selectedGrupo] } 
       : {};
   }, [subjectWeights, selectedGrupo]);
   
@@ -345,9 +345,9 @@ export const AnalysisTab: React.FC = () => {
                           p3?: number | null;
                           defP4?: number | null;
                           p4?: number | null;
-                          tendencia?: string;
-                          promActual?: number;
-                          p4Min?: number | null;
+                          tendencia: Trend;
+                          promActual: number | null;
+                          p4Min: number | null;
                           estado: { text: string; color: string };
                         }, idx) => {
                           const areaKey = `${group.estudiante}_${row.area}`;
@@ -387,7 +387,7 @@ export const AnalysisTab: React.FC = () => {
                                 </td>
                                 <td className="py-2 text-center">
                                   <StatusBadge text={row.estado.text} color={row.estado.color} />
-                                  {row.p4Min !== null && row.p4Min > 5.0 && (
+                                  {row.p4Min !== null && row.p4Min !== undefined && row.p4Min > 5.0 && (
                                     <span 
                                       className="ml-2 cursor-help" 
                                       title={`Requiere ${row.p4Min} en el periodo restante para aprobar`}

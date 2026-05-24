@@ -633,22 +633,22 @@ export const ReportsTab: React.FC = () => {
               </h3>
               
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden text-xs">
+                <table className="min-w-full divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden text-xs print:table-layout-fixed">
                   <thead className="bg-slate-50 print:bg-slate-100">
                     <tr>
-                      <th className="px-3 py-3 text-left font-bold text-slate-600 sticky left-0 bg-slate-50 print:bg-slate-100 z-10 w-48">Estudiante</th>
+                      <th className="px-3 py-3 text-left font-bold text-slate-600 sticky left-0 bg-slate-50 print:bg-slate-100 z-10 w-48 print:w-[120px] print:min-w-0 print:text-[8px] print:px-1">Estudiante</th>
                       {heatmapData.areasList.map(area => (
-                        <th key={area} className="px-2 py-3 text-center font-bold text-slate-600 min-w-[100px] max-w-[140px]" title={area}>
+                        <th key={area} className="px-2 py-3 text-center font-bold text-slate-600 min-w-[100px] max-w-[140px] print:min-w-0 print:w-auto print:text-[7.5px] print:px-1" title={area}>
                           {area.length > 15 ? `${area.substring(0, 15)}.` : area}
                         </th>
                       ))}
-                      <th className="px-3 py-3 text-center font-bold text-slate-700 w-24">Prom.</th>
+                      <th className="px-3 py-3 text-center font-bold text-slate-700 w-24 print:w-[45px] print:min-w-0 print:text-[8px] print:px-1">Prom.</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {heatmapData.rows.map(row => (
                       <tr key={row.studentId} className="hover:bg-slate-50/40">
-                        <td className="px-3 py-2 font-bold text-slate-800 sticky left-0 bg-white z-10 border-r border-slate-100">{row.studentName}</td>
+                        <td className="px-3 py-2 font-bold text-slate-800 sticky left-0 bg-white z-10 border-r border-slate-100 print:w-[120px] print:min-w-0 print:text-[8px] print:px-1">{row.studentName}</td>
                         {heatmapData.areasList.map(areaName => {
                           const cell = row.grades[areaName];
                           let cellClass = 'bg-slate-50 text-slate-400';
@@ -660,12 +660,12 @@ export const ReportsTab: React.FC = () => {
                             else if (cell.color === 'blue') cellClass = 'bg-blue-50 text-blue-800 font-semibold';
                           }
                           return (
-                            <td key={areaName} className={`px-2 py-2 text-center border-r border-slate-100/60 ${cellClass}`}>
+                            <td key={areaName} className={`px-2 py-2 text-center border-r border-slate-100/60 print:min-w-0 print:w-auto print:text-[8px] print:px-1 ${cellClass}`}>
                               {cell?.grade?.toFixed(1) ?? '-'}
                             </td>
                           );
                         })}
-                        <td className="px-3 py-2 text-center font-extrabold text-slate-900 bg-slate-50/40">{row.promActual.toFixed(2)}</td>
+                        <td className="px-3 py-2 text-center font-extrabold text-slate-900 bg-slate-50/40 print:w-[45px] print:min-w-0 print:text-[8px] print:px-1">{row.promActual.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -703,32 +703,32 @@ export const ReportsTab: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="bg-emerald-50/30 p-3.5 rounded-xl border border-emerald-100/40 print:bg-white print:border-slate-300">
-                        <span className="block text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1">💪 Áreas de Fortaleza (Refuerzo Positivo)</span>
+                      <div className="bg-emerald-50/30 dark:bg-emerald-950/20 p-3.5 rounded-xl border border-emerald-100/40 dark:border-emerald-900/30 print:bg-white print:border-slate-300">
+                        <span className="block text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-1">💪 Áreas de Fortaleza (Refuerzo Positivo)</span>
                         {student.strengths.length > 0 ? (
-                          <ul className="list-disc pl-5 text-sm text-slate-700 space-y-0.5">
+                          <ul className="list-disc pl-5 text-sm text-slate-700 dark:text-slate-300 space-y-0.5">
                             {student.strengths.map(area => <li key={area}>{area}</li>)}
                           </ul>
                         ) : (
-                          <span className="text-xs text-slate-400 italic">No se listan fortalezas con nota superior a 4.0</span>
+                          <span className="text-xs text-slate-400 dark:text-slate-400 italic">No se listan fortalezas con nota superior a 4.0</span>
                         )}
                       </div>
 
-                      <div className="bg-rose-50/30 p-3.5 rounded-xl border border-rose-100/40 print:bg-white print:border-slate-300">
-                        <span className="block text-xs font-bold text-rose-700 uppercase tracking-wider mb-1">🎯 Áreas de Debilidad (Plan de Atención)</span>
+                      <div className="bg-rose-50/30 dark:bg-rose-950/20 p-3.5 rounded-xl border border-rose-100/40 dark:border-rose-900/30 print:bg-white print:border-slate-300">
+                        <span className="block text-xs font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider mb-1">🎯 Áreas de Debilidad (Plan de Atención)</span>
                         {student.weaknesses.length > 0 ? (
                           <ul className="list-disc pl-5 text-sm text-slate-700 space-y-0.5">
-                            {student.weaknesses.map(area => <li key={area} className="font-semibold text-rose-800 print:text-black">{area}</li>)}
+                            {student.weaknesses.map(area => <li key={area} className="font-semibold text-rose-800 dark:text-rose-300 print:text-black">{area}</li>)}
                           </ul>
                         ) : (
-                          <span className="text-xs text-slate-400 italic">¡Ninguna! Felicitaciones, no presenta áreas con reprobación.</span>
+                          <span className="text-xs text-slate-400 dark:text-slate-400 italic">¡Ninguna! Felicitaciones, no presenta áreas con reprobación.</span>
                         )}
                       </div>
                     </div>
 
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 print:bg-white print:border-slate-300">
-                      <span className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">📝 Recomendaciones y Tutoría del Docente</span>
-                      <p className="text-sm font-semibold text-slate-800 italic leading-relaxed print:text-black">"{student.adviceText}"</p>
+                    <div className="bg-slate-50 dark:bg-slate-900/20 p-4 rounded-xl border border-slate-100 dark:border-slate-800/40 print:bg-white print:border-slate-300">
+                      <span className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">📝 Recomendaciones y Tutoría del Docente</span>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-300 italic leading-relaxed print:text-black">"{student.adviceText}"</p>
                     </div>
                   </div>
                 ))}
@@ -774,43 +774,43 @@ export const ReportsTab: React.FC = () => {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden text-xs">
+                <table className="min-w-full divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden text-xs print:table-layout-fixed">
                   <thead className="bg-slate-50 print:bg-slate-100">
                     <tr>
-                      <th className="px-2 py-3 text-center font-bold text-slate-600 w-12">Puesto</th>
-                      <th className="px-3 py-3 text-left font-bold text-slate-600 w-44">Estudiante</th>
+                      <th className="px-2 py-3 text-center font-bold text-slate-600 w-12 print:w-[35px] print:min-w-0 print:text-[8px] print:px-1">Puesto</th>
+                      <th className="px-3 py-3 text-left font-bold text-slate-600 w-44 print:w-[110px] print:min-w-0 print:text-[8px] print:px-1">Estudiante</th>
                       {Object.keys(officialRecordsData.rows[0]?.grades || {}).map(area => (
-                        <th key={area} className="px-2 py-3 text-center font-bold text-slate-600 max-w-[120px]" title={area}>
+                        <th key={area} className="px-2 py-3 text-center font-bold text-slate-600 max-w-[120px] print:min-w-0 print:w-auto print:text-[7.5px] print:px-1" title={area}>
                           {area.length > 15 ? `${area.substring(0, 15)}.` : area}
                         </th>
                       ))}
-                      <th className="px-2 py-3 text-center font-bold text-slate-700 w-16">Promedio</th>
+                      <th className="px-2 py-3 text-center font-bold text-slate-700 w-16 print:w-[45px] print:min-w-0 print:text-[8px] print:px-1">Promedio</th>
                       {hasP4 && (
                         <th className="px-2 py-3 text-center font-bold text-slate-600 w-12">P4</th>
                       )}
-                      <th className="px-2 py-3 text-center font-bold text-slate-600 w-16">Fallas</th>
-                      <th className="px-3 py-3 text-center font-bold text-slate-700 w-24">Decisión</th>
+                      <th className="px-2 py-3 text-center font-bold text-slate-600 w-16 print:w-[35px] print:min-w-0 print:text-[8px] print:px-1">Fallas</th>
+                      <th className="px-3 py-3 text-center font-bold text-slate-700 w-24 print:w-[50px] print:min-w-0 print:text-[8px] print:px-1">Decisión</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {officialRecordsData.rows.map(row => (
                       <tr key={row.studentId} className="hover:bg-slate-50/40">
-                        <td className="px-2 py-2 text-center font-bold text-slate-500">{row.ranking}</td>
-                        <td className="px-3 py-2 font-bold text-slate-800">{row.studentName}</td>
+                        <td className="px-2 py-2 text-center font-bold text-slate-500 print:w-[35px] print:min-w-0 print:text-[8px] print:px-1">{row.ranking}</td>
+                        <td className="px-3 py-2 font-bold text-slate-800 print:w-[110px] print:min-w-0 print:text-[8px] print:px-1">{row.studentName}</td>
                         {Object.entries(row.grades).map(([areaName, grade]) => {
                           const isFailed = grade !== null && grade < 3.0;
                           return (
-                            <td key={areaName} className={`px-2 py-2 text-center ${isFailed ? 'text-rose-600 font-bold' : 'text-slate-600'}`}>
+                            <td key={areaName} className={`px-2 py-2 text-center print:min-w-0 print:w-auto print:text-[8px] print:px-1 ${isFailed ? 'text-rose-600 font-bold' : 'text-slate-600'}`}>
                               {grade?.toFixed(1) ?? '-'}
                             </td>
                           );
                         })}
-                        <td className="px-2 py-2 text-center font-extrabold text-slate-900 bg-slate-50/30">{row.promActual.toFixed(2)}</td>
+                        <td className="px-2 py-2 text-center font-extrabold text-slate-900 bg-slate-50/30 print:w-[45px] print:min-w-0 print:text-[8px] print:px-1">{row.promActual.toFixed(2)}</td>
                         {hasP4 && (
                           <td className="px-2 py-2 text-center text-slate-500">P4</td>
                         )}
-                        <td className="px-2 py-2 text-center font-bold text-slate-600">{row.failedAreasCount}</td>
-                        <td className="px-3 py-2 text-center">
+                        <td className="px-2 py-2 text-center font-bold text-slate-600 print:w-[35px] print:min-w-0 print:text-[8px] print:px-1">{row.failedAreasCount}</td>
+                        <td className="px-3 py-2 text-center print:w-[50px] print:min-w-0 print:text-[8px] print:px-1">
                           <span className={`px-2 py-0.5 inline-flex text-[10px] leading-5 font-bold rounded-full ${
                             row.decision === 'Aprobado'
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'

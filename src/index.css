@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
   --color-primary-50: #eff6ff;
   --color-primary-500: #3b82f6;
@@ -343,5 +345,21 @@ body {
     color: black !important;
     border-color: #cbd5e1 !important;
     box-shadow: none !important;
+  }
+
+  /* Ensure print tables scale and shrink without overflow */
+  .print-landscape table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  .print-landscape th,
+  .print-landscape td {
+    min-width: 0 !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 }

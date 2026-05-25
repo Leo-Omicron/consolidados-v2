@@ -152,8 +152,8 @@ export function useAnalysisPipeline(
     const modifier = isDesc ? -1 : 1;
 
     const sortedGroups = [...grouped].sort((a, b) => {
-      let valA: string | number | null = null;
-      let valB: string | number | null = null;
+      let valA: string | number | null | undefined;
+      let valB: string | number | null | undefined;
       
       const groupKey = key === 'aggregates.promActual' ? 'promActual' : key;
       

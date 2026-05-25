@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import * as XLSX from 'xlsx';
-import { parseHeaders, extractStudents, flattenRows, parseWorkbook } from './excelParser';
+import { parseHeaders, extractStudents, flattenRows, parseWorkbook, getColumnLetter, validateWorkbook } from './excelParser';
 import type { HeaderComponent } from './excelParser';
 import type { Estudiante } from '../domain/types';
 
@@ -205,6 +205,233 @@ describe('excelParser', () => {
       // Resumen sheet should be ignored
       expect(spy).toHaveBeenCalledTimes(2); // Only called for 6A and 6B
       
+      spy.mockRestore();
+    });
+  });
+
+  describe('getColumnLetter', () => {
+    it('converts column index to Excel column letter', () => {
+      expect(getColumnLetter(0)).toBe('A');
+      expect(getColumnLetter(25)).toBe('Z');
+      expect(getColumnLetter(26)).toBe('AA');
+      expect(getColumnLetter(27)).toBe('AB');
+      expect(getColumnLetter(701)).toBe('ZZ');
+      expect(getColumnLetter(702)).toBe('AAA');
+    });
+  });
+
+  describe('validateWorkbook', () => {
+    it('identifies completely empty workbook or missing sheets (CRITICAL MISSING_SCHEMA)', () => {
+      const mockWorkbook: XLSX.WorkBook = {
+        SheetNames: [],
+        Sheets: {}
+      };
+      const report = validateWorkbook(mockWorkbook);
+      expect(report.isValid).toBe(false);
+      expect(report.totalSheetsProcessed).toBe(0);
+      expect(report.issues[0]).toEqual(expect.objectContaining({
+        code: 'MISSING_SCHEMA',
+        severity: 'CRITICAL',
+        sheet: 'Global',
+        message: expect.stringContaining('No se encontraron hojas')
+      }));
+    });
+
+    it('identifies sheet with less than 4 rows (CRITICAL MISSING_SCHEMA)', () => {
+      const mockWorkbook: XLSX.WorkBook = {
+        SheetNames: ['6A'],
+        Sheets: {
+          '6A': {
+            '!ref': 'A1:C2'
+          }
+        }
+      };
+      const spy = vi.spyOn(XLSX.utils, 'sheet_to_json').mockReturnValue([
+        ['ID', 'Nombre', 'P1'],
+        ['', '', 'BIOLOGIA']
+      ]);
+
+      const report = validateWorkbook(mockWorkbook);
+      expect(report.isValid).toBe(false);
+      expect(report.issues[0]).toEqual(expect.objectContaining({
+        code: 'MISSING_SCHEMA',
+        severity: 'CRITICAL',
+        sheet: '6A',
+        message: expect.stringContaining('menos de 4 filas')
+      }));
+      spy.mockRestore();
+    });
+
+    it('identifies sheet missing mandatory headers ID/No and Name/Estudiante in rows 0-2 (CRITICAL MISSING_SCHEMA)', () => {
+      const mockWorkbook: XLSX.WorkBook = {
+        SheetNames: ['6A'],
+        Sheets: {
+          '6A': {
+            '!ref': 'A1:C5'
+          }
+        }
+      };
+      // Columns 0 and 1 are invalid headers
+      const spy = vi.spyOn(XLSX.utils, 'sheet_to_json').mockReturnValue([
+        ['Invalido1', 'Invalido2', 'CIENCIAS'],
+        ['', '', 'BIOLOGIA'],
+        ['', '', 'P1'],
+        [1, 'Alice', 4.5],
+        [2, 'Bob', 3.5]
+      ]);
+
+      const report = validateWorkbook(mockWorkbook);
+      expect(report.isValid).toBe(false);
+      expect(report.issues[0]).toEqual(expect.objectContaining({
+        code: 'MISSING_SCHEMA',
+        severity: 'CRITICAL',
+        sheet: '6A',
+        message: expect.stringContaining('ID')
+      }));
+      spy.mockRestore();
+    });
+
+    it('identifies student with blank name but row populated (WARNING MISSING_NAME)', () => {
+      const mockWorkbook: XLSX.WorkBook = {
+        SheetNames: ['6A'],
+        Sheets: {
+          '6A': {
+            '!ref': 'A1:C5'
+          }
+        }
+      };
+      const spy = vi.spyOn(XLSX.utils, 'sheet_to_json').mockReturnValue([
+        ['No', 'Estudiante', 'CIENCIAS'],
+        ['', '', 'BIOLOGIA'],
+        ['', '', 'P1'],
+        [1, '', 4.5], // Name is blank, but row has ID 1 and grade 4.5
+        [2, 'Bob', 3.5]
+      ]);
+
+      const report = validateWorkbook(mockWorkbook);
+      expect(report.issues).toContainEqual(expect.objectContaining({
+        code: 'MISSING_NAME',
+        severity: 'WARNING',
+        sheet: '6A',
+        row: 4,
+        col: 'B',
+        message: expect.stringContaining('nombre en blanco')
+      }));
+      spy.mockRestore();
+    });
+
+    it('identifies empty grade cells in period columns (WARNING EMPTY_GRADE)', () => {
+      const mockWorkbook: XLSX.WorkBook = {
+        SheetNames: ['6A'],
+        Sheets: {
+          '6A': {
+            '!ref': 'A1:C5'
+          }
+        }
+      };
+      const spy = vi.spyOn(XLSX.utils, 'sheet_to_json').mockReturnValue([
+        ['No', 'Estudiante', 'CIENCIAS'],
+        ['', '', 'BIOLOGIA'],
+        ['', '', 'P1'],
+        [1, 'Alice', null], // empty grade
+        [2, 'Bob', 3.5]
+      ]);
+
+      const report = validateWorkbook(mockWorkbook);
+      expect(report.issues).toContainEqual(expect.objectContaining({
+        code: 'EMPTY_GRADE',
+        severity: 'WARNING',
+        sheet: '6A',
+        row: 4,
+        col: 'C',
+        message: expect.stringContaining('Calificación vacía')
+      }));
+      spy.mockRestore();
+    });
+
+    it('identifies grade out of range or non-numeric (WARNING INVALID_GRADE)', () => {
+      const mockWorkbook: XLSX.WorkBook = {
+        SheetNames: ['6A'],
+        Sheets: {
+          '6A': {
+            '!ref': 'A1:C6'
+          }
+        }
+      };
+      const spy = vi.spyOn(XLSX.utils, 'sheet_to_json').mockReturnValue([
+        ['No', 'Estudiante', 'CIENCIAS'],
+        ['', '', 'BIOLOGIA'],
+        ['', '', 'P1'],
+        [1, 'Alice', 5.5], // too high
+        [2, 'Bob', -0.1], // too low
+        [3, 'Charlie', 'abc'] // non-numeric
+      ]);
+
+      const report = validateWorkbook(mockWorkbook);
+      expect(report.issues).toContainEqual(expect.objectContaining({
+        code: 'INVALID_GRADE',
+        severity: 'WARNING',
+        sheet: '6A',
+        row: 4,
+        col: 'C',
+        message: expect.stringContaining('fuera de rango')
+      }));
+      expect(report.issues).toContainEqual(expect.objectContaining({
+        code: 'INVALID_GRADE',
+        severity: 'WARNING',
+        sheet: '6A',
+        row: 5,
+        col: 'C',
+        message: expect.stringContaining('fuera de rango')
+      }));
+      expect(report.issues).toContainEqual(expect.objectContaining({
+        code: 'INVALID_GRADE',
+        severity: 'WARNING',
+        sheet: '6A',
+        row: 6,
+        col: 'C',
+        message: expect.stringContaining('no es un número')
+      }));
+      spy.mockRestore();
+    });
+
+    it('identifies completely empty worksheets or sheets missing !ref (SUGGESTION EMPTY_SHEET)', () => {
+      const mockWorkbook: XLSX.WorkBook = {
+        SheetNames: ['6A'],
+        Sheets: {
+          '6A': {} // Missing !ref
+        }
+      };
+      const report = validateWorkbook(mockWorkbook);
+      expect(report.issues[0]).toEqual(expect.objectContaining({
+        code: 'EMPTY_SHEET',
+        severity: 'SUGGESTION',
+        sheet: '6A',
+        message: expect.stringContaining('vacía')
+      }));
+    });
+
+    it('returns isValid: true and empty issues for a perfectly valid workbook', () => {
+      const mockWorkbook: XLSX.WorkBook = {
+        SheetNames: ['6A'],
+        Sheets: {
+          '6A': {
+            '!ref': 'A1:C5'
+          }
+        }
+      };
+      const spy = vi.spyOn(XLSX.utils, 'sheet_to_json').mockReturnValue([
+        ['No', 'Estudiante', 'CIENCIAS'],
+        ['', '', 'BIOLOGIA'],
+        ['', '', 'P1'],
+        [1, 'Alice', 4.5],
+        [2, 'Bob', 3.5]
+      ]);
+
+      const report = validateWorkbook(mockWorkbook);
+      expect(report.isValid).toBe(true);
+      expect(report.totalSheetsProcessed).toBe(1);
+      expect(report.issues).toHaveLength(0);
       spy.mockRestore();
     });
   });

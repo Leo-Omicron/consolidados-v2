@@ -7,11 +7,26 @@ export const FileUploadArea: React.FC = () => {
   const setConfig = useDashboardStore((state) => state.setConfig);
   const loading = useDashboardStore((state) => state.loading);
   const error = useDashboardStore((state) => state.error);
+  const diagnosticReport = useDashboardStore((state) => state.diagnosticReport);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const configInputRef = useRef<HTMLInputElement>(null);
 
   const [isDragging, setIsDragging] = useState<boolean>(false);
+
+  // Group issues by sheet name
+  const issuesBySheet = React.useMemo(() => {
+    if (!diagnosticReport || !diagnosticReport.issues) return {};
+    // Only display WARNING and SUGGESTION in this list
+    const nonCritical = diagnosticReport.issues.filter(i => i.severity !== 'CRITICAL');
+    const groups: Record<string, typeof nonCritical> = {};
+    nonCritical.forEach(issue => {
+      const s = issue.sheet || 'Global';
+      if (!groups[s]) groups[s] = [];
+      groups[s].push(issue);
+    });
+    return groups;
+  }, [diagnosticReport]);
 
   const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -162,6 +177,84 @@ export const FileUploadArea: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>{error}</span>
+        </div>
+      )}
+
+      {diagnosticReport && diagnosticReport.issues.some(i => i.severity !== 'CRITICAL') && (
+        <div className="mt-6 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-slate-900/30">
+          <div className="bg-slate-100 dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                Resultados del Diagnóstico de Calidad
+              </span>
+            </div>
+            <span className="text-xs font-semibold px-2 py-1 rounded bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+              {diagnosticReport.issues.filter(i => i.severity !== 'CRITICAL').length} advertencias / sugerencias
+            </span>
+          </div>
+          
+          <div className="p-4 space-y-3">
+            {Object.entries(issuesBySheet).map(([sheetName, sheetIssues]) => (
+              <details key={sheetName} className="group border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 transition-premium" open>
+                <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 select-none list-none">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                      Hoja: {sheetName}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      ({sheetIssues.length} {sheetIssues.length === 1 ? 'problema detectado' : 'problemas detectados'})
+                    </span>
+                  </div>
+                  <span className="transition-transform duration-300 group-open:rotate-180">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </summary>
+                <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                  {sheetIssues.map((issue, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`p-3 rounded-lg border text-xs leading-relaxed flex flex-col gap-1.5 ${
+                        issue.severity === 'WARNING' 
+                          ? 'border-amber-100 dark:border-amber-950 bg-amber-50/50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300' 
+                          : 'border-blue-100 dark:border-blue-950 bg-blue-50/50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-1.5 font-semibold">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                            issue.severity === 'WARNING'
+                              ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200'
+                              : 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200'
+                          }`}>
+                            {issue.severity === 'WARNING' ? 'ADVERTENCIA' : 'SUGERENCIA'}
+                          </span>
+                          {issue.row && issue.col && (
+                            <span className="text-slate-500 dark:text-slate-400">
+                              Celda: <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">{issue.col}{issue.row}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-slate-700 dark:text-slate-300 font-medium">
+                        {issue.message}
+                      </p>
+                      {issue.action && (
+                        <div className="mt-1 flex items-start gap-1 text-slate-600 dark:text-slate-400">
+                          <span className="font-bold">Acción recomendada:</span>
+                          <span>{issue.action}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ))}
+          </div>
         </div>
       )}
     </div>

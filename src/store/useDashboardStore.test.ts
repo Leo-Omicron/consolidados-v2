@@ -26,6 +26,12 @@ vi.mock('../services/excelParser', () => ({
   parseHeaders: vi.fn(),
   extractStudents: vi.fn(),
   parseWorkbook: vi.fn(),
+  validateWorkbook: vi.fn(() => ({
+    isValid: true,
+    totalSheetsProcessed: 1,
+    issues: []
+  })),
+  getColumnLetter: vi.fn((colIndex: number) => String.fromCharCode(65 + colIndex)),
   flattenRows: vi.fn(() => ({
     rowsArea: [{ area: 'AREA_1', promActual: 10, estado: { text: 'Ganado', color: 'green' } }],
     rowsAsignatura: []
@@ -155,5 +161,66 @@ describe('useDashboardStore', () => {
 
     state.setViewMode('area');
     expect(useDashboardStore.getState().viewMode).toBe('area');
+  });
+
+  describe('processFile with diagnostics', () => {
+    it('blocks processing and sets error when validateWorkbook returns critical issues', async () => {
+      // Mock validateWorkbook to return a CRITICAL issue
+      vi.spyOn(excelParser, 'validateWorkbook').mockReturnValue({
+        isValid: false,
+        totalSheetsProcessed: 1,
+        issues: [
+          {
+            code: 'MISSING_SCHEMA',
+            severity: 'CRITICAL',
+            sheet: '6A',
+            message: 'Esquema de cabecera inválido en 6A',
+            action: 'Corrija los encabezados'
+          }
+        ]
+      });
+
+      const file = new File([''], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      await useDashboardStore.getState().processFile(file);
+
+      const state = useDashboardStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBe('Esquema de cabecera inválido en 6A');
+      expect(state.diagnosticReport?.isValid).toBe(false);
+      expect(state.estudiantes).toEqual([]); // Did not parse students
+    });
+
+    it('continues processing and preserves report when validateWorkbook returns only warnings/suggestions', async () => {
+      // Mock validateWorkbook to return non-critical issues (WARNING)
+      vi.spyOn(excelParser, 'validateWorkbook').mockReturnValue({
+        isValid: true,
+        totalSheetsProcessed: 1,
+        issues: [
+          {
+            code: 'EMPTY_GRADE',
+            severity: 'WARNING',
+            sheet: '6A',
+            row: 4,
+            col: 'C',
+            message: 'Calificación vacía',
+            action: 'Ingrese nota'
+          }
+        ]
+      });
+
+      vi.spyOn(excelParser, 'parseWorkbook').mockReturnValue([
+        { id: '1', name: 'Alice', CURSO: 'test', grupo: '6A', areas: {} }
+      ]);
+
+      const file = new File([''], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      await useDashboardStore.getState().processFile(file);
+
+      const state = useDashboardStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+      expect(state.diagnosticReport?.isValid).toBe(true);
+      expect(state.diagnosticReport?.issues[0].code).toBe('EMPTY_GRADE');
+      expect(state.estudiantes).toHaveLength(1); // Continued parsing
+    });
   });
 });

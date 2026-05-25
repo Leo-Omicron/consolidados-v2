@@ -20,7 +20,8 @@ describe('FileUploadArea', () => {
         processFile: processFileMock,
         setConfig: setConfigMock,
         loading: false,
-        error: null
+        error: null,
+        diagnosticReport: null
       };
       return selector(state);
     });
@@ -133,5 +134,60 @@ describe('FileUploadArea', () => {
     await new Promise(resolve => setTimeout(resolve, 50));
     
     expect(setConfigMock).toHaveBeenCalledWith(configData);
+  });
+
+  it('renders the premium diagnostic accordion with sheet grouping, cell coordinates, and recommended actions', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        processFile: processFileMock,
+        setConfig: setConfigMock,
+        loading: false,
+        error: null,
+        diagnosticReport: {
+          isValid: true,
+          totalSheetsProcessed: 1,
+          issues: [
+            {
+              code: 'EMPTY_GRADE',
+              severity: 'WARNING',
+              sheet: '6A',
+              row: 4,
+              col: 'C',
+              message: 'Calificación vacía en C4',
+              action: 'Ingrese nota de P1'
+            },
+            {
+              code: 'EMPTY_SHEET',
+              severity: 'SUGGESTION',
+              sheet: 'Grupo Inactivo',
+              message: 'La hoja está vacía',
+              action: 'Verifique si debe eliminarse'
+            }
+          ]
+        }
+      };
+      return selector(state);
+    });
+
+    render(<FileUploadArea />);
+
+    // Assert main header is rendered
+    expect(screen.getByText('Resultados del Diagnóstico de Calidad')).toBeDefined();
+    expect(screen.getByText('2 advertencias / sugerencias')).toBeDefined();
+
+    // Assert sheet groups are rendered
+    expect(screen.getByText('Hoja: 6A')).toBeDefined();
+    expect(screen.getByText('Hoja: Grupo Inactivo')).toBeDefined();
+
+    // Assert messages and severity labels
+    expect(screen.getByText('Calificación vacía en C4')).toBeDefined();
+    expect(screen.getByText('La hoja está vacía')).toBeDefined();
+
+    // Assert coordinates are displayed nicely
+    expect(screen.getByText('C4')).toBeDefined();
+
+    // Assert recommended actions
+    expect(screen.getByText('Ingrese nota de P1')).toBeDefined();
+    expect(screen.getByText('Verifique si debe eliminarse')).toBeDefined();
   });
 });

@@ -432,7 +432,7 @@ export function generateTeacherFeedbackReport(student: Estudiante, _config: Peri
   strengths.sort();
   weaknesses.sort();
   
-  let adviceText = '';
+  let adviceText: string;
   if (avg >= 4.5) {
     adviceText = 'Continúa con ese gran nivel y apoya a tus compañeros.';
   } else if (avg >= 4.0) {

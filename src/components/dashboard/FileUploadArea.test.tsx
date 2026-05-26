@@ -174,39 +174,45 @@ describe('FileUploadArea', () => {
   });
 
   it('renders the premium diagnostic accordion with sheet grouping, cell coordinates, and recommended actions', () => {
+    const mockReport = {
+      isValid: true,
+      totalSheetsProcessed: 1,
+      issues: [
+        {
+          code: 'EMPTY_GRADE',
+          severity: 'WARNING',
+          sheet: '6A',
+          row: 4,
+          col: 'C',
+          message: 'Calificación vacía en C4',
+          action: 'Ingrese nota de P1'
+        },
+        {
+          code: 'EMPTY_SHEET',
+          severity: 'SUGGESTION',
+          sheet: 'Grupo Inactivo',
+          message: 'La hoja está vacía',
+          action: 'Verifique si debe eliminarse'
+        }
+      ]
+    };
+
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
         processFile: processFileMock,
         setConfig: setConfigMock,
         loading: false,
         error: null,
-        diagnosticReport: {
-          isValid: true,
-          totalSheetsProcessed: 1,
-          issues: [
-            {
-              code: 'EMPTY_GRADE',
-              severity: 'WARNING',
-              sheet: '6A',
-              row: 4,
-              col: 'C',
-              message: 'Calificación vacía en C4',
-              action: 'Ingrese nota de P1'
-            },
-            {
-              code: 'EMPTY_SHEET',
-              severity: 'SUGGESTION',
-              sheet: 'Grupo Inactivo',
-              message: 'La hoja está vacía',
-              action: 'Verifique si debe eliminarse'
-            }
-          ]
-        }
+        diagnosticReport: mockReport
       };
       return selector(state);
     });
 
     render(<FileUploadArea />);
+
+    // Show the report by clicking the restore button since it is hidden by default
+    const restoreBtn = screen.getByTestId('restore-diagnostic-btn');
+    fireEvent.click(restoreBtn);
 
     // Assert main header is rendered
     expect(screen.getByText('Resultados del Diagnóstico de Calidad')).toBeDefined();
@@ -217,8 +223,8 @@ describe('FileUploadArea', () => {
     expect(screen.getByText('Hoja: Grupo Inactivo')).toBeDefined();
 
     // Assert messages and severity labels
-    expect(screen.getByText('Calificación vacía en C4')).toBeDefined();
-    expect(screen.getByText('La hoja está vacía')).toBeDefined();
+    expect(screen.getAllByText('Calificación vacía en C4')[0]).toBeDefined();
+    expect(screen.getAllByText('La hoja está vacía')[0]).toBeDefined();
 
     // Assert coordinates are displayed nicely
     expect(screen.getByText('C4')).toBeDefined();
@@ -258,8 +264,17 @@ describe('FileUploadArea', () => {
 
     render(<FileUploadArea />);
 
-    // Initially, both report and its contents are visible
-    expect(screen.getByText('Calificación vacía en C4')).toBeDefined();
+    // Initially, the report is hidden/dismissed by default
+    expect(screen.queryByText('Resultados del Diagnóstico de Calidad')).toBeNull();
+    expect(screen.queryByText('Calificación vacía en C4')).toBeNull();
+
+    // Show it
+    const initialRestoreBtn = screen.getByTestId('restore-diagnostic-btn');
+    fireEvent.click(initialRestoreBtn);
+
+    // Now, the report and its contents are visible
+    expect(screen.getByText('Resultados del Diagnóstico de Calidad')).toBeDefined();
+    expect(screen.getAllByText('Calificación vacía en C4')[0]).toBeDefined();
     
     // Collapse the report
     const collapseBtn = screen.getByTestId('toggle-diagnostic-collapse-btn');
@@ -271,7 +286,7 @@ describe('FileUploadArea', () => {
 
     // Expand the report again
     fireEvent.click(collapseBtn);
-    expect(screen.getByText('Calificación vacía en C4')).toBeDefined();
+    expect(screen.getAllByText('Calificación vacía en C4')[0]).toBeDefined();
 
     // Dismiss the report
     const dismissBtn = screen.getByTestId('dismiss-diagnostic-btn');
@@ -289,6 +304,6 @@ describe('FileUploadArea', () => {
     // Click restore to show it again
     fireEvent.click(restoreBtn);
     expect(screen.getByText('Resultados del Diagnóstico de Calidad')).toBeDefined();
-    expect(screen.getByText('Calificación vacía en C4')).toBeDefined();
+    expect(screen.getAllByText('Calificación vacía en C4')[0]).toBeDefined();
   });
 });

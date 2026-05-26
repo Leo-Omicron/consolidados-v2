@@ -781,4 +781,91 @@ describe('AnalysisTab', () => {
     // Check that activeSimulations is empty
     expect(useSimulationStore.getState().activeSimulations).toEqual({});
   });
+
+  it('displays simulated subject grades and updated computed averages in the subtable', () => {
+    const studentWithSubjects = [
+      {
+        id: 'juan',
+        name: 'Juan',
+        CURSO: '6A',
+        grupo: '6A',
+        areas: {
+          'Ciencias Sociales': {
+            asignaturas: {
+              'Historia': { P1: 4.0, P2: 3.5, P3: null, promedioActual: 3.75, p4Min: 2.0, estado: { text: 'Ganado', color: 'green' } },
+              'Geografía': { P1: 3.0, P2: 2.0, P3: null, promedioActual: 2.5, p4Min: 4.0, estado: { text: 'Recuperable', color: 'blue' } }
+            },
+            DEF: { P1: 3.5, P2: 2.75, P3: null },
+            areaStats: { promedioActual: 3.125, p4Min: 3.0, estado: { text: 'Recuperable', color: 'blue' } }
+          }
+        }
+      }
+    ];
+
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        estudiantes: studentWithSubjects,
+        rowsArea: [
+          { id: 'juan_Ciencias Sociales', estudiante: 'Juan', area: 'Ciencias Sociales', defP1: 3.5, defP2: 2.75, defP3: null, promActual: 3.125, p4Min: 3.0, estado: { text: 'Recuperable', color: 'blue' }, CURSO: '6A', grupo: '6A' }
+        ],
+        rowsAsignatura: [
+          { id: 'juan_Ciencias Sociales_Historia', estudiante: 'Juan', area: 'Ciencias Sociales', asignatura: 'Historia', p1: 4.0, p2: 3.5, p3: null, promActual: 3.75, p4Min: 2.0, estado: { text: 'Ganado', color: 'green' }, CURSO: '6A', grupo: '6A' },
+          { id: 'juan_Ciencias Sociales_Geografía', estudiante: 'Juan', area: 'Ciencias Sociales', asignatura: 'Geografía', p1: 3.0, p2: 2.0, p3: null, promActual: 2.5, p4Min: 4.0, estado: { text: 'Recuperable', color: 'blue' }, CURSO: '6A', grupo: '6A' }
+        ],
+        viewMode: 'area',
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos'],
+        setGrupo: vi.fn(),
+        subjectWeights: {}
+      };
+      return selector(state);
+    });
+
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'Juan',
+        rows: [{
+          id: 'juan_Ciencias Sociales',
+          area: 'Ciencias Sociales',
+          defP1: 3.5,
+          defP2: 2.75,
+          defP3: null,
+          promActual: 3.125,
+          p4Min: 3.0,
+          tendencia: 'flat',
+          estado: { text: 'Recuperable', color: 'blue' }
+        }],
+        aggregates: { promActual: 3.125 }
+      }],
+      kpis: { promedioGeneral: 3.125, statusDistribution: {} }
+    });
+
+    render(<AnalysisTab />);
+
+    // Expand the student row
+    fireEvent.click(screen.getByText('Juan'));
+
+    // Expand the Area row subjects
+    const expandBtn = screen.getByRole('button', { name: 'Toggle subjects for Ciencias Sociales' });
+    fireEvent.click(expandBtn);
+
+    // Set a simulated grade on Historia P3 = 5.0
+    act(() => {
+      useSimulationStore.setState({
+        activeSimulations: {
+          'juan_Ciencias Sociales_Historia': { P3: 5.0 }
+        }
+      });
+    });
+
+    // Check that we display the simulated value in the cell (5.00)
+    expect(screen.getByText('5.00')).toBeDefined();
+
+    // Verify that the subject's Promedio is updated to the simulated value (4.20)
+    expect(screen.getByText('4.20')).toBeDefined();
+
+    // Cleanup store
+    useSimulationStore.setState({ activeSimulations: {} });
+  });
 });

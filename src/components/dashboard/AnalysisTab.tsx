@@ -498,7 +498,7 @@ export const AnalysisTab: React.FC = () => {
                         }, idx) => {
                           const areaKey = `${group.estudiante}_${row.area}`;
                           const isAreaExpanded = expandedAreas[areaKey];
-                          const subjects = rowsAsignatura.filter(asig => 
+                          const subjects = currentRowsAsignatura.filter(asig => 
                             asig.estudiante === group.estudiante && 
                             asig.area === row.area
                           );

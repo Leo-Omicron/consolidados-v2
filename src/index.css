@@ -363,3 +363,8 @@ body {
     text-overflow: ellipsis !important;
   }
 }
+
+/* Rotate chevron icon on open details */
+details[open] > summary .rotate-on-open {
+  transform: rotate(180deg);
+}

@@ -10,7 +10,7 @@ interface DiagnosticReportBlockProps {
 
 const DiagnosticReportBlock: React.FC<DiagnosticReportBlockProps> = ({ diagnosticReport, issuesBySheet }) => {
   const [isReportCollapsed, setIsReportCollapsed] = useState<boolean>(false);
-  const [isReportDismissed, setIsReportDismissed] = useState<boolean>(false);
+  const [isReportDismissed, setIsReportDismissed] = useState<boolean>(true);
 
   if (isReportDismissed) {
     return (
@@ -80,7 +80,7 @@ const DiagnosticReportBlock: React.FC<DiagnosticReportBlockProps> = ({ diagnosti
       {!isReportCollapsed && (
         <div className="p-4 space-y-3">
           {Object.entries(issuesBySheet).map(([sheetName, sheetIssues]) => (
-            <details key={sheetName} className="group border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 transition-premium" open>
+            <details key={sheetName} className="group border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 transition-premium">
               <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 select-none list-none">
                 <div className="flex items-center space-x-2">
                   <span className="font-bold text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
@@ -90,7 +90,7 @@ const DiagnosticReportBlock: React.FC<DiagnosticReportBlockProps> = ({ diagnosti
                     ({sheetIssues.length} {sheetIssues.length === 1 ? 'problema detectado' : 'problemas detectados'})
                   </span>
                 </div>
-                <span className="transition-transform duration-300 group-open:rotate-180">
+                <span className="transition-transform duration-300 rotate-on-open">
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -98,17 +98,17 @@ const DiagnosticReportBlock: React.FC<DiagnosticReportBlockProps> = ({ diagnosti
               </summary>
               <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
                 {sheetIssues.map((issue, idx) => (
-                  <div 
+                  <details 
                     key={idx} 
-                    className={`p-3 rounded-lg border text-xs leading-relaxed flex flex-col gap-1.5 ${
+                    className={`border text-xs leading-relaxed rounded-lg transition-all duration-200 ${
                       issue.severity === 'WARNING' 
-                        ? 'border-amber-100 dark:border-amber-950 bg-amber-50/50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300' 
-                        : 'border-blue-100 dark:border-blue-950 bg-blue-50/50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300'
+                        ? 'border-amber-100 dark:border-amber-950/50 bg-amber-50/30 dark:bg-amber-950/10 text-amber-800 dark:text-amber-300' 
+                        : 'border-blue-100 dark:border-blue-950/50 bg-blue-50/30 dark:bg-blue-950/10 text-blue-800 dark:text-blue-300'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-1.5 font-semibold">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                    <summary className="flex items-center justify-between p-2.5 cursor-pointer select-none list-none font-medium hover:bg-slate-500/5">
+                      <div className="flex items-center gap-2 truncate pr-4">
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider shrink-0 ${
                           issue.severity === 'WARNING'
                             ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200'
                             : 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200'
@@ -116,22 +116,32 @@ const DiagnosticReportBlock: React.FC<DiagnosticReportBlockProps> = ({ diagnosti
                           {issue.severity === 'WARNING' ? 'ADVERTENCIA' : 'SUGERENCIA'}
                         </span>
                         {issue.row && issue.col && (
-                          <span className="text-slate-500 dark:text-slate-400">
+                          <span className="text-slate-500 dark:text-slate-400 shrink-0">
                             Celda: <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">{issue.col}{issue.row}</span>
                           </span>
                         )}
+                        <span className="text-slate-600 dark:text-slate-400 truncate max-w-[200px] sm:max-w-md md:max-w-lg lg:max-w-xl font-medium">
+                          {issue.message}
+                        </span>
                       </div>
+                      <span className="transition-transform duration-300 rotate-on-open shrink-0">
+                        <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </span>
+                    </summary>
+                    <div className="p-3 border-t border-slate-200/50 dark:border-slate-800/50 flex flex-col gap-1.5">
+                      <p className="text-slate-700 dark:text-slate-300 font-medium">
+                        {issue.message}
+                      </p>
+                      {issue.action && (
+                        <div className="mt-1 flex items-start gap-1 text-slate-600 dark:text-slate-400">
+                          <span className="font-bold">Acción recomendada:</span>
+                          <span>{issue.action}</span>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-slate-700 dark:text-slate-300 font-medium">
-                      {issue.message}
-                    </p>
-                    {issue.action && (
-                      <div className="mt-1 flex items-start gap-1 text-slate-600 dark:text-slate-400">
-                        <span className="font-bold">Acción recomendada:</span>
-                        <span>{issue.action}</span>
-                      </div>
-                    )}
-                  </div>
+                  </details>
                 ))}
               </div>
             </details>

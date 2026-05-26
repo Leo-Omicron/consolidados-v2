@@ -8,6 +8,7 @@ export const FileUploadArea: React.FC = () => {
   const loading = useDashboardStore((state) => state.loading);
   const error = useDashboardStore((state) => state.error);
   const diagnosticReport = useDashboardStore((state) => state.diagnosticReport);
+  const parsingProgress = useDashboardStore((state) => state.parsingProgress);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const configInputRef = useRef<HTMLInputElement>(null);
@@ -145,7 +146,7 @@ export const FileUploadArea: React.FC = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.126 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <span>Procesando...</span>
+                  <span>{parsingProgress || 'Procesando...'}</span>
                 </>
               ) : (
                 'Cargar Excel'

@@ -1,9 +1,9 @@
 import { create } from 'zustand';
-import * as XLSX from 'xlsx';
 import type { Estudiante, PeriodConfig, RowArea, RowAsignatura, SubjectWeightConfig } from '../domain/types';
-import { flattenRows, parseWorkbook, validateWorkbook } from '../services/excelParser';
+import { flattenRows } from '../services/excelParser';
 import type { DiagnosticReport } from '../services/excelParser';
-import { applyAcademicLogic, inferSubjectWeights } from '../services/academicLogic';
+import { applyAcademicLogic } from '../services/academicLogic';
+import { parseFileInWorker } from '../services/excelWorkerClient';
 
 export interface DashboardState {
   estudiantes: Estudiante[];
@@ -17,6 +17,7 @@ export interface DashboardState {
   availableGroups: string[];
   viewMode: 'area' | 'subject';
   diagnosticReport: DiagnosticReport | null;
+  parsingProgress: string | null;
   setConfig: (config: PeriodConfig) => void;
   setGrupo: (grupo: string) => void;
   setViewMode: (mode: 'area' | 'subject') => void;
@@ -30,7 +31,7 @@ const DEFAULT_CONFIG: PeriodConfig = {
   P3: 33.4
 };
 
-export const useDashboardStore = create<DashboardState>((set, get) => ({
+export const useDashboardStore = create<DashboardState>((set) => ({
   estudiantes: [],
   rowsArea: [],
   rowsAsignatura: [],
@@ -42,6 +43,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   availableGroups: [],
   viewMode: 'area',
   diagnosticReport: null,
+  parsingProgress: null,
   
   setGrupo: (grupo: string) => set({ selectedGrupo: grupo }),
   
@@ -94,71 +96,32 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   }),
   
   processFile: async (file: File) => {
-    set({ loading: true, error: null, diagnosticReport: null });
+    set({ loading: true, error: null, diagnosticReport: null, parsingProgress: 'Leyendo archivo...' });
     
     try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'array' });
-      
-      const report = validateWorkbook(workbook);
-      set({ diagnosticReport: report });
-
-      if (!report.isValid) {
-        const firstCritical = report.issues.find(i => i.severity === 'CRITICAL');
-        const errorMessage = firstCritical ? firstCritical.message : "El archivo Excel no cumple con el esquema requerido.";
-        set({ loading: false, error: errorMessage });
-        return;
-      }
-
-      // Use filename as curso for now, stripping extension
-      const curso = file.name.replace(/\.[^/.]+$/, "");
-      
-      const students = parseWorkbook(workbook, curso);
-      
-      if (students.length === 0) {
-        throw new Error("No se encontraron estudiantes válidos en el archivo.");
-      }
-
-      const uniqueGroupsSet = new Set<string>();
-      students.forEach(s => {
-        if (s.grupo) uniqueGroupsSet.add(s.grupo);
+      const result = await parseFileInWorker(file, {
+        onProgress: (_phase, message) => {
+          set({ parsingProgress: message });
+        },
+        onDiagnostic: (report) => {
+          set({ diagnosticReport: report });
+        }
       });
-      const availableGroups = ['Todos', ...Array.from(uniqueGroupsSet).sort()];
-
-      // Infer subject weights isolated per group
-      const groups = Array.from(uniqueGroupsSet);
-      const inferredWeights: SubjectWeightConfig = {};
-
-      groups.forEach(grupo => {
-        inferredWeights[grupo] = {};
-        const groupStudents = students.filter(s => s.grupo === grupo);
-        
-        // Find all unique areas for students of this group
-        const groupAreas = new Set<string>();
-        groupStudents.forEach(s => Object.keys(s.areas).forEach(a => groupAreas.add(a)));
-        
-        groupAreas.forEach(areaName => {
-          inferredWeights[grupo][areaName] = inferSubjectWeights(groupStudents, areaName);
-        });
-      });
-
-      // Call logic with current config and inferred weights
-      applyAcademicLogic(students, get().config, inferredWeights);
-      
-      const { rowsArea, rowsAsignatura } = flattenRows(students);
       
       set({ 
-        estudiantes: students,
-        rowsArea,
-        rowsAsignatura,
-        subjectWeights: inferredWeights,
-        availableGroups,
+        estudiantes: result.estudiantes,
+        rowsArea: result.rowsArea,
+        rowsAsignatura: result.rowsAsignatura,
+        subjectWeights: result.subjectWeights,
+        availableGroups: result.availableGroups,
         selectedGrupo: 'Todos',
-        loading: false
+        diagnosticReport: result.diagnosticReport,
+        loading: false,
+        parsingProgress: null
       });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Error processing file";
-      set({ loading: false, error: errorMessage });
+      set({ loading: false, error: errorMessage, parsingProgress: null });
     }
   }
 }));

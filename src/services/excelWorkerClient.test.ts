@@ -1,0 +1,186 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { parseFileInWorker, terminateWorker } from './excelWorkerClient';
+import type { ParsedExcelData, WorkerMessage } from './workerTypes';
+
+// We need to mock the Worker constructor and its methods.
+// vitest/jsdom has no Worker, so we stub it.
+describe('excelWorkerClient', () => {
+  let mockWorkerPostMessage: ReturnType<typeof vi.fn>;
+  let mockWorkerAddEventListener: ReturnType<typeof vi.fn>;
+  let mockWorkerTerminate: ReturnType<typeof vi.fn>;
+  let messageHandlers: Array<(e: MessageEvent) => void> = [];
+  let errorHandlers: Array<(e: ErrorEvent) => void> = [];
+
+  const mockParsedData: ParsedExcelData = {
+    estudiantes: [{ id: '1', name: 'Alice', CURSO: 'test', grupo: '10A', areas: {} }],
+    rowsArea: [],
+    rowsAsignatura: [],
+    subjectWeights: {},
+    availableGroups: ['Todos', '10A'],
+    diagnosticReport: { isValid: true, totalSheetsProcessed: 1, issues: [] }
+  };
+
+  // Microtask flush helper
+  const flushMicrotasks = (): Promise<void> =>
+    new Promise((resolve) => setTimeout(resolve, 0));
+
+  beforeEach(() => {
+    messageHandlers = [];
+    errorHandlers = [];
+    mockWorkerPostMessage = vi.fn();
+    mockWorkerTerminate = vi.fn();
+    mockWorkerAddEventListener = vi.fn((type: string, handler: (e: unknown) => void) => {
+      if (type === 'message') messageHandlers.push(handler as (e: MessageEvent) => void);
+      if (type === 'error') errorHandlers.push(handler as (e: ErrorEvent) => void);
+    });
+
+    // Use a regular function so 'new Worker(...)' works
+    const MockWorker = vi.fn(function (this: unknown, _url: string, _options?: unknown) {
+      (this as Record<string, unknown>).postMessage = mockWorkerPostMessage;
+      (this as Record<string, unknown>).addEventListener = mockWorkerAddEventListener;
+      (this as Record<string, unknown>).terminate = mockWorkerTerminate;
+      (this as Record<string, unknown>).removeEventListener = vi.fn();
+    }) as unknown as typeof Worker;
+    vi.stubGlobal('Worker', MockWorker);
+  });
+
+  afterEach(() => {
+    terminateWorker();
+    vi.unstubAllGlobals();
+  });
+
+  function simulateWorkerMessage(msg: WorkerMessage): void {
+    messageHandlers.forEach(h => h(new MessageEvent('message', { data: msg })));
+  }
+
+  it('parses a file and resolves with ParsedExcelData', async () => {
+    const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    const promise = parseFileInWorker(file);
+
+    // Flush microtasks so arrayBuffer().then() runs
+    await flushMicrotasks();
+
+    // Worker should have received postMessage with file data
+    expect(mockWorkerPostMessage).toHaveBeenCalledTimes(1);
+    const posted = mockWorkerPostMessage.mock.calls[0];
+    expect(posted[0].type).toBe('PARSE');
+    expect(posted[0].fileName).toBe('test.xlsx');
+
+    // Simulate worker response
+    simulateWorkerMessage({ type: 'RESULT', data: mockParsedData });
+
+    const result = await promise;
+    expect(result.estudiantes).toHaveLength(1);
+    expect(result.availableGroups).toContain('10A');
+    expect(result.diagnosticReport.isValid).toBe(true);
+  });
+
+  it('rejects when worker sends ERROR', async () => {
+    const file = new File(['dummy'], 'bad.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    const promise = parseFileInWorker(file);
+    await flushMicrotasks();
+
+    simulateWorkerMessage({ type: 'ERROR', message: 'parse failed', stack: 'at Worker' });
+
+    await expect(promise).rejects.toThrow('parse failed');
+  });
+
+  it('calls onProgress callback with phase and message', async () => {
+    const onProgress = vi.fn();
+    const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    const promise = parseFileInWorker(file, { onProgress });
+    await flushMicrotasks();
+
+    // Simulate progress and result
+    simulateWorkerMessage({ type: 'PROGRESS', phase: 'Leyendo archivo...', message: '10%' });
+    simulateWorkerMessage({ type: 'PROGRESS', phase: 'Extrayendo estudiantes...', message: '50%' });
+    simulateWorkerMessage({ type: 'RESULT', data: mockParsedData });
+
+    await promise;
+
+    expect(onProgress).toHaveBeenCalledTimes(2);
+    expect(onProgress).toHaveBeenCalledWith('Leyendo archivo...', '10%');
+    expect(onProgress).toHaveBeenCalledWith('Extrayendo estudiantes...', '50%');
+  });
+
+  it('calls onDiagnostic callback with report', async () => {
+    const onDiagnostic = vi.fn();
+    const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    const promise = parseFileInWorker(file, { onDiagnostic });
+    await flushMicrotasks();
+
+    const report = { isValid: false, totalSheetsProcessed: 0, issues: [{ code: 'MISSING_SCHEMA' as const, severity: 'CRITICAL' as const, sheet: 'Sheet1', message: 'bad', action: 'fix' }] };
+    simulateWorkerMessage({ type: 'DIAGNOSTIC', report });
+    simulateWorkerMessage({ type: 'RESULT', data: mockParsedData });
+
+    await promise;
+
+    expect(onDiagnostic).toHaveBeenCalledTimes(1);
+    expect(onDiagnostic).toHaveBeenCalledWith(report);
+  });
+
+  it('transfers ArrayBuffer via transfer list (zero-copy)', async () => {
+    const buffer = new ArrayBuffer(16);
+    // Override arrayBuffer to return our controlled buffer
+    const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    Object.defineProperty(file, 'arrayBuffer', {
+      value: vi.fn().mockResolvedValue(buffer),
+      writable: true
+    });
+
+    const promise = parseFileInWorker(file);
+    await flushMicrotasks();
+
+    const posted = mockWorkerPostMessage.mock.calls[0];
+    // Verify transfer list includes the buffer (zero-copy intent)
+    expect(posted[1]).toEqual([buffer]);
+    // Note: buffer detaching (byteLength → 0) only happens in a real Worker;
+    // our mock postMessage does not detach, but the transfer list proves intent
+
+    simulateWorkerMessage({ type: 'RESULT', data: mockParsedData });
+    await promise;
+  });
+
+  it('rejects when Worker constructor throws (fallback)', async () => {
+    // Reset: current worker must be null for the next stub to take effect
+    terminateWorker();
+
+    const ThrowingWorker = vi.fn(function (this: unknown) {
+      throw new Error('Workers not supported');
+    }) as unknown as typeof Worker;
+    vi.stubGlobal('Worker', ThrowingWorker);
+
+    const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    await expect(parseFileInWorker(file)).rejects.toThrow('Workers not supported');
+  });
+
+  it('terminates previous worker on new upload', async () => {
+    const file1 = new File(['a'], 'first.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const file2 = new File(['b'], 'second.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    // Start first parse (no prior worker, so no terminate)
+    const promise1 = parseFileInWorker(file1);
+    await flushMicrotasks();
+    expect(mockWorkerTerminate).not.toHaveBeenCalled();
+
+    // Pre-attach the rejection assertion so the catch handler exists
+    // before terminateWorker fires the rejection
+    const rejectionAssertion = expect(promise1).rejects.toThrow('aborted');
+
+    // Start second parse — this internally calls terminateWorker(),
+    // which should abort the first parse's promise
+    const promise2 = parseFileInWorker(file2);
+    await flushMicrotasks();
+
+    await rejectionAssertion;
+
+    // Second parse should succeed
+    simulateWorkerMessage({ type: 'RESULT', data: mockParsedData });
+    await promise2;
+  });
+});

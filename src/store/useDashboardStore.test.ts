@@ -2,41 +2,46 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useDashboardStore } from './useDashboardStore';
 import * as academicLogic from '../services/academicLogic';
 import * as excelParser from '../services/excelParser';
+import * as excelWorkerClient from '../services/excelWorkerClient';
+import type { ParsedExcelData, ParseCallbacks } from '../services/excelWorkerClient';
 
+// ---------------------------------------------------------------------------
+// Mock academicLogic (used by setConfig / updateSubjectWeight — unchanged)
+// ---------------------------------------------------------------------------
 vi.mock('../services/academicLogic', () => ({
   applyAcademicLogic: vi.fn(),
-  inferSubjectWeights: vi.fn((students: any[], _areaName: string) => {
-    const uniqueGroups = Array.from(new Set(students.map(s => s.grupo)));
-    if (uniqueGroups.length > 1) {
-      // Inconsistent/mixed group call
-      return { 'MIXED': 1.0 };
-    }
-    const grupo = students[0]?.grupo;
-    if (grupo === '6A') {
-      return { 'BIOLOGIA': 0.33, 'QUIMICA': 0.33, 'FISICA': 0.34 };
-    }
-    if (grupo === '10A') {
-      return { 'CIENCIAS_POLITICAS': 0.5, 'ECONOMIA': 0.5 };
-    }
-    return { 'DEFAULT': 1.0 };
-  })
+  inferSubjectWeights: vi.fn()
 }));
 
+// ---------------------------------------------------------------------------
+// Mock excelParser.flattenRows (still used by setConfig / updateSubjectWeight)
+// ---------------------------------------------------------------------------
 vi.mock('../services/excelParser', () => ({
-  parseHeaders: vi.fn(),
-  extractStudents: vi.fn(),
-  parseWorkbook: vi.fn(),
-  validateWorkbook: vi.fn(() => ({
-    isValid: true,
-    totalSheetsProcessed: 1,
-    issues: []
-  })),
-  getColumnLetter: vi.fn((colIndex: number) => String.fromCharCode(65 + colIndex)),
   flattenRows: vi.fn(() => ({
     rowsArea: [{ area: 'AREA_1', promActual: 10, estado: { text: 'Ganado', color: 'green' } }],
     rowsAsignatura: []
   }))
 }));
+
+// ---------------------------------------------------------------------------
+// Mock excelWorkerClient (used by processFile)
+// ---------------------------------------------------------------------------
+vi.mock('../services/excelWorkerClient', () => ({
+  parseFileInWorker: vi.fn(),
+  terminateWorker: vi.fn()
+}));
+
+// ---------------------------------------------------------------------------
+// Test data
+// ---------------------------------------------------------------------------
+const mockParsedResult: ParsedExcelData = {
+  estudiantes: [{ id: '1', name: 'Alice', CURSO: 'test', grupo: '10A', areas: {} }],
+  rowsArea: [{ id: '1_AREA', CURSO: 'test', estudiante: 'Alice', area: 'CIENCIAS', grupo: '10A', defP1: 4.0, defP2: 3.5, defP3: null, promActual: 3.7, p4Min: 2.1, estado: { text: 'Recuperable', color: 'blue' }, CURSO_NORM: 'TEST', AREA_NORM: 'CIENCIAS', EST_NORM: 'ALICE' }],
+  rowsAsignatura: [],
+  subjectWeights: { '10A': { 'CIENCIAS': { 'BIOLOGIA': 0.5, 'QUIMICA': 0.5 } } },
+  availableGroups: ['Todos', '10A'],
+  diagnosticReport: { isValid: true, totalSheetsProcessed: 1, issues: [] }
+};
 
 describe('useDashboardStore', () => {
   beforeEach(() => {
@@ -48,11 +53,16 @@ describe('useDashboardStore', () => {
       error: null,
       config: { P1: 33.3, P2: 33.3, P3: 33.4 },
       selectedGrupo: 'Todos',
-      availableGroups: []
+      availableGroups: [],
+      parsingProgress: null,
+      diagnosticReport: null
     });
     vi.clearAllMocks();
   });
 
+  // -----------------------------------------------------------------------
+  // Existing behavior — setConfig, updateSubjectWeight, setGrupo, viewMode
+  // -----------------------------------------------------------------------
   it('setConfig should only update config if no students', () => {
     const newConfig = { P1: 40, P2: 30, P3: 30 };
     useDashboardStore.getState().setConfig(newConfig);
@@ -62,7 +72,6 @@ describe('useDashboardStore', () => {
   });
 
   it('setConfig should trigger recalculation if students exist', () => {
-    // Inject mock students
     useDashboardStore.setState({
       estudiantes: [{ id: '1', nombre: 'Test', notas: [] } as any]
     });
@@ -96,7 +105,6 @@ describe('useDashboardStore', () => {
       }
     });
 
-    // Update existing
     useDashboardStore.getState().updateSubjectWeight('6A', 'Matemáticas', 'Álgebra', 0.5);
     expect(useDashboardStore.getState().subjectWeights['6A']['Matemáticas']['Álgebra']).toBe(0.5);
   });
@@ -105,51 +113,6 @@ describe('useDashboardStore', () => {
     expect(useDashboardStore.getState().selectedGrupo).toBe('Todos');
     useDashboardStore.getState().setGrupo('A');
     expect(useDashboardStore.getState().selectedGrupo).toBe('A');
-  });
-
-  it('processFile extracts unique groups and sets selectedGrupo to Todos', async () => {
-    // We mock excelParser.parseWorkbook to return students with groups
-    vi.spyOn(excelParser, 'parseWorkbook' as any).mockReturnValue([
-      { id: '1', nombre: 'Test1', grupo: 'A', areas: {} },
-      { id: '2', nombre: 'Test2', grupo: 'B', areas: {} },
-      { id: '3', nombre: 'Test3', grupo: 'A', areas: {} },
-    ]);
-    
-    // Create a dummy file
-    const file = new File([''], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
-    // Set a different initial state to ensure it resets
-    useDashboardStore.getState().setGrupo('X');
-    
-    await useDashboardStore.getState().processFile(file);
-    
-    const state = useDashboardStore.getState();
-    expect(state.availableGroups).toEqual(['Todos', 'A', 'B']);
-    expect(state.selectedGrupo).toBe('Todos');
-  });
-
-  it('processFile infers weights isolated per group', async () => {
-    // Mock excelParser.parseWorkbook to return students from different groups with CIENCIAS area
-    vi.spyOn(excelParser, 'parseWorkbook' as any).mockReturnValue([
-      { id: '1', nombre: 'Juan', grupo: '6A', areas: { 'CIENCIAS': {} } },
-      { id: '2', nombre: 'Pedro', grupo: '10A', areas: { 'CIENCIAS': {} } }
-    ]);
-
-    const file = new File([''], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-
-    await useDashboardStore.getState().processFile(file);
-
-    const state = useDashboardStore.getState();
-    
-    // Weight inference should run per group, keeping weights isolated:
-    expect(state.subjectWeights).toEqual({
-      '6A': {
-        'CIENCIAS': { 'BIOLOGIA': 0.33, 'QUIMICA': 0.33, 'FISICA': 0.34 }
-      },
-      '10A': {
-        'CIENCIAS': { 'CIENCIAS_POLITICAS': 0.5, 'ECONOMIA': 0.5 }
-      }
-    });
   });
 
   it('provides viewMode with default "area" and updates via setViewMode', () => {
@@ -163,64 +126,127 @@ describe('useDashboardStore', () => {
     expect(useDashboardStore.getState().viewMode).toBe('area');
   });
 
-  describe('processFile with diagnostics', () => {
-    it('blocks processing and sets error when validateWorkbook returns critical issues', async () => {
-      // Mock validateWorkbook to return a CRITICAL issue
-      vi.spyOn(excelParser, 'validateWorkbook').mockReturnValue({
-        isValid: false,
-        totalSheetsProcessed: 1,
-        issues: [
-          {
-            code: 'MISSING_SCHEMA',
-            severity: 'CRITICAL',
-            sheet: '6A',
-            message: 'Esquema de cabecera inválido en 6A',
-            action: 'Corrija los encabezados'
-          }
-        ]
-      });
+  // -----------------------------------------------------------------------
+  // processFile — worker client integration
+  // -----------------------------------------------------------------------
+  describe('processFile (worker integration)', () => {
+    let parseFileMock: ReturnType<typeof vi.fn>;
 
-      const file = new File([''], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      await useDashboardStore.getState().processFile(file);
-
-      const state = useDashboardStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBe('Esquema de cabecera inválido en 6A');
-      expect(state.diagnosticReport?.isValid).toBe(false);
-      expect(state.estudiantes).toEqual([]); // Did not parse students
+    beforeEach(() => {
+      parseFileMock = excelWorkerClient.parseFileInWorker as ReturnType<typeof vi.fn>;
+      parseFileMock.mockReset();
     });
 
-    it('continues processing and preserves report when validateWorkbook returns only warnings/suggestions', async () => {
-      // Mock validateWorkbook to return non-critical issues (WARNING)
-      vi.spyOn(excelParser, 'validateWorkbook').mockReturnValue({
-        isValid: true,
-        totalSheetsProcessed: 1,
-        issues: [
-          {
-            code: 'EMPTY_GRADE',
-            severity: 'WARNING',
-            sheet: '6A',
-            row: 4,
-            col: 'C',
-            message: 'Calificación vacía',
-            action: 'Ingrese nota'
-          }
-        ]
+    it('delegates to excelWorkerClient.parseFileInWorker', async () => {
+      parseFileMock.mockResolvedValue(mockParsedResult);
+
+      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      await useDashboardStore.getState().processFile(file);
+
+      expect(parseFileMock).toHaveBeenCalledTimes(1);
+      expect(parseFileMock).toHaveBeenCalledWith(file, expect.objectContaining({
+        onProgress: expect.any(Function),
+        onDiagnostic: expect.any(Function)
+      }));
+    });
+
+    it('sets loading=true and parsingProgress at start', () => {
+      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+      // Call processFile but don't await — check intermediate state
+      useDashboardStore.getState().processFile(file);
+
+      expect(useDashboardStore.getState().loading).toBe(true);
+      expect(useDashboardStore.getState().parsingProgress).toBe('Leyendo archivo...');
+    });
+
+    it('updates parsingProgress from onProgress callback', async () => {
+      // Capture the callbacks
+      parseFileMock.mockImplementation(async (_file: File, callbacks: ParseCallbacks) => {
+        callbacks?.onProgress?.('Leyendo archivo...', '10%');
+        callbacks?.onProgress?.('Extrayendo estudiantes...', '50%');
+        callbacks?.onProgress?.('Calculando pesos...', '75%');
+        return mockParsedResult;
       });
 
-      vi.spyOn(excelParser, 'parseWorkbook').mockReturnValue([
-        { id: '1', name: 'Alice', CURSO: 'test', grupo: '6A', areas: {} }
-      ]);
+      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      await useDashboardStore.getState().processFile(file);
 
-      const file = new File([''], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      // After processFile completes, parsingProgress should be null
+      expect(useDashboardStore.getState().parsingProgress).toBeNull();
+    });
+
+    it('updates diagnosticReport from onDiagnostic callback', async () => {
+      const warnReport = {
+        isValid: true,
+        totalSheetsProcessed: 1,
+        issues: [{ code: 'EMPTY_GRADE' as const, severity: 'WARNING' as const, sheet: 'Sheet1', col: 'C', row: 5, message: 'empty', action: 'fix' }]
+      };
+
+      parseFileMock.mockImplementation(async (_file: File, callbacks: ParseCallbacks) => {
+        callbacks?.onDiagnostic?.(warnReport);
+        // RESULT carries the same diagnosticReport
+        return { ...mockParsedResult, diagnosticReport: warnReport };
+      });
+
+      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      await useDashboardStore.getState().processFile(file);
+
+      expect(useDashboardStore.getState().diagnosticReport?.isValid).toBe(true);
+      expect(useDashboardStore.getState().diagnosticReport?.issues[0].code).toBe('EMPTY_GRADE');
+    });
+
+    it('populates all state fields on successful RESULT', async () => {
+      parseFileMock.mockResolvedValue(mockParsedResult);
+
+      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      useDashboardStore.getState().setGrupo('X');
+
       await useDashboardStore.getState().processFile(file);
 
       const state = useDashboardStore.getState();
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
-      expect(state.diagnosticReport?.isValid).toBe(true);
-      expect(state.diagnosticReport?.issues[0].code).toBe('EMPTY_GRADE');
-      expect(state.estudiantes).toHaveLength(1); // Continued parsing
+      expect(state.estudiantes).toHaveLength(1);
+      expect(state.rowsArea).toHaveLength(1);
+      expect(state.availableGroups).toEqual(['Todos', '10A']);
+      expect(state.selectedGrupo).toBe('Todos');
+      expect(state.subjectWeights).toEqual(mockParsedResult.subjectWeights);
+      expect(state.parsingProgress).toBeNull();
+    });
+
+    it('sets error and loading=false on worker rejection', async () => {
+      parseFileMock.mockRejectedValue(new Error('parse failed'));
+
+      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      await useDashboardStore.getState().processFile(file);
+
+      const state = useDashboardStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBe('parse failed');
+      expect(state.parsingProgress).toBeNull();
+    });
+
+    it('handles worker ERROR with diagnostic attached', async () => {
+      const criticalDiag = {
+        isValid: false,
+        totalSheetsProcessed: 0,
+        issues: [{ code: 'MISSING_SCHEMA' as const, severity: 'CRITICAL' as const, sheet: 'Global', message: 'No hay hojas válidas', action: 'fix' }]
+      };
+
+      parseFileMock.mockImplementation(async (_file: File, callbacks: ParseCallbacks) => {
+        callbacks?.onDiagnostic?.(criticalDiag);
+        throw new Error('No hay hojas válidas');
+      });
+
+      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      await useDashboardStore.getState().processFile(file);
+
+      const state = useDashboardStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBe('No hay hojas válidas');
+      expect(state.diagnosticReport?.isValid).toBe(false);
+      expect(state.estudiantes).toEqual([]);
     });
   });
 });

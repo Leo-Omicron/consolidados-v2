@@ -40,7 +40,8 @@ describe('FileUploadArea', () => {
         processFile: processFileMock,
         setConfig: setConfigMock,
         loading: true,
-        error: null
+        error: null,
+        parsingProgress: null
       };
       return selector(state);
     });
@@ -48,6 +49,42 @@ describe('FileUploadArea', () => {
     render(<FileUploadArea />);
     expect(screen.getByText('Procesando...')).toBeDefined();
     expect((screen.getByText('Procesando...').closest('button') as HTMLButtonElement)?.disabled).toBe(true);
+  });
+
+  it('shows parsing progress text from store when available', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        processFile: processFileMock,
+        setConfig: setConfigMock,
+        loading: true,
+        error: null,
+        parsingProgress: 'Extrayendo estudiantes...'
+      };
+      return selector(state);
+    });
+
+    render(<FileUploadArea />);
+    expect(screen.getByText('Extrayendo estudiantes...')).toBeDefined();
+    // "Procesando..." should NOT be rendered when progress text is available
+    expect(screen.queryByText('Procesando...')).toBeNull();
+    // Button should still be disabled during loading
+    expect((screen.getByText('Extrayendo estudiantes...').closest('button') as HTMLButtonElement)?.disabled).toBe(true);
+  });
+
+  it('falls back to "Procesando..." when loading but no parsingProgress', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        processFile: processFileMock,
+        setConfig: setConfigMock,
+        loading: true,
+        error: null,
+        parsingProgress: null
+      };
+      return selector(state);
+    });
+
+    render(<FileUploadArea />);
+    expect(screen.getByText('Procesando...')).toBeDefined();
   });
 
   it('shows error state', () => {

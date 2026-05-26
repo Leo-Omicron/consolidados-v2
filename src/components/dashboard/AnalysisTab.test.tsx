@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { AnalysisTab } from './AnalysisTab';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
 import { useUIStore } from '../../store/useUIStore';
+import { useSimulationStore } from '../../store/useSimulationStore';
 
 vi.mock('../../store/useDashboardStore', () => ({
   useDashboardStore: vi.fn()
@@ -12,6 +13,21 @@ vi.mock('../../store/useDashboardStore', () => ({
 vi.mock('../../hooks/useAnalysisPipeline', () => ({
   useAnalysisPipeline: vi.fn()
 }));
+
+const mockEstudiantes: any[] = [
+  {
+    id: 'juan',
+    name: 'Juan',
+    CURSO: 'Curso Test',
+    grupo: 'Todos',
+    areas: {
+      'Ciencias Sociales': {
+        asignaturas: {},
+        DEF: { P1: 3.5, P2: 3.0, P3: null }
+      }
+    }
+  }
+];
 
 describe('AnalysisTab', () => {
   beforeEach(() => {
@@ -26,6 +42,7 @@ describe('AnalysisTab', () => {
 
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
+        estudiantes: mockEstudiantes,
         rowsArea: [],
         rowsAsignatura: [],
         viewMode: 'area',
@@ -583,5 +600,185 @@ describe('AnalysisTab', () => {
 
     expect(screen.getByRole('table')).toBeDefined();
     expect(screen.getByRole('status', { name: 'Estado: Ganado' })).toBeDefined();
+  });
+
+  it('toggles editing mode on click and allows inputting a simulated grade', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        estudiantes: mockEstudiantes,
+        rowsArea: [{ estudiante: 'Juan', area: 'Ciencias Sociales', estado: { text: 'En riesgo', color: 'yellow' } }],
+        rowsAsignatura: [],
+        viewMode: 'area',
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos'],
+        setGrupo: vi.fn(),
+        subjectWeights: {}
+      };
+      return selector(state);
+    });
+
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'Juan',
+        rows: [{
+          id: 'juan_sociales',
+          area: 'Ciencias Sociales',
+          defP1: 3.5,
+          defP2: 3.0,
+          defP3: null,
+          promActual: 3.25,
+          p4Min: 2.5,
+          tendencia: 'flat',
+          estado: { text: 'En riesgo', color: 'yellow' }
+        }],
+        aggregates: { promActual: 3.25 }
+      }],
+      kpis: { promedioGeneral: 3.25, statusDistribution: {} }
+    });
+
+    render(<AnalysisTab />);
+    
+    // Expand the student row
+    fireEvent.click(screen.getByText('Juan'));
+    
+    // Find the cell displaying 3.50
+    const cell = screen.getByText('3.50');
+    expect(cell).toBeDefined();
+    
+    // Click it to start editing
+    fireEvent.click(cell);
+    
+    // The input should appear with value "3.5"
+    const input = screen.getByDisplayValue('3.5') as HTMLInputElement;
+    expect(input).toBeDefined();
+    
+    // Change value
+    fireEvent.change(input, { target: { value: '4.8' } });
+    
+    // Blur to save
+    fireEvent.blur(input);
+    
+    // After blurring, the input should disappear
+    expect(screen.queryByDisplayValue('4.8')).toBeNull();
+  });
+
+  it('renders simulation banner and student restoration button when simulations are active', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        estudiantes: mockEstudiantes,
+        rowsArea: [{ estudiante: 'Juan', area: 'Ciencias Sociales', estado: { text: 'En riesgo', color: 'yellow' } }],
+        rowsAsignatura: [],
+        viewMode: 'area',
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos'],
+        setGrupo: vi.fn(),
+        subjectWeights: {}
+      };
+      return selector(state);
+    });
+
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'Juan',
+        rows: [{
+          id: 'juan_sociales',
+          area: 'Ciencias Sociales',
+          defP1: 3.5,
+          defP2: 3.0,
+          defP3: null,
+          promActual: 3.25,
+          p4Min: 2.5,
+          tendencia: 'flat',
+          estado: { text: 'En riesgo', color: 'yellow' }
+        }],
+        aggregates: { promActual: 3.25 }
+      }],
+      kpis: { promedioGeneral: 3.25, statusDistribution: {} }
+    });
+
+    render(<AnalysisTab />);
+
+    act(() => {
+      useSimulationStore.setState({
+        activeSimulations: {
+          'juan_sociales': { P1: 4.8 }
+        }
+      });
+    });
+
+    // The simulation banner should be visible
+    expect(screen.getByText(/Modo de Simulación Activo/)).toBeDefined();
+    
+    // Expand the student row
+    fireEvent.click(screen.getByText('Juan'));
+    
+    // The "Restaurar" button for the student should be visible
+    expect(screen.getByRole('button', { name: 'Restaurar' })).toBeDefined();
+
+    // Click "Restaurar" to clear simulations for this student
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar' }));
+    
+    // Check that activeSimulations has been cleared
+    expect(useSimulationStore.getState().activeSimulations).toEqual({});
+    
+    // Cleanup store
+    useSimulationStore.setState({ activeSimulations: {} });
+  });
+
+  it('clears all simulations when clicking the global reset button in the banner', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        estudiantes: mockEstudiantes,
+        rowsArea: [{ estudiante: 'Juan', area: 'Ciencias Sociales', estado: { text: 'En riesgo', color: 'yellow' } }],
+        rowsAsignatura: [],
+        viewMode: 'area',
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos'],
+        setGrupo: vi.fn(),
+        subjectWeights: {}
+      };
+      return selector(state);
+    });
+
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'Juan',
+        rows: [{
+          id: 'juan_sociales',
+          area: 'Ciencias Sociales',
+          defP1: 3.5,
+          defP2: 3.0,
+          defP3: null,
+          promActual: 3.25,
+          p4Min: 2.5,
+          tendencia: 'flat',
+          estado: { text: 'En riesgo', color: 'yellow' }
+        }],
+        aggregates: { promActual: 3.25 }
+      }],
+      kpis: { promedioGeneral: 3.25, statusDistribution: {} }
+    });
+
+    render(<AnalysisTab />);
+
+    act(() => {
+      useSimulationStore.setState({
+        activeSimulations: {
+          'juan_sociales': { P1: 4.8 }
+        }
+      });
+    });
+
+    // Click the "Restaurar todo" button in the banner
+    const resetAllBtn = screen.getByRole('button', { name: 'Restaurar datos reales' });
+    expect(resetAllBtn).toBeDefined();
+    
+    fireEvent.click(resetAllBtn);
+
+    // Check that activeSimulations is empty
+    expect(useSimulationStore.getState().activeSimulations).toEqual({});
   });
 });

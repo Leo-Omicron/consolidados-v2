@@ -1,0 +1,124 @@
+import { describe, it, expect } from 'vitest';
+import type { Estudiante, PeriodConfig, SubjectWeightConfig, PeriodoNotas } from '../domain/types';
+import { getSimulatedRows } from './simulationLogic';
+
+// Datos de prueba simulados
+const mockConfig: PeriodConfig = { P1: 25, P2: 25, P3: 25, P4: 25 };
+
+const mockSubjectWeights: SubjectWeightConfig = {
+  '10A': {
+    'CIENCIAS': {
+      'BIOLOGIA': 0.6,
+      'QUIMICA': 0.4,
+    },
+  },
+};
+
+const mockStudents: Estudiante[] = [
+  {
+    id: 'student1',
+    name: 'Carlos Perez',
+    CURSO: '10',
+    grupo: '10A',
+    areas: {
+      'CIENCIAS': {
+        DEF: { P1: 3.0, P2: 3.0, P3: 3.0, P4: null },
+        areaStats: {
+          promedioActual: 3.0,
+          p4Min: 3.0,
+          estado: { text: 'Recuperable', color: 'blue' },
+        },
+        asignaturas: {
+          'BIOLOGIA': {
+            P1: 3.0,
+            P2: 3.0,
+            P3: 3.0,
+            P4: null,
+            promedioActual: 3.0,
+            p4Min: 3.0,
+            estado: { text: 'Recuperable', color: 'blue' },
+          },
+          'QUIMICA': {
+            P1: 3.0,
+            P2: 3.0,
+            P3: 3.0,
+            P4: null,
+            promedioActual: 3.0,
+            p4Min: 3.0,
+            estado: { text: 'Recuperable', color: 'blue' },
+          },
+        },
+      },
+    },
+  },
+];
+
+describe('simulationLogic - getSimulatedRows', () => {
+  it('returns null if there are no active simulations', () => {
+    const activeSimulations: Record<string, Partial<PeriodoNotas>> = {};
+    const result = getSimulatedRows(mockStudents, activeSimulations, mockConfig, mockSubjectWeights);
+    expect(result).toBeNull();
+  });
+
+  it('updates a subject grade and recalculates its stats', () => {
+    const activeSimulations: Record<string, Partial<PeriodoNotas>> = {
+      'student1_CIENCIAS_BIOLOGIA': { P3: 5.0 }, // Subimos P3 de 3.0 a 5.0
+    };
+
+    const result = getSimulatedRows(mockStudents, activeSimulations, mockConfig, mockSubjectWeights);
+    expect(result).not.toBeNull();
+
+    if (result) {
+      const bioRow = result.rowsAsignatura.find(r => r.id === 'student1_CIENCIAS_BIOLOGIA');
+      expect(bioRow).toBeDefined();
+      expect(bioRow?.p3).toBe(5.0);
+      // Promedio de BIOLOGIA debe cambiar: (3.0*25 + 3.0*25 + 5.0*25) / 75 = 3.66 -> redondeado a 3.7
+      expect(bioRow?.promActual).toBe(3.7);
+      // p4Min para BIOLOGIA: (3.0 * 100 - (3.0*25 + 3.0*25 + 5.0*25)) / 25 = (300 - 275) / 25 = 1.0
+      expect(bioRow?.p4Min).toBe(1.0);
+    }
+  });
+
+  it('propagates subject simulation to the parent area and recalculates area stats', () => {
+    const activeSimulations: Record<string, Partial<PeriodoNotas>> = {
+      // BIOLOGIA (peso 0.6) sube de 3.0 a 5.0. QUIMICA (peso 0.4) sigue en 3.0.
+      // DEF P3 del área de CIENCIAS = 5.0 * 0.6 + 3.0 * 0.4 = 3.0 + 1.2 = 4.2
+      'student1_CIENCIAS_BIOLOGIA': { P3: 5.0 },
+    };
+
+    const result = getSimulatedRows(mockStudents, activeSimulations, mockConfig, mockSubjectWeights);
+    expect(result).not.toBeNull();
+
+    if (result) {
+      const areaRow = result.rowsArea.find(r => r.id === 'student1_CIENCIAS');
+      expect(areaRow).toBeDefined();
+      expect(areaRow?.defP3).toBe(4.2);
+      // Promedio del área: (3.0*25 + 3.0*25 + 4.2*25) / 75 = 3.4
+      expect(areaRow?.promActual).toBe(3.4);
+      // p4Min del área: (3.0 * 100 - (3.0*25 + 3.0*25 + 4.2*25)) / 25 = (300 - 255) / 25 = 1.8
+      expect(areaRow?.p4Min).toBe(1.8);
+    }
+  });
+
+  it('allows direct area grade simulation overriding the calculated DEF', () => {
+    const activeSimulations: Record<string, Partial<PeriodoNotas>> = {
+      // Simulamos la nota DEF del área directamente en P3 a 1.0 (reprobando el área)
+      'student1_CIENCIAS': { P3: 1.0 },
+    };
+
+    const result = getSimulatedRows(mockStudents, activeSimulations, mockConfig, mockSubjectWeights);
+    expect(result).not.toBeNull();
+
+    if (result) {
+      const areaRow = result.rowsArea.find(r => r.id === 'student1_CIENCIAS');
+      expect(areaRow).toBeDefined();
+      expect(areaRow?.defP3).toBe(1.0);
+      // Promedio del área: (3.0*25 + 3.0*25 + 1.0*25) / 75 = 2.33 -> 2.3
+      expect(areaRow?.promActual).toBe(2.3);
+      // p4Min del área: (3.0 * 100 - (3.0*25 + 3.0*25 + 1.0*25)) / 25 = (300 - 175) / 25 = 5.0
+      expect(areaRow?.p4Min).toBe(5.0);
+      // Estado debe ser En riesgo o similar (requiere 5.0)
+      expect(areaRow?.estado.text).toBe('En riesgo');
+    }
+  });
+});

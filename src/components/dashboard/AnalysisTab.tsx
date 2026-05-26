@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
 import type { Trend, SubjectWeightConfig } from '../../domain/types';
 import { useUIStore } from '../../store/useUIStore';
+import { useSimulationStore } from '../../store/useSimulationStore';
+import { getSimulatedRows } from '../../services/simulationLogic';
 
 interface StatusBadgeProps {
   text: string;
@@ -39,7 +41,102 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ text, color, isMini = 
   );
 };
 
+const EditableGradeCell: React.FC<{
+  rowId: string;
+  period: 'P1' | 'P2' | 'P3' | 'P4';
+  originalGrade: number | null | undefined;
+  simulatedGrade: number | null | undefined;
+  onSave: (rowId: string, period: 'P1' | 'P2' | 'P3' | 'P4', value: number | null) => void;
+}> = ({ rowId, period, originalGrade, simulatedGrade, onSave }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [value, setValue] = useState<string>(
+    simulatedGrade !== undefined && simulatedGrade !== null
+      ? simulatedGrade.toString()
+      : originalGrade !== undefined && originalGrade !== null
+      ? originalGrade.toString()
+      : ''
+  );
+
+  const [prevSimulated, setPrevSimulated] = useState(simulatedGrade);
+  const [prevOriginal, setPrevOriginal] = useState(originalGrade);
+
+  if (simulatedGrade !== prevSimulated || originalGrade !== prevOriginal) {
+    setPrevSimulated(simulatedGrade);
+    setPrevOriginal(originalGrade);
+    setValue(
+      simulatedGrade !== undefined && simulatedGrade !== null
+        ? simulatedGrade.toString()
+        : originalGrade !== undefined && originalGrade !== null
+        ? originalGrade.toString()
+        : ''
+    );
+  }
+
+  const isSimulated = simulatedGrade !== undefined && simulatedGrade !== null;
+  const displayGrade = isSimulated ? simulatedGrade : originalGrade;
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    if (value.trim() === '') {
+      onSave(rowId, period, null);
+    } else {
+      const parsed = parseFloat(value);
+      if (!isNaN(parsed)) {
+        onSave(rowId, period, parsed);
+      } else {
+        setValue(originalGrade?.toString() ?? '');
+      }
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      setValue(
+        simulatedGrade !== undefined && simulatedGrade !== null
+          ? simulatedGrade.toString()
+          : originalGrade !== undefined && originalGrade !== null
+          ? originalGrade.toString()
+          : ''
+      );
+      setIsEditing(false);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        min="0"
+        max="5"
+        step="0.1"
+        className="w-16 px-1 py-0.5 text-center border rounded border-amber-500 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50 font-bold focus:outline-none focus:ring-1 focus:ring-amber-500"
+        autoFocus
+      />
+    );
+  }
+
+  return (
+    <span
+      onClick={() => setIsEditing(true)}
+      className={`px-1.5 py-0.5 rounded font-medium cursor-pointer transition-all select-none ${
+        isSimulated
+          ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-bold shadow-sm'
+          : 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
+      }`}
+    >
+      {displayGrade !== null && displayGrade !== undefined ? displayGrade.toFixed(2) : '-'}
+    </span>
+  );
+};
+
 export const AnalysisTab: React.FC = () => {
+  const estudiantes = useDashboardStore(state => state.estudiantes);
   const rowsArea = useDashboardStore(state => state.rowsArea);
   const rowsAsignatura = useDashboardStore(state => state.rowsAsignatura);
   const viewMode = useDashboardStore(state => state.viewMode);
@@ -55,12 +152,29 @@ export const AnalysisTab: React.FC = () => {
   const sortConfig = useUIStore(state => state.analysisSortConfig);
   const setSortConfig = useUIStore(state => state.setAnalysisSortConfig);
   const [isWeightsExpanded, setIsWeightsExpanded] = useState(false);
+
+  const activeSimulations = useSimulationStore(state => state.activeSimulations);
+  const setSimulation = useSimulationStore(state => state.setSimulation);
+  const clearSimulation = useSimulationStore(state => state.clearSimulation);
+  const clearAllSimulations = useSimulationStore(state => state.clearAllSimulations);
+
+  // Limpiar simulaciones cuando cambie el archivo cargado
+  useEffect(() => {
+    clearAllSimulations();
+  }, [estudiantes, clearAllSimulations]);
   
   const hasP4 = config.P4 !== undefined && config.P4 > 0;
   
+  const simulatedData = useMemo(() => {
+    return getSimulatedRows(estudiantes, activeSimulations, config, subjectWeights);
+  }, [estudiantes, activeSimulations, config, subjectWeights]);
+
+  const currentRowsArea = simulatedData ? simulatedData.rowsArea : rowsArea;
+  const currentRowsAsignatura = simulatedData ? simulatedData.rowsAsignatura : rowsAsignatura;
+
   const activeRows = useMemo(() => {
-    return (viewMode === 'area' ? rowsArea : rowsAsignatura) || [];
-  }, [viewMode, rowsArea, rowsAsignatura]);
+    return (viewMode === 'area' ? currentRowsArea : currentRowsAsignatura) || [];
+  }, [viewMode, currentRowsArea, currentRowsAsignatura]);
 
   const weightsToDisplay = useMemo(() => {
     const firstVal = Object.values(subjectWeights)[0];
@@ -120,6 +234,24 @@ export const AnalysisTab: React.FC = () => {
   return (
     <div className="p-6 app-text">
       <h2 className="text-xl font-bold mb-6 app-text">Análisis Avanzado</h2>
+
+      {Object.keys(activeSimulations).length > 0 && (
+        <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900/50 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
+          <div className="flex items-center gap-3 flex-1">
+            <span className="text-xl">🧪</span>
+            <div>
+              <h4 className="font-bold text-amber-950 dark:text-amber-200 text-sm">Modo de Simulación Activo</h4>
+              <p className="text-xs text-amber-800 dark:text-amber-400">Estás viendo promedios e indicadores académicos hipotéticos. Los datos reales no se han alterado.</p>
+            </div>
+          </div>
+          <button
+            onClick={clearAllSimulations}
+            className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-amber-300 dark:border-amber-800 bg-white dark:bg-neutral-900 hover:bg-amber-100 dark:hover:bg-amber-950 text-amber-900 dark:text-amber-200 transition-premium cursor-pointer shadow-sm app-focus"
+          >
+            Restaurar datos reales
+          </button>
+        </div>
+      )}
 
       {/* View Mode Toggle */}
       <div className="flex mb-6 space-x-2">
@@ -277,6 +409,7 @@ export const AnalysisTab: React.FC = () => {
           )}
           {groupedAndSorted.map(group => {
             const isExpanded = expandedGroups[group.estudiante];
+            const hasStudentSimulations = group.rows.some(row => activeSimulations[row.id] !== undefined);
             
             return (
               <div key={group.estudiante} className="flex flex-col">
@@ -293,6 +426,18 @@ export const AnalysisTab: React.FC = () => {
                       <span className="ml-2 app-status-red border text-xs px-2 py-0.5 rounded-full font-bold">
                         Año Reprobado ({group.failedAreasCount} {group.failedAreasCount === 1 ? 'Área' : 'Áreas'})
                       </span>
+                    )}
+                    {hasStudentSimulations && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          group.rows.forEach(row => clearSimulation(row.id));
+                        }}
+                        className="ml-3 px-2 py-0.5 text-[10px] font-bold uppercase rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors cursor-pointer shadow-sm app-focus"
+                        title="Restaurar notas reales de este estudiante"
+                      >
+                        Restaurar
+                      </button>
                     )}
                   </div>
                   <div className="flex-1 text-center text-sm app-text-muted">
@@ -335,6 +480,7 @@ export const AnalysisTab: React.FC = () => {
                       </thead>
                       <tbody className="divide-y app-divide">
                         {group.rows.map((row: {
+                          id: string;
                           area: string;
                           asignatura?: string;
                           defP1?: number | null;
@@ -372,11 +518,43 @@ export const AnalysisTab: React.FC = () => {
                                   )}
                                   {viewMode === 'area' ? row.area : row.asignatura}
                                 </td>
-                                <td className="py-2 text-center app-text-muted">{(viewMode === 'area' ? row.defP1 : row.p1)?.toFixed(2) ?? '-'}</td>
-                                <td className="py-2 text-center app-text-muted">{(viewMode === 'area' ? row.defP2 : row.p2)?.toFixed(2) ?? '-'}</td>
-                                <td className="py-2 text-center app-text-muted">{(viewMode === 'area' ? row.defP3 : row.p3)?.toFixed(2) ?? '-'}</td>
+                                <td className="py-2 text-center">
+                                  <EditableGradeCell
+                                    rowId={row.id}
+                                    period="P1"
+                                    originalGrade={viewMode === 'area' ? row.defP1 : row.p1}
+                                    simulatedGrade={activeSimulations[row.id]?.P1}
+                                    onSave={setSimulation}
+                                  />
+                                </td>
+                                <td className="py-2 text-center">
+                                  <EditableGradeCell
+                                    rowId={row.id}
+                                    period="P2"
+                                    originalGrade={viewMode === 'area' ? row.defP2 : row.p2}
+                                    simulatedGrade={activeSimulations[row.id]?.P2}
+                                    onSave={setSimulation}
+                                  />
+                                </td>
+                                <td className="py-2 text-center">
+                                  <EditableGradeCell
+                                    rowId={row.id}
+                                    period="P3"
+                                    originalGrade={viewMode === 'area' ? row.defP3 : row.p3}
+                                    simulatedGrade={activeSimulations[row.id]?.P3}
+                                    onSave={setSimulation}
+                                  />
+                                </td>
                                 {hasP4 && (
-                                  <td className="py-2 text-center app-text-muted">{(viewMode === 'area' ? row.defP4 : row.p4)?.toFixed(2) ?? '-'}</td>
+                                  <td className="py-2 text-center">
+                                    <EditableGradeCell
+                                      rowId={row.id}
+                                      period="P4"
+                                      originalGrade={viewMode === 'area' ? row.defP4 : row.p4}
+                                      simulatedGrade={activeSimulations[row.id]?.P4}
+                                      onSave={setSimulation}
+                                    />
+                                  </td>
                                 )}
                                 <td className="py-2 text-center text-xl" title={`Tendencia: ${row.tendencia}`}>
                                   {row.tendencia === 'up' ? '↗️' : row.tendencia === 'down' ? '↘️' : row.tendencia === 'flat' ? '➡️' : '-'}
@@ -434,10 +612,44 @@ export const AnalysisTab: React.FC = () => {
                                             return (
                                               <tr key={sIdx} className="app-surface-hover">
                                                 <td className="p-2 pl-4 app-text font-semibold">{sub.asignatura}</td>
-                                                <td className="p-2 text-center app-text-muted">{sub.p1?.toFixed(2) ?? '-'}</td>
-                                                <td className="p-2 text-center app-text-muted">{sub.p2?.toFixed(2) ?? '-'}</td>
-                                                <td className="p-2 text-center app-text-muted">{sub.p3?.toFixed(2) ?? '-'}</td>
-                                                {hasP4 && <td className="p-2 text-center app-text-muted">{sub.p4?.toFixed(2) ?? '-'}</td>}
+                                                <td className="p-2 text-center">
+                                                  <EditableGradeCell
+                                                    rowId={sub.id}
+                                                    period="P1"
+                                                    originalGrade={sub.p1}
+                                                    simulatedGrade={activeSimulations[sub.id]?.P1}
+                                                    onSave={setSimulation}
+                                                  />
+                                                </td>
+                                                <td className="p-2 text-center">
+                                                  <EditableGradeCell
+                                                    rowId={sub.id}
+                                                    period="P2"
+                                                    originalGrade={sub.p2}
+                                                    simulatedGrade={activeSimulations[sub.id]?.P2}
+                                                    onSave={setSimulation}
+                                                  />
+                                                </td>
+                                                <td className="p-2 text-center">
+                                                  <EditableGradeCell
+                                                    rowId={sub.id}
+                                                    period="P3"
+                                                    originalGrade={sub.p3}
+                                                    simulatedGrade={activeSimulations[sub.id]?.P3}
+                                                    onSave={setSimulation}
+                                                  />
+                                                </td>
+                                                {hasP4 && (
+                                                  <td className="p-2 text-center">
+                                                    <EditableGradeCell
+                                                      rowId={sub.id}
+                                                      period="P4"
+                                                      originalGrade={sub.p4}
+                                                      simulatedGrade={activeSimulations[sub.id]?.P4}
+                                                      onSave={setSimulation}
+                                                    />
+                                                  </td>
+                                                )}
                                                 <td className="p-2 text-center text-base" title={`Tendencia: ${subTendencia}`}>
                                                   {subTendencia === 'up' ? '↗️' : subTendencia === 'down' ? '↘️' : subTendencia === 'flat' ? '➡️' : '-'}
                                                 </td>

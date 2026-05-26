@@ -29,3 +29,5 @@ dist-ssr
 *.xlsx
 inspect_excel.js
 
+.vercel
+.env*

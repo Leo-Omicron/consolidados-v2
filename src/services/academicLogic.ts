@@ -148,12 +148,32 @@ export function getEvaluatedPeriods(students: Estudiante[]) {
   return { P1: hasP1, P2: hasP2, P3: hasP3, P4: hasP4 };
 }
 
-export function applyAcademicLogic(students: Estudiante[], config: PeriodConfig, subjectWeights: SubjectWeightConfig = {}): void {
+export function applyAcademicLogic(
+  students: Estudiante[],
+  config: PeriodConfig,
+  subjectWeights: SubjectWeightConfig = {},
+  activeSimulations: Record<string, Partial<PeriodoNotas>> = {}
+): void {
   const evaluated = getEvaluatedPeriods(students);
   students.forEach(student => {
     Object.entries(student.areas).forEach(([areaName, area]) => {
       // Calculate each asignatura
-      Object.values(area.asignaturas).forEach((asig) => {
+      Object.entries(area.asignaturas).forEach(([asigName, asig]) => {
+        const asigRowId = `${student.id}_${areaName}_${asigName}`;
+        const overrides = activeSimulations[asigRowId];
+        if (overrides) {
+          (Object.keys(overrides) as Array<keyof PeriodoNotas>).forEach((period) => {
+            const val = overrides[period];
+            if (val !== undefined) {
+              if (period === 'P4') {
+                asig.P4 = val;
+              } else {
+                asig[period] = val;
+              }
+            }
+          });
+        }
+
         asig.promedioActual = calcularPromedioActual(asig, config, evaluated);
         asig.p4Min = calcularMinimoRequerido(asig, config, evaluated);
         asig.estado = determinarEstado(asig, config, evaluated);
@@ -181,6 +201,22 @@ export function applyAcademicLogic(students: Estudiante[], config: PeriodConfig,
           });
           if (hasGrade) {
             area.DEF[period] = roundToOneDecimal(sum);
+          }
+        });
+      }
+
+      // Apply direct area simulations overrides to area.DEF before calculating areaStats
+      const areaRowId = `${student.id}_${areaName}`;
+      const areaOverrides = activeSimulations[areaRowId];
+      if (areaOverrides) {
+        (Object.keys(areaOverrides) as Array<keyof PeriodoNotas>).forEach((period) => {
+          const val = areaOverrides[period];
+          if (val !== undefined) {
+            if (period === 'P4') {
+              area.DEF.P4 = val;
+            } else {
+              area.DEF[period] = val;
+            }
           }
         });
       }

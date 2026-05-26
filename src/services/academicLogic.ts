@@ -179,10 +179,22 @@ export function applyAcademicLogic(
         asig.estado = determinarEstado(asig, config, evaluated);
       });
 
-      // Dynamically calculate Area DEF if weights are provided
+      // Dynamically calculate Area DEF if weights are provided (or fallback to uniform weights if there are multiple subjects)
       const groupWeights = (subjectWeights as unknown as Record<string, Record<string, Record<string, number>>>)[student.grupo] || {};
-      const weights = groupWeights[areaName] || (subjectWeights as unknown as Record<string, Record<string, number>>)[areaName];
-      if (weights && Object.keys(weights).length > 0) {
+      let weights = groupWeights[areaName] || (subjectWeights as unknown as Record<string, Record<string, number>>)[areaName];
+      
+      const asigNames = Object.keys(area.asignaturas);
+      if (asigNames.length > 0) {
+        if (!weights || Object.keys(weights).length === 0) {
+          // Fallback to uniform weights (equal weights)
+          const uniformWeight = 1 / asigNames.length;
+          const fallbackWeights: Record<string, number> = {};
+          asigNames.forEach(name => {
+            fallbackWeights[name] = uniformWeight;
+          });
+          weights = fallbackWeights;
+        }
+
         (['P1', 'P2', 'P3', 'P4'] as const).forEach(period => {
           let sum = 0;
           let hasGrade = false;
@@ -219,6 +231,25 @@ export function applyAcademicLogic(
             }
           }
         });
+      }
+
+      // If the area has no subjects, the UI renders a fallback subject with id `${student.id}_${areaName}_${areaName}`.
+      // We apply its overrides directly to area.DEF.
+      if (asigNames.length === 0) {
+        const fallbackSubjectRowId = `${student.id}_${areaName}_${areaName}`;
+        const fallbackOverrides = activeSimulations[fallbackSubjectRowId];
+        if (fallbackOverrides) {
+          (Object.keys(fallbackOverrides) as Array<keyof PeriodoNotas>).forEach((period) => {
+            const val = fallbackOverrides[period];
+            if (val !== undefined) {
+              if (period === 'P4') {
+                area.DEF.P4 = val;
+              } else {
+                area.DEF[period] = val;
+              }
+            }
+          });
+        }
       }
 
       // Calculate area stats based on area DEF

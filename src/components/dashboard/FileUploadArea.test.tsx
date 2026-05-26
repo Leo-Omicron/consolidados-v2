@@ -227,4 +227,68 @@ describe('FileUploadArea', () => {
     expect(screen.getByText('Ingrese nota de P1')).toBeDefined();
     expect(screen.getByText('Verifique si debe eliminarse')).toBeDefined();
   });
+
+  it('allows collapsing, expanding, dismissing, and restoring the diagnostic report', () => {
+    const mockReport = {
+      isValid: true,
+      totalSheetsProcessed: 1,
+      issues: [
+        {
+          code: 'EMPTY_GRADE',
+          severity: 'WARNING',
+          sheet: '6A',
+          row: 4,
+          col: 'C',
+          message: 'Calificación vacía en C4',
+          action: 'Ingrese nota de P1'
+        }
+      ]
+    };
+
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        processFile: processFileMock,
+        setConfig: setConfigMock,
+        loading: false,
+        error: null,
+        diagnosticReport: mockReport
+      };
+      return selector(state);
+    });
+
+    render(<FileUploadArea />);
+
+    // Initially, both report and its contents are visible
+    expect(screen.getByText('Calificación vacía en C4')).toBeDefined();
+    
+    // Collapse the report
+    const collapseBtn = screen.getByTestId('toggle-diagnostic-collapse-btn');
+    fireEvent.click(collapseBtn);
+
+    // The header is still there, but content (issues) is hidden
+    expect(screen.getByText('Resultados del Diagnóstico de Calidad')).toBeDefined();
+    expect(screen.queryByText('Calificación vacía en C4')).toBeNull();
+
+    // Expand the report again
+    fireEvent.click(collapseBtn);
+    expect(screen.getByText('Calificación vacía en C4')).toBeDefined();
+
+    // Dismiss the report
+    const dismissBtn = screen.getByTestId('dismiss-diagnostic-btn');
+    fireEvent.click(dismissBtn);
+
+    // Now, the report header and content are completely hidden
+    expect(screen.queryByText('Resultados del Diagnóstico de Calidad')).toBeNull();
+    expect(screen.queryByText('Calificación vacía en C4')).toBeNull();
+
+    // But we have the restore button
+    const restoreBtn = screen.getByTestId('restore-diagnostic-btn');
+    expect(restoreBtn).toBeDefined();
+    expect(restoreBtn.textContent).toContain('Mostrar resultados del diagnóstico (1)');
+
+    // Click restore to show it again
+    fireEvent.click(restoreBtn);
+    expect(screen.getByText('Resultados del Diagnóstico de Calidad')).toBeDefined();
+    expect(screen.getByText('Calificación vacía en C4')).toBeDefined();
+  });
 });

@@ -1,6 +1,146 @@
 import React, { useRef, useState } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import type { PeriodConfig } from '../../domain/types';
+import type { DiagnosticReport, DiagnosticIssue } from '../../services/excelParser';
+
+interface DiagnosticReportBlockProps {
+  diagnosticReport: DiagnosticReport;
+  issuesBySheet: Record<string, DiagnosticIssue[]>;
+}
+
+const DiagnosticReportBlock: React.FC<DiagnosticReportBlockProps> = ({ diagnosticReport, issuesBySheet }) => {
+  const [isReportCollapsed, setIsReportCollapsed] = useState<boolean>(false);
+  const [isReportDismissed, setIsReportDismissed] = useState<boolean>(false);
+
+  if (isReportDismissed) {
+    return (
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={() => setIsReportDismissed(false)}
+          className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+          data-testid="restore-diagnostic-btn"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          Mostrar resultados del diagnóstico ({diagnosticReport.issues.filter(i => i.severity !== 'CRITICAL').length})
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-slate-900/30">
+      <div className="bg-slate-100 dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span className="font-bold text-sm text-slate-800 dark:text-slate-200">
+            Resultados del Diagnóstico de Calidad
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold px-2 py-1 rounded bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+            {diagnosticReport.issues.filter(i => i.severity !== 'CRITICAL').length} advertencias / sugerencias
+          </span>
+          <div className="flex items-center gap-1 border-l border-slate-200 dark:border-slate-800 pl-3">
+            <button
+              onClick={() => setIsReportCollapsed(!isReportCollapsed)}
+              aria-label={isReportCollapsed ? "Expandir diagnóstico" : "Colapsar diagnóstico"}
+              className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
+              title={isReportCollapsed ? "Expandir diagnóstico" : "Colapsar diagnóstico"}
+              data-testid="toggle-diagnostic-collapse-btn"
+            >
+              <svg
+                className={`w-4 h-4 transform transition-transform duration-200 ${isReportCollapsed ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setIsReportDismissed(true)}
+              aria-label="Cerrar diagnóstico"
+              className="p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-950/50 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer"
+              title="Ocultar reporte"
+              data-testid="dismiss-diagnostic-btn"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {!isReportCollapsed && (
+        <div className="p-4 space-y-3">
+          {Object.entries(issuesBySheet).map(([sheetName, sheetIssues]) => (
+            <details key={sheetName} className="group border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 transition-premium" open>
+              <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 select-none list-none">
+                <div className="flex items-center space-x-2">
+                  <span className="font-bold text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                    Hoja: {sheetName}
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    ({sheetIssues.length} {sheetIssues.length === 1 ? 'problema detectado' : 'problemas detectados'})
+                  </span>
+                </div>
+                <span className="transition-transform duration-300 group-open:rotate-180">
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </summary>
+              <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                {sheetIssues.map((issue, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`p-3 rounded-lg border text-xs leading-relaxed flex flex-col gap-1.5 ${
+                      issue.severity === 'WARNING' 
+                        ? 'border-amber-100 dark:border-amber-950 bg-amber-50/50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300' 
+                        : 'border-blue-100 dark:border-blue-950 bg-blue-50/50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-1.5 font-semibold">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                          issue.severity === 'WARNING'
+                            ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200'
+                            : 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200'
+                        }`}>
+                          {issue.severity === 'WARNING' ? 'ADVERTENCIA' : 'SUGERENCIA'}
+                        </span>
+                        {issue.row && issue.col && (
+                          <span className="text-slate-500 dark:text-slate-400">
+                            Celda: <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">{issue.col}{issue.row}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-slate-700 dark:text-slate-300 font-medium">
+                      {issue.message}
+                    </p>
+                    {issue.action && (
+                      <div className="mt-1 flex items-start gap-1 text-slate-600 dark:text-slate-400">
+                        <span className="font-bold">Acción recomendada:</span>
+                        <span>{issue.action}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </details>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const FileUploadArea: React.FC = () => {
   const processFile = useDashboardStore((state) => state.processFile);
@@ -182,81 +322,11 @@ export const FileUploadArea: React.FC = () => {
       )}
 
       {diagnosticReport && diagnosticReport.issues.some(i => i.severity !== 'CRITICAL') && (
-        <div className="mt-6 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/50 dark:bg-slate-900/30">
-          <div className="bg-slate-100 dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              <span className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                Resultados del Diagnóstico de Calidad
-              </span>
-            </div>
-            <span className="text-xs font-semibold px-2 py-1 rounded bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
-              {diagnosticReport.issues.filter(i => i.severity !== 'CRITICAL').length} advertencias / sugerencias
-            </span>
-          </div>
-          
-          <div className="p-4 space-y-3">
-            {Object.entries(issuesBySheet).map(([sheetName, sheetIssues]) => (
-              <details key={sheetName} className="group border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 transition-premium" open>
-                <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 select-none list-none">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                      Hoja: {sheetName}
-                    </span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      ({sheetIssues.length} {sheetIssues.length === 1 ? 'problema detectado' : 'problemas detectados'})
-                    </span>
-                  </div>
-                  <span className="transition-transform duration-300 group-open:rotate-180">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </span>
-                </summary>
-                <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
-                  {sheetIssues.map((issue, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`p-3 rounded-lg border text-xs leading-relaxed flex flex-col gap-1.5 ${
-                        issue.severity === 'WARNING' 
-                          ? 'border-amber-100 dark:border-amber-950 bg-amber-50/50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300' 
-                          : 'border-blue-100 dark:border-blue-950 bg-blue-50/50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-1.5 font-semibold">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] ${
-                            issue.severity === 'WARNING'
-                              ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200'
-                              : 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200'
-                          }`}>
-                            {issue.severity === 'WARNING' ? 'ADVERTENCIA' : 'SUGERENCIA'}
-                          </span>
-                          {issue.row && issue.col && (
-                            <span className="text-slate-500 dark:text-slate-400">
-                              Celda: <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">{issue.col}{issue.row}</span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-slate-700 dark:text-slate-300 font-medium">
-                        {issue.message}
-                      </p>
-                      {issue.action && (
-                        <div className="mt-1 flex items-start gap-1 text-slate-600 dark:text-slate-400">
-                          <span className="font-bold">Acción recomendada:</span>
-                          <span>{issue.action}</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </details>
-            ))}
-          </div>
-        </div>
+        <DiagnosticReportBlock 
+          key={diagnosticReport.issues.map(i => `${i.sheet}_${i.row}_${i.col}_${i.message}`).join(',')}
+          diagnosticReport={diagnosticReport} 
+          issuesBySheet={issuesBySheet} 
+        />
       )}
     </div>
   );

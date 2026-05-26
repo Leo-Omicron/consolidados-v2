@@ -415,7 +415,7 @@ export function generateHeatmapReport(students: Estudiante[], grupo: string): He
 export function generateTeacherFeedbackReportForGroup(
   students: Estudiante[],
   grupo: string,
-  config: PeriodConfig
+  _config: PeriodConfig
 ): TeacherFeedbackReport[] {
   const groupStudents = students.filter(s => s.grupo === grupo);
   const totalEstudiantesGrupo = groupStudents.length;
@@ -448,11 +448,10 @@ export function generateTeacherFeedbackReportForGroup(
           weaknesses.push(areaName);
           failedAreasCount++;
           
-          const gradeReq = calculateRequiredGrade(area.DEF, config);
           weaknessesDetail.push({
             areaName,
-            requiredGrade: gradeReq.required,
-            isImpossible: gradeReq.isImpossible
+            requiredGrade: area.areaStats.p4Min,
+            isImpossible: area.areaStats.estado.text === 'Perdido' || area.areaStats.p4Min > 5.0
           });
         }
       }

@@ -22,7 +22,7 @@ const mockStudents = [
         }
       },
       'Ciencias': {
-        areaStats: { promedioActual: 2.5, estado: { text: 'Perdido', color: 'red' } },
+        areaStats: { promedioActual: 2.5, p4Min: 3.5, estado: { text: 'Recuperable', color: 'blue' } },
         DEF: { P1: 2.0, P2: 3.0, P3: 2.5 },
         asignaturas: {
           'Química': { promedioActual: 2.5 }

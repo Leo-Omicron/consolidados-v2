@@ -16,14 +16,14 @@ const mockStudents = [
     areas: {
       'Matemáticas': {
         areaStats: { promedioActual: 4.8, estado: { text: 'Ganado', color: 'green' } },
-        DEF: { p1: 5.0, p2: 4.5, p3: 4.9 },
+        DEF: { P1: 5.0, P2: 4.5, P3: 4.9 },
         asignaturas: {
           'Álgebra': { promedioActual: 4.8 }
         }
       },
       'Ciencias': {
         areaStats: { promedioActual: 2.5, estado: { text: 'Perdido', color: 'red' } },
-        DEF: { p1: 2.0, p2: 3.0, p3: 2.5 },
+        DEF: { P1: 2.0, P2: 3.0, P3: 2.5 },
         asignaturas: {
           'Química': { promedioActual: 2.5 }
         }
@@ -37,14 +37,14 @@ const mockStudents = [
     areas: {
       'Matemáticas': {
         areaStats: { promedioActual: 3.2, estado: { text: 'Ganado', color: 'green' } },
-        DEF: { p1: 3.0, p2: 3.5, p3: 3.1 },
+        DEF: { P1: 3.0, P2: 3.5, P3: 3.1 },
         asignaturas: {
           'Álgebra': { promedioActual: 3.2 }
         }
       },
       'Ciencias': {
         areaStats: { promedioActual: 4.0, estado: { text: 'Ganado', color: 'green' } },
-        DEF: { p1: 4.0, p2: 4.0, p3: 4.0 },
+        DEF: { P1: 4.0, P2: 4.0, P3: 4.0 },
         asignaturas: {
           'Química': { promedioActual: 4.0 }
         }
@@ -213,5 +213,42 @@ describe('ReportsTab', () => {
     rerender(<ReportsTab />);
     // "P4" should be present as header or cell
     expect(screen.getAllByText('P4').length).toBeGreaterThan(0);
+  });
+
+  it('renders student feedback cards with enhanced pedagogical metrics', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        estudiantes: mockStudents,
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: '10A',
+        availableGroups: ['Todos', '10A'],
+        setGrupo: vi.fn()
+      };
+      return selector(state);
+    });
+
+    render(<ReportsTab />);
+
+    // Click on "Retroalimentación"
+    fireEvent.click(screen.getByText('Retroalimentación'));
+
+    // Check header
+    expect(screen.getByText('Fichas de Retroalimentación de Alumnos - Grupo 10A')).toBeDefined();
+
+    // Check student name
+    expect(screen.getByText('Ana Perez')).toBeDefined();
+
+    // Check KPIs
+    expect(screen.getAllByText('Promedio').length).toBe(2);
+    expect(screen.getAllByText('Puesto').length).toBe(2);
+    expect(screen.getAllByText('Media Grupal').length).toBe(2);
+    expect(screen.getAllByText('Carga Académica').length).toBe(2);
+
+    // Check that we display the average grade of the first student (Ana Perez: average of 4.8 and 2.5 is 3.65)
+    expect(screen.getByText('3.65')).toBeDefined();
+
+    // Check that the weakness is shown
+    expect(screen.getAllByText('Ciencias').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Nota Req:/i).length).toBeGreaterThan(0);
   });
 });

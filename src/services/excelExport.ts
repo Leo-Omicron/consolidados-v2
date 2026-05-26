@@ -215,16 +215,24 @@ export function mapFeedbackToAOA(reports: TeacherFeedbackReport[]): unknown[][] 
   const aoa: unknown[][] = [
     ["RETROALIMENTACIÓN DE DOCENTES - GRUPO", grupo],
     [],
-    ["ID", "ESTUDIANTE", "ESTADO GENERAL", "FORTALEZAS", "DEBILIDADES", "RECOMENDACIÓN"]
+    ["PUESTO", "ID", "ESTUDIANTE", "PROMEDIO INDIVIDUAL", "PROMEDIO GRUPAL", "ESTADO GENERAL", "FORTALEZAS", "DEBILIDADES", "RECOMENDACIÓN"]
   ];
 
   reports.forEach(rep => {
+    const formattedWeaknesses = rep.weaknessesDetail.map(w => {
+      const label = w.isImpossible ? "IRRECUPERABLE" : `REQ: ${w.requiredGrade.toFixed(2)}`;
+      return `${w.areaName.toUpperCase()} (${label})`;
+    }).join(', ');
+
     aoa.push([
+      rep.puestoGrupo,
       rep.studentId,
       rep.studentName.toUpperCase(),
+      rep.promedioActual,
+      rep.promedioGrupo,
       rep.overallStatus.toUpperCase(),
       rep.strengths.join(', ').toUpperCase(),
-      rep.weaknesses.join(', ').toUpperCase(),
+      formattedWeaknesses,
       rep.adviceText
     ]);
   });

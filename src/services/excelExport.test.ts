@@ -211,15 +211,22 @@ describe('excelExport service Unit 1 - Mapping and Calculations', () => {
           overallStatus: 'Aprobado',
           strengths: ['Ciencias', 'Español'],
           weaknesses: [],
-          adviceText: 'Excelente desempeño.'
+          adviceText: 'Excelente desempeño.',
+          promedioActual: 4.25,
+          promedioGrupo: 3.5,
+          puestoGrupo: 2,
+          totalEstudiantesGrupo: 20,
+          totalAreasCount: 10,
+          failedAreasCount: 0,
+          weaknessesDetail: []
         }
       ];
 
       const aoa = mapFeedbackToAOA(reports);
       expect(aoa[0]).toEqual(["RETROALIMENTACIÓN DE DOCENTES - GRUPO", "10A"]);
       expect(aoa[1]).toEqual([]);
-      expect(aoa[2]).toEqual(["ID", "ESTUDIANTE", "ESTADO GENERAL", "FORTALEZAS", "DEBILIDADES", "RECOMENDACIÓN"]);
-      expect(aoa[3]).toEqual(["101", "ANA GOMEZ", "APROBADO", "CIENCIAS, ESPAÑOL", "", "Excelente desempeño."]);
+      expect(aoa[2]).toEqual(["PUESTO", "ID", "ESTUDIANTE", "PROMEDIO INDIVIDUAL", "PROMEDIO GRUPAL", "ESTADO GENERAL", "FORTALEZAS", "DEBILIDADES", "RECOMENDACIÓN"]);
+      expect(aoa[3]).toEqual([2, "101", "ANA GOMEZ", 4.25, 3.5, "APROBADO", "CIENCIAS, ESPAÑOL", "", "Excelente desempeño."]);
     });
   });
 

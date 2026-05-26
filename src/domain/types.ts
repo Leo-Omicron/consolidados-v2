@@ -222,6 +222,13 @@ export interface TeacherFeedbackReport {
   strengths: string[];
   weaknesses: string[];
   adviceText: string;
+  promedioActual: number;
+  promedioGrupo: number;
+  puestoGrupo: number;
+  totalEstudiantesGrupo: number;
+  totalAreasCount: number;
+  failedAreasCount: number;
+  weaknessesDetail: Array<{ areaName: string; requiredGrade: number; isImpossible: boolean }>;
 }
 
 export interface OfficialRecordsReport {

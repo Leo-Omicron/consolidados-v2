@@ -10,7 +10,7 @@ import {
   generateSubjectAnalyticsReport,
   generateGroupComparisonReport,
   generateHeatmapReport,
-  generateTeacherFeedbackReport,
+  generateTeacherFeedbackReportForGroup,
   generateOfficialRecordsReport,
 } from './reportEngine';
 import type { PeriodConfig, PeriodoNotas, Estudiante } from '../domain/types';
@@ -259,15 +259,39 @@ describe('reportEngine 8-Category Reports Generators', () => {
     });
   });
 
-  describe('generateTeacherFeedbackReport', () => {
-    it('provides personalized feedback based on performance', () => {
-      const report = generateTeacherFeedbackReport(mockStudents[0], config3Periods); // JUAN (average 4.6)
-      expect(report.studentName).toBe('JUAN');
-      expect(report.overallStatus).toBe('Aprobado');
-      expect(report.strengths).toContain('MATEMATICAS');
-      expect(report.strengths).toContain('HUMANIDADES');
-      expect(report.weaknesses).toHaveLength(0);
-      expect(report.adviceText).toBe('Continúa con ese gran nivel y apoya a tus compañeros.');
+  describe('generateTeacherFeedbackReportForGroup', () => {
+    it('provides personalized feedback based on performance for a whole group', () => {
+      const reports = generateTeacherFeedbackReportForGroup(mockStudents, '6A', config3Periods);
+      expect(reports).toHaveLength(3);
+      
+      const juanReport = reports.find(r => r.studentName === 'JUAN');
+      expect(juanReport).toBeDefined();
+      expect(juanReport?.overallStatus).toBe('Aprobado');
+      expect(juanReport?.strengths).toContain('MATEMATICAS');
+      expect(juanReport?.strengths).toContain('HUMANIDADES');
+      expect(juanReport?.weaknesses).toHaveLength(0);
+      expect(juanReport?.adviceText).toBe('Continúa con ese gran nivel y apoya a tus compañeros.');
+      expect(juanReport?.promedioActual).toBe(4.6);
+      expect(juanReport?.promedioGrupo).toBeCloseTo(3.12, 1);
+      expect(juanReport?.puestoGrupo).toBe(1);
+      expect(juanReport?.totalEstudiantesGrupo).toBe(3);
+      expect(juanReport?.totalAreasCount).toBe(2);
+      expect(juanReport?.failedAreasCount).toBe(0);
+
+      const pedroReport = reports.find(r => r.studentName === 'PEDRO');
+      expect(pedroReport).toBeDefined();
+      expect(pedroReport?.overallStatus).toBe('Reprobado');
+      expect(pedroReport?.strengths).toHaveLength(0);
+      expect(pedroReport?.weaknesses).toContain('MATEMATICAS');
+      expect(pedroReport?.weaknesses).toContain('HUMANIDADES');
+      expect(pedroReport?.puestoGrupo).toBe(3);
+      expect(pedroReport?.failedAreasCount).toBe(2);
+      
+      // Let's check weaknesses detail for Pedro
+      const humanidadesWeakness = pedroReport?.weaknessesDetail.find(w => w.areaName === 'HUMANIDADES');
+      expect(humanidadesWeakness).toBeDefined();
+      expect(humanidadesWeakness?.requiredGrade).toBe(6.84);
+      expect(humanidadesWeakness?.isImpossible).toBe(true);
     });
   });
 

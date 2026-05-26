@@ -8,7 +8,7 @@ import {
   generateSubjectAnalyticsReport,
   generateGroupComparisonReport,
   generateHeatmapReport,
-  generateTeacherFeedbackReport,
+  generateTeacherFeedbackReportForGroup,
   generateOfficialRecordsReport,
 } from '../../services/reportEngine';
 import { ExcelExportServiceImpl } from '../../services/excelExport';
@@ -140,8 +140,7 @@ export const ReportsTab: React.FC = () => {
   // 7. Teacher Feedback (Iterate all students in activeGroupToUse)
   const teacherFeedbackData = useMemo(() => {
     if (estudiantes.length === 0 || !activeGroupToUse) return [];
-    const groupStudents = estudiantes.filter(s => s.grupo === activeGroupToUse);
-    return groupStudents.map(s => generateTeacherFeedbackReport(s, config));
+    return generateTeacherFeedbackReportForGroup(estudiantes, activeGroupToUse, config);
   }, [estudiantes, activeGroupToUse, config]);
 
   // 8. Official Records Ledger
@@ -702,9 +701,40 @@ export const ReportsTab: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* KPIs Pedagógicos */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 print:grid-cols-4 print:gap-3">
+                      <div className="bg-slate-50 dark:bg-slate-900/10 border border-slate-100 dark:border-slate-800/40 p-2.5 rounded-xl text-center print:bg-white print:border-slate-300">
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Promedio</span>
+                        <span className="text-lg font-extrabold text-slate-800 dark:text-slate-200 print:text-black">
+                          {student.promedioActual.toFixed(2)}
+                        </span>
+                      </div>
+                      
+                      <div className="bg-slate-50 dark:bg-slate-900/10 border border-slate-100 dark:border-slate-800/40 p-2.5 rounded-xl text-center print:bg-white print:border-slate-300">
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Puesto</span>
+                        <span className="text-lg font-extrabold text-slate-800 dark:text-slate-200 print:text-black">
+                          {student.puestoGrupo} <span className="text-xs font-normal text-slate-400">/ {student.totalEstudiantesGrupo}</span>
+                        </span>
+                      </div>
+                      
+                      <div className="bg-slate-50 dark:bg-slate-900/10 border border-slate-100 dark:border-slate-800/40 p-2.5 rounded-xl text-center print:bg-white print:border-slate-300">
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Media Grupal</span>
+                        <span className="text-lg font-extrabold text-slate-800 dark:text-slate-200 print:text-black">
+                          {student.promedioGrupo.toFixed(2)}
+                        </span>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-900/10 border border-slate-100 dark:border-slate-800/40 p-2.5 rounded-xl text-center print:bg-white print:border-slate-300">
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Carga Académica</span>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 print:text-black block mt-1">
+                          {student.totalAreasCount - student.failedAreasCount} / {student.totalAreasCount} Aprobados
+                        </span>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div className="bg-emerald-50/30 dark:bg-emerald-950/20 p-3.5 rounded-xl border border-emerald-100/40 dark:border-emerald-900/30 print:bg-white print:border-slate-300">
-                        <span className="block text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-1">💪 Áreas de Fortaleza (Refuerzo Positivo)</span>
+                        <span className="block text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-1.5">💪 Áreas de Fortaleza (Refuerzo Positivo)</span>
                         {student.strengths.length > 0 ? (
                           <ul className="list-disc pl-5 text-sm text-slate-700 dark:text-slate-300 space-y-0.5">
                             {student.strengths.map(area => <li key={area}>{area}</li>)}
@@ -715,13 +745,26 @@ export const ReportsTab: React.FC = () => {
                       </div>
 
                       <div className="bg-rose-50/30 dark:bg-rose-950/20 p-3.5 rounded-xl border border-rose-100/40 dark:border-rose-900/30 print:bg-white print:border-slate-300">
-                        <span className="block text-xs font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider mb-1">🎯 Áreas de Debilidad (Plan de Atención)</span>
-                        {student.weaknesses.length > 0 ? (
-                          <ul className="list-disc pl-5 text-sm text-slate-700 space-y-0.5">
-                            {student.weaknesses.map(area => <li key={area} className="font-semibold text-rose-800 dark:text-rose-300 print:text-black">{area}</li>)}
-                          </ul>
+                        <span className="block text-xs font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider mb-1.5">🎯 Áreas de Debilidad (Plan de Atención)</span>
+                        {student.weaknessesDetail.length > 0 ? (
+                          <div className="space-y-2">
+                            {student.weaknessesDetail.map(w => (
+                              <div key={w.areaName} className="flex justify-between items-center text-sm border-b border-rose-100/20 dark:border-rose-900/20 pb-1 last:border-0 last:pb-0">
+                                <span className="font-semibold text-rose-900 dark:text-rose-200 print:text-black">
+                                  {w.areaName}
+                                </span>
+                                <span className={`px-2 py-0.5 text-xs font-bold rounded-md border ${
+                                  w.isImpossible
+                                    ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50 print:bg-white print:text-rose-800'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50 print:bg-white print:text-amber-800'
+                                }`}>
+                                  {w.isImpossible ? 'IRRECUPERABLE' : `Nota Req: ${w.requiredGrade.toFixed(2)}`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         ) : (
-                          <span className="text-xs text-slate-400 dark:text-slate-400 italic">¡Ninguna! Felicitaciones, no presenta áreas con reprobación.</span>
+                          <span className="text-xs text-slate-400 dark:text-slate-400 italic block mt-1">¡Ninguna! Felicitaciones, no presenta áreas con reprobación.</span>
                         )}
                       </div>
                     </div>

@@ -412,48 +412,86 @@ export function generateHeatmapReport(students: Estudiante[], grupo: string): He
   };
 }
 
-export function generateTeacherFeedbackReport(student: Estudiante, _config: PeriodConfig): TeacherFeedbackReport {
-  const overallStatus = determinePromotionDecision(student);
-  const avg = getStudentAverage(student);
-  
-  const strengths: string[] = [];
-  const weaknesses: string[] = [];
-  
-  Object.entries(student.areas).forEach(([areaName, area]) => {
-    if (area.areaStats) {
-      if (area.areaStats.promedioActual >= 4.0) {
-        strengths.push(areaName);
-      } else if (area.areaStats.promedioActual < 3.0) {
-        weaknesses.push(areaName);
+export function generateTeacherFeedbackReportForGroup(
+  students: Estudiante[],
+  grupo: string,
+  config: PeriodConfig
+): TeacherFeedbackReport[] {
+  const groupStudents = students.filter(s => s.grupo === grupo);
+  const totalEstudiantesGrupo = groupStudents.length;
+
+  if (totalEstudiantesGrupo === 0) return [];
+
+  // Calculate averages and rankings
+  const studentAverages = groupStudents.map(s => getStudentAverage(s));
+  const rankings = calculateCompetitionRanking(studentAverages);
+
+  const totalAvgSum = studentAverages.reduce((acc, val) => acc + val, 0);
+  const promedioGrupo = Math.round((totalAvgSum / totalEstudiantesGrupo) * 100) / 100;
+
+  return groupStudents.map((student, idx) => {
+    const overallStatus = determinePromotionDecision(student);
+    const avg = studentAverages[idx];
+    
+    const strengths: string[] = [];
+    const weaknesses: string[] = [];
+    const weaknessesDetail: Array<{ areaName: string; requiredGrade: number; isImpossible: boolean }> = [];
+    
+    const totalAreasCount = Object.keys(student.areas).length;
+    let failedAreasCount = 0;
+
+    Object.entries(student.areas).forEach(([areaName, area]) => {
+      if (area.areaStats) {
+        if (area.areaStats.promedioActual >= 4.0) {
+          strengths.push(areaName);
+        } else if (area.areaStats.promedioActual < 3.0) {
+          weaknesses.push(areaName);
+          failedAreasCount++;
+          
+          const gradeReq = calculateRequiredGrade(area.DEF, config);
+          weaknessesDetail.push({
+            areaName,
+            requiredGrade: gradeReq.required,
+            isImpossible: gradeReq.isImpossible
+          });
+        }
       }
+    });
+    
+    strengths.sort();
+    weaknesses.sort();
+    weaknessesDetail.sort((a, b) => a.areaName.localeCompare(b.areaName));
+    
+    let adviceText: string;
+    if (avg >= 4.5) {
+      adviceText = 'Continúa con ese gran nivel y apoya a tus compañeros.';
+    } else if (avg >= 4.0) {
+      adviceText = 'Excelente rendimiento. Sigue así para mantener tus resultados.';
+    } else if (overallStatus === 'Aprobado') {
+      adviceText = 'Buen desempeño general. Puedes esforzarte un poco más para sobresalir.';
+    } else if (overallStatus === 'Compromisos') {
+      adviceText = 'Tienes algunas asignaturas pendientes. Con un poco más de esfuerzo y dedicación lograrás superarlas.';
+    } else {
+      adviceText = 'Tu situación académica es crítica. Es indispensable establecer un plan de recuperación inmediato junto con tus profesores y acudiente.';
     }
+    
+    return {
+      studentId: student.id,
+      studentName: student.name,
+      grupo: student.grupo,
+      overallStatus,
+      strengths,
+      weaknesses,
+      adviceText,
+      promedioActual: avg,
+      promedioGrupo,
+      puestoGrupo: rankings[idx],
+      totalEstudiantesGrupo,
+      totalAreasCount,
+      failedAreasCount,
+      weaknessesDetail
+    };
   });
-  
-  strengths.sort();
-  weaknesses.sort();
-  
-  let adviceText: string;
-  if (avg >= 4.5) {
-    adviceText = 'Continúa con ese gran nivel y apoya a tus compañeros.';
-  } else if (avg >= 4.0) {
-    adviceText = 'Excelente rendimiento. Sigue así para mantener tus resultados.';
-  } else if (overallStatus === 'Aprobado') {
-    adviceText = 'Buen desempeño general. Puedes esforzarte un poco más para sobresalir.';
-  } else if (overallStatus === 'Compromisos') {
-    adviceText = 'Tienes algunas asignaturas pendientes. Con un poco más de esfuerzo y dedicación lograrás superarlas.';
-  } else {
-    adviceText = 'Tu situación académica es crítica. Es indispensable establecer un plan de recuperación inmediato junto con tus profesores y acudiente.';
-  }
-  
-  return {
-    studentId: student.id,
-    studentName: student.name,
-    grupo: student.grupo,
-    overallStatus,
-    strengths,
-    weaknesses,
-    adviceText,
-  };
 }
 
 export function generateOfficialRecordsReport(

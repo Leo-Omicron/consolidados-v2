@@ -165,60 +165,60 @@ export const ReportsTab: React.FC = () => {
     window.print();
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     switch (activeTab) {
       case 'group-performance':
         if (groupPerformanceData) {
-          ExcelExportServiceImpl.exportGroupPerformance(groupPerformanceData);
+          await ExcelExportServiceImpl.exportGroupPerformance(groupPerformanceData);
         } else {
           alert('No hay datos de Rendimiento Grupal disponibles para exportar.');
         }
         break;
       case 'outstanding':
         if (outstandingStudentsData) {
-          ExcelExportServiceImpl.exportOutstandingStudents(outstandingStudentsData);
+          await ExcelExportServiceImpl.exportOutstandingStudents(outstandingStudentsData);
         } else {
           alert('No hay datos de Estudiantes Destacados disponibles para exportar.');
         }
         break;
       case 'academic-risk':
         if (academicRiskData) {
-          ExcelExportServiceImpl.exportAcademicRisk(academicRiskData);
+          await ExcelExportServiceImpl.exportAcademicRisk(academicRiskData);
         } else {
           alert('No hay datos de Riesgo Académico disponibles para exportar.');
         }
         break;
       case 'subject-analytics':
         if (subjectAnalyticsData) {
-          ExcelExportServiceImpl.exportSubjectAnalytics(subjectAnalyticsData);
+          await ExcelExportServiceImpl.exportSubjectAnalytics(subjectAnalyticsData);
         } else {
           alert('No hay datos de Análisis de Asignaturas disponibles para exportar.');
         }
         break;
       case 'group-comparison':
         if (groupComparisonData) {
-          ExcelExportServiceImpl.exportGroupComparison(groupComparisonData);
+          await ExcelExportServiceImpl.exportGroupComparison(groupComparisonData);
         } else {
           alert('No hay datos de Comparativa de Grupos disponibles para exportar.');
         }
         break;
       case 'heatmap':
         if (heatmapData) {
-          ExcelExportServiceImpl.exportHeatmap(heatmapData);
+          await ExcelExportServiceImpl.exportHeatmap(heatmapData);
         } else {
           alert('No hay datos de Mapa de Calor disponibles para exportar.');
         }
         break;
       case 'feedback':
         if (teacherFeedbackData && teacherFeedbackData.length > 0) {
-          ExcelExportServiceImpl.exportTeacherFeedback(teacherFeedbackData);
+          await ExcelExportServiceImpl.exportTeacherFeedback(teacherFeedbackData);
         } else {
           alert('No hay datos de Retroalimentación disponibles para exportar.');
         }
         break;
       case 'official':
         if (officialRecordsData) {
-          ExcelExportServiceImpl.exportOfficialRecords(officialRecordsData);
+          await ExcelExportServiceImpl.exportOfficialRecords(officialRecordsData);
         } else {
           alert('No hay datos de Registro Oficial disponibles para exportar.');
         }
@@ -228,7 +228,7 @@ export const ReportsTab: React.FC = () => {
     }
   };
 
-  const handleExportConsolidadoCompleto = () => {
+  const handleExportConsolidadoCompleto = async () => {
     if (activeTab === 'group-comparison') return;
 
     if (
@@ -245,7 +245,7 @@ export const ReportsTab: React.FC = () => {
       return;
     }
 
-    ExcelExportServiceImpl.exportConsolidadoCompleto({
+    await ExcelExportServiceImpl.exportConsolidadoCompleto({
       groupPerformance: groupPerformanceData,
       outstandingStudents: outstandingStudentsData,
       academicRisk: academicRiskData,

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Estudiante, PeriodConfig, RowArea, RowAsignatura, SubjectWeightConfig } from '../domain/types';
-import { flattenRows } from '../services/excelParser';
+import { flattenRows } from '../services/rowFlattener';
 import type { DiagnosticReport } from '../services/excelParser';
 import { applyAcademicLogic } from '../services/academicLogic';
 import { parseFileInWorker } from '../services/excelWorkerClient';

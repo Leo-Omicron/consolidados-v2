@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import type { WorkBook } from 'xlsx';
 import type {
   GroupPerformanceReport,
   OutstandingStudentsReport,
@@ -14,14 +14,14 @@ import type {
  * Main service interface to handle exporting reports.
  */
 export interface ExcelExportService {
-  exportGroupPerformance(report: GroupPerformanceReport): void;
-  exportOutstandingStudents(report: OutstandingStudentsReport): void;
-  exportAcademicRisk(report: AcademicRiskReport): void;
-  exportSubjectAnalytics(report: SubjectAnalyticsReport): void;
-  exportGroupComparison(report: GroupComparisonReport): void;
-  exportHeatmap(report: HeatmapReport): void;
-  exportTeacherFeedback(reports: TeacherFeedbackReport[]): void;
-  exportOfficialRecords(report: OfficialRecordsReport): void;
+  exportGroupPerformance(report: GroupPerformanceReport): Promise<void>;
+  exportOutstandingStudents(report: OutstandingStudentsReport): Promise<void>;
+  exportAcademicRisk(report: AcademicRiskReport): Promise<void>;
+  exportSubjectAnalytics(report: SubjectAnalyticsReport): Promise<void>;
+  exportGroupComparison(report: GroupComparisonReport): Promise<void>;
+  exportHeatmap(report: HeatmapReport): Promise<void>;
+  exportTeacherFeedback(reports: TeacherFeedbackReport[]): Promise<void>;
+  exportOfficialRecords(report: OfficialRecordsReport): Promise<void>;
 
   exportConsolidadoCompleto(params: {
     groupPerformance: GroupPerformanceReport;
@@ -32,7 +32,7 @@ export interface ExcelExportService {
     teacherFeedback: TeacherFeedbackReport[];
     officialRecords: OfficialRecordsReport;
     grupo: string;
-  }): void;
+  }): Promise<void>;
 }
 
 /**
@@ -281,7 +281,8 @@ export function mapOfficialToAOA(report: OfficialRecordsReport): unknown[][] {
 /**
  * Generates browser download of compiled SheetJS workbook.
  */
-export function triggerDownload(wb: XLSX.WorkBook, fileName: string): void {
+export async function triggerDownload(wb: WorkBook, fileName: string): Promise<void> {
+  const XLSX = await import('xlsx');
   const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
 
@@ -302,83 +303,91 @@ export function triggerDownload(wb: XLSX.WorkBook, fileName: string): void {
 }
 
 // Single-sheet export triggers
-export function exportGroupPerformance(report: GroupPerformanceReport): void {
+export async function exportGroupPerformance(report: GroupPerformanceReport): Promise<void> {
+  const XLSX = await import('xlsx');
   const aoa = mapPerformanceToAOA(report);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = calculateColWidths(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Rendimiento');
-  triggerDownload(wb, `${report.grupo}_Rendimiento.xlsx`);
+  await triggerDownload(wb, `${report.grupo}_Rendimiento.xlsx`);
 }
 
-export function exportOutstandingStudents(report: OutstandingStudentsReport): void {
+export async function exportOutstandingStudents(report: OutstandingStudentsReport): Promise<void> {
+  const XLSX = await import('xlsx');
   const aoa = mapOutstandingToAOA(report);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = calculateColWidths(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Destacados');
-  triggerDownload(wb, `${report.grupo}_Destacados.xlsx`);
+  await triggerDownload(wb, `${report.grupo}_Destacados.xlsx`);
 }
 
-export function exportAcademicRisk(report: AcademicRiskReport): void {
+export async function exportAcademicRisk(report: AcademicRiskReport): Promise<void> {
+  const XLSX = await import('xlsx');
   const aoa = mapRiskToAOA(report);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = calculateColWidths(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Riesgo');
-  triggerDownload(wb, `${report.grupo}_Riesgo.xlsx`);
+  await triggerDownload(wb, `${report.grupo}_Riesgo.xlsx`);
 }
 
-export function exportSubjectAnalytics(report: SubjectAnalyticsReport): void {
+export async function exportSubjectAnalytics(report: SubjectAnalyticsReport): Promise<void> {
+  const XLSX = await import('xlsx');
   const aoa = mapSubjectToAOA(report);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = calculateColWidths(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Asignaturas');
-  triggerDownload(wb, `${report.grupo}_Asignaturas.xlsx`);
+  await triggerDownload(wb, `${report.grupo}_Asignaturas.xlsx`);
 }
 
-export function exportGroupComparison(report: GroupComparisonReport): void {
+export async function exportGroupComparison(report: GroupComparisonReport): Promise<void> {
+  const XLSX = await import('xlsx');
   const aoa = mapComparisonToAOA(report);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = calculateColWidths(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Comparativa');
-  triggerDownload(wb, `Comparativa_Grupos.xlsx`);
+  await triggerDownload(wb, `Comparativa_Grupos.xlsx`);
 }
 
-export function exportHeatmap(report: HeatmapReport): void {
+export async function exportHeatmap(report: HeatmapReport): Promise<void> {
+  const XLSX = await import('xlsx');
   const aoa = mapHeatmapToAOA(report);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = calculateColWidths(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Mapa de Calor');
-  triggerDownload(wb, `${report.grupo}_Mapa_Calor.xlsx`);
+  await triggerDownload(wb, `${report.grupo}_Mapa_Calor.xlsx`);
 }
 
-export function exportTeacherFeedback(reports: TeacherFeedbackReport[]): void {
+export async function exportTeacherFeedback(reports: TeacherFeedbackReport[]): Promise<void> {
+  const XLSX = await import('xlsx');
   const aoa = mapFeedbackToAOA(reports);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = calculateColWidths(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Retroalimentación');
   const grupo = reports[0]?.grupo ?? 'Grupo';
-  triggerDownload(wb, `${grupo}_Retroalimentacion.xlsx`);
+  await triggerDownload(wb, `${grupo}_Retroalimentacion.xlsx`);
 }
 
-export function exportOfficialRecords(report: OfficialRecordsReport): void {
+export async function exportOfficialRecords(report: OfficialRecordsReport): Promise<void> {
+  const XLSX = await import('xlsx');
   const aoa = mapOfficialToAOA(report);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = calculateColWidths(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Libro Oficial');
-  triggerDownload(wb, `${report.grupo}_Libro_Oficial.xlsx`);
+  await triggerDownload(wb, `${report.grupo}_Libro_Oficial.xlsx`);
 }
 
 /**
  * Compiles 7 group-specific sheets into a single workbook, excluding Group Comparison.
  */
-export function exportConsolidadoCompleto(params: {
+export async function exportConsolidadoCompleto(params: {
   groupPerformance: GroupPerformanceReport;
   outstandingStudents: OutstandingStudentsReport;
   academicRisk: AcademicRiskReport;
@@ -387,7 +396,8 @@ export function exportConsolidadoCompleto(params: {
   teacherFeedback: TeacherFeedbackReport[];
   officialRecords: OfficialRecordsReport;
   grupo: string;
-}): void {
+}): Promise<void> {
+  const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
 
   // 1. Rendimiento
@@ -435,7 +445,7 @@ export function exportConsolidadoCompleto(params: {
   // Trigger download
   const year = new Date().getFullYear();
   const fileName = `${params.grupo}_Consolidado_Completo_${year}.xlsx`;
-  triggerDownload(wb, fileName);
+  await triggerDownload(wb, fileName);
 }
 
 export const ExcelExportServiceImpl: ExcelExportService = {

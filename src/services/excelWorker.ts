@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
-import { validateWorkbook, parseWorkbook, flattenRows } from './excelParser';
+import { validateWorkbook, parseWorkbook } from './excelParser';
+import { flattenRows } from './rowFlattener';
 import { applyAcademicLogic, inferSubjectWeights } from './academicLogic';
 import type { WorkerRequest, WorkerMessage } from './workerTypes';
 import type { SubjectWeightConfig } from '../domain/types';

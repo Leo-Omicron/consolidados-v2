@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import * as XLSX from 'xlsx';
-import { parseHeaders, extractStudents, flattenRows, parseWorkbook, getColumnLetter, validateWorkbook } from './excelParser';
+import { parseHeaders, extractStudents, parseWorkbook, getColumnLetter, validateWorkbook } from './excelParser';
+import { flattenRows } from './rowFlattener';
 import type { HeaderComponent } from './excelParser';
 import type { Estudiante } from '../domain/types';
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useDashboardStore } from './useDashboardStore';
 import * as academicLogic from '../services/academicLogic';
-import * as excelParser from '../services/excelParser';
+import * as rowFlattener from '../services/rowFlattener';
 import * as excelWorkerClient from '../services/excelWorkerClient';
 import type { ParsedExcelData, ParseCallbacks } from '../services/excelWorkerClient';
 
@@ -14,9 +14,9 @@ vi.mock('../services/academicLogic', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock excelParser.flattenRows (still used by setConfig / updateSubjectWeight)
+// Mock rowFlattener.flattenRows (still used by setConfig / updateSubjectWeight)
 // ---------------------------------------------------------------------------
-vi.mock('../services/excelParser', () => ({
+vi.mock('../services/rowFlattener', () => ({
   flattenRows: vi.fn(() => ({
     rowsArea: [{ area: 'AREA_1', promActual: 10, estado: { text: 'Ganado', color: 'green' } }],
     rowsAsignatura: []
@@ -84,7 +84,7 @@ describe('useDashboardStore', () => {
       newConfig,
       {}
     );
-    expect(excelParser.flattenRows).toHaveBeenCalled();
+    expect(rowFlattener.flattenRows).toHaveBeenCalled();
     expect(useDashboardStore.getState().rowsArea).toHaveLength(1);
     expect(useDashboardStore.getState().rowsArea[0].area).toBe('AREA_1');
   });

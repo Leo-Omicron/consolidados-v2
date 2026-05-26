@@ -255,7 +255,7 @@ describe('excelExport service Unit 1 - Mapping and Calculations', () => {
   });
 
   describe('exportConsolidadoCompleto', () => {
-    it('should compile exactly 7 sheets with appropriate names', () => {
+    it('should compile exactly 7 sheets with appropriate names', async () => {
       const mockParams = {
         groupPerformance: {
           grupo: '10A',
@@ -293,7 +293,7 @@ describe('excelExport service Unit 1 - Mapping and Calculations', () => {
       };
 
       // Call function under test
-      exportConsolidadoCompleto(mockParams);
+      await exportConsolidadoCompleto(mockParams);
 
       // Verify book_new was called
       expect(XLSX.utils.book_new).toHaveBeenCalled();

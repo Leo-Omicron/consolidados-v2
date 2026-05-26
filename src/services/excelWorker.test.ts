@@ -13,11 +13,14 @@ vi.mock('xlsx', () => ({
 vi.mock('./excelParser', () => ({
   validateWorkbook: vi.fn(),
   parseWorkbook: vi.fn(),
-  flattenRows: vi.fn(),
   parseHeaders: vi.fn(),
   extractStudents: vi.fn(),
   getColumnLetter: vi.fn(),
   normalizeText: vi.fn()
+}));
+
+vi.mock('./rowFlattener', () => ({
+  flattenRows: vi.fn()
 }));
 
 vi.mock('./academicLogic', () => ({
@@ -31,6 +34,7 @@ vi.mock('./academicLogic', () => ({
 // Import the worker handler (pure function) and mocked deps
 import { handleParse } from './excelWorker';
 import * as excelParser from './excelParser';
+import * as rowFlattener from './rowFlattener';
 import * as academicLogic from './academicLogic';
 
 describe('excelWorker — handleParse', () => {
@@ -60,7 +64,7 @@ describe('excelWorker — handleParse', () => {
     (excelParser.parseWorkbook as ReturnType<typeof vi.fn>).mockReturnValue(mockStudents);
     (academicLogic.inferSubjectWeights as ReturnType<typeof vi.fn>).mockReturnValue({ BIOLOGIA: 0.5, QUIMICA: 0.5 });
     (academicLogic.applyAcademicLogic as ReturnType<typeof vi.fn>).mockImplementation(() => {});
-    (excelParser.flattenRows as ReturnType<typeof vi.fn>).mockReturnValue({
+    (rowFlattener.flattenRows as ReturnType<typeof vi.fn>).mockReturnValue({
       rowsArea: [{ id: '1_CIENCIAS', CURSO: 'test', estudiante: 'Alice', area: 'CIENCIAS', grupo: '10A', defP1: 4.0, defP2: 3.5, defP3: null, promActual: 3.7, p4Min: 2.1, estado: { text: 'Recuperable', color: 'blue' }, CURSO_NORM: 'TEST', AREA_NORM: 'CIENCIAS', EST_NORM: 'ALICE' }],
       rowsAsignatura: []
     });

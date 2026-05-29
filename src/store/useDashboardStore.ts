@@ -22,7 +22,7 @@ export interface DashboardState {
   setGrupo: (grupo: string) => void;
   setViewMode: (mode: 'area' | 'subject') => void;
   updateSubjectWeight: (grupo: string, area: string, asignatura: string, weight: number) => void;
-  processFile: (file: File) => Promise<void>;
+  processFiles: (files: File[]) => Promise<void>;
 }
 
 const DEFAULT_CONFIG: PeriodConfig = {
@@ -95,11 +95,11 @@ export const useDashboardStore = create<DashboardState>((set) => ({
     };
   }),
   
-  processFile: async (file: File) => {
-    set({ loading: true, error: null, diagnosticReport: null, parsingProgress: 'Leyendo archivo...' });
+  processFiles: async (files: File[]) => {
+    set({ loading: true, error: null, diagnosticReport: null, parsingProgress: 'Leyendo archivos...' });
     
     try {
-      const result = await parseFileInWorker(file, {
+      const result = await parseFileInWorker(files, {
         onProgress: (_phase, message) => {
           set({ parsingProgress: message });
         },

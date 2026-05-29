@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useUIStore } from '../../store/useUIStore';
 import {
@@ -95,9 +95,25 @@ export const ReportsTab: React.FC = () => {
   if (selectedGrupo !== lastSelectedGrupo) {
     if (selectedGrupo && selectedGrupo !== 'Todos') {
       setLocalGroup(selectedGrupo);
+      
+      // Auto-populate director for the selected group
+      const firstStudentOfGroup = estudiantes.find(s => s.grupo === selectedGrupo);
+      if (firstStudentOfGroup && firstStudentOfGroup.director) {
+        setDirectorName(firstStudentOfGroup.director);
+      }
     }
     setLastSelectedGrupo(selectedGrupo);
   }
+
+  // Also auto-populate director when localGroup changes manually in the tab
+  useEffect(() => {
+    if (localGroup) {
+      const firstStudentOfGroup = estudiantes.find(s => s.grupo === localGroup);
+      if (firstStudentOfGroup && firstStudentOfGroup.director) {
+        setDirectorName(firstStudentOfGroup.director);
+      }
+    }
+  }, [localGroup, estudiantes, setDirectorName]);
 
   const activeGroupToUse = selectedGrupo === 'Todos' ? (localGroup || defaultReportGroup) : selectedGrupo;
 
@@ -458,9 +474,17 @@ export const ReportsTab: React.FC = () => {
                   <tbody className="divide-y divide-slate-100">
                     {outstandingStudentsData.students.map((student, idx) => (
                       <tr key={student.id} className="hover:bg-slate-50/40">
-                        <td className="px-4 py-2.5 text-slate-500 font-bold">{idx + 1}</td>
+                        <td className="px-4 py-2.5 text-slate-500 font-bold">
+                          {student.officialRanking !== null && student.officialRanking !== undefined 
+                            ? student.officialRanking 
+                            : idx + 1}
+                        </td>
                         <td className="px-4 py-2.5 font-bold text-indigo-700 print:text-black">{student.name}</td>
-                        <td className="px-4 py-2.5 text-center font-extrabold text-slate-800">{student.average.toFixed(2)}</td>
+                        <td className="px-4 py-2.5 text-center font-extrabold text-slate-800">
+                          {student.officialAverage !== null && student.officialAverage !== undefined 
+                            ? student.officialAverage.toFixed(2) 
+                            : student.average.toFixed(2)}
+                        </td>
                         <td className="px-4 py-2.5 text-center font-semibold text-emerald-600 print:text-black">{student.percentile}%</td>
                       </tr>
                     ))}
@@ -704,14 +728,14 @@ export const ReportsTab: React.FC = () => {
                     {/* KPIs Pedagógicos */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 print:grid-cols-4 print:gap-3">
                       <div className="bg-slate-50 dark:bg-slate-900/10 border border-slate-100 dark:border-slate-800/40 p-2.5 rounded-xl text-center print:bg-white print:border-slate-300">
-                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Promedio</span>
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Promedio <span className="text-[8px] text-amber-600 dark:text-amber-400 font-bold">(Ofic.)</span></span>
                         <span className="text-lg font-extrabold text-slate-800 dark:text-slate-200 print:text-black">
                           {student.promedioActual.toFixed(2)}
                         </span>
                       </div>
                       
                       <div className="bg-slate-50 dark:bg-slate-900/10 border border-slate-100 dark:border-slate-800/40 p-2.5 rounded-xl text-center print:bg-white print:border-slate-300">
-                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Puesto</span>
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Puesto <span className="text-[8px] text-amber-600 dark:text-amber-400 font-bold">(Ofic.)</span></span>
                         <span className="text-lg font-extrabold text-slate-800 dark:text-slate-200 print:text-black">
                           {student.puestoGrupo} <span className="text-xs font-normal text-slate-400">/ {student.totalEstudiantesGrupo}</span>
                         </span>

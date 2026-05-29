@@ -153,7 +153,7 @@ const DiagnosticReportBlock: React.FC<DiagnosticReportBlockProps> = ({ diagnosti
 };
 
 export const FileUploadArea: React.FC = () => {
-  const processFile = useDashboardStore((state) => state.processFile);
+  const processFiles = useDashboardStore((state) => state.processFiles);
   const setConfig = useDashboardStore((state) => state.setConfig);
   const loading = useDashboardStore((state) => state.loading);
   const error = useDashboardStore((state) => state.error);
@@ -180,9 +180,9 @@ export const FileUploadArea: React.FC = () => {
   }, [diagnosticReport]);
 
   const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processFile(file);
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      processFiles(files);
     }
   };
 
@@ -216,9 +216,10 @@ export const FileUploadArea: React.FC = () => {
     e.preventDefault();
     setIsDragging(false);
     
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      if (file.name.endsWith('.json')) {
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length > 0) {
+      const jsonFile = files.find(f => f.name.endsWith('.json'));
+      if (jsonFile) {
         const reader = new FileReader();
         reader.onload = (event) => {
           try {
@@ -228,9 +229,12 @@ export const FileUploadArea: React.FC = () => {
             console.error('Invalid configuration file', err);
           }
         };
-        reader.readAsText(file);
-      } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-        processFile(file);
+        reader.readAsText(jsonFile);
+      }
+      
+      const excelFiles = files.filter(f => f.name.endsWith('.xlsx') || f.name.endsWith('.xls'));
+      if (excelFiles.length > 0) {
+        processFiles(excelFiles);
       }
     }
   };
@@ -284,6 +288,7 @@ export const FileUploadArea: React.FC = () => {
               onChange={handleExcelUpload}
               ref={fileInputRef}
               className="hidden"
+              multiple
             />
             <button
               onClick={() => fileInputRef.current?.click()}

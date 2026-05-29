@@ -27,6 +27,8 @@ dist-ssr
 .engram/
 .pi/
 *.xlsx
+*.pdf
+archivos/* # Ignorar todos los archivos dentro de la carpeta archivos
 inspect_excel.js
 
 .vercel

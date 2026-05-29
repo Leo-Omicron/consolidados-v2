@@ -427,6 +427,14 @@ export const AnalysisTab: React.FC = () => {
                         Año Reprobado ({group.failedAreasCount} {group.failedAreasCount === 1 ? 'Área' : 'Áreas'})
                       </span>
                     )}
+                    {group.rows[0]?.desempeños && (
+                      <span className="ml-2 flex gap-1">
+                        {group.rows[0].desempeños.BAJ > 0 && <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-1.5 py-0.5 rounded">BAJ: {group.rows[0].desempeños.BAJ}</span>}
+                        {group.rows[0].desempeños.BAS > 0 && <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded">BAS: {group.rows[0].desempeños.BAS}</span>}
+                        {group.rows[0].desempeños.ALT > 0 && <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded">ALT: {group.rows[0].desempeños.ALT}</span>}
+                        {group.rows[0].desempeños.SUP > 0 && <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-1.5 py-0.5 rounded">SUP: {group.rows[0].desempeños.SUP}</span>}
+                      </span>
+                    )}
                     {hasStudentSimulations && (
                       <button
                         onClick={(e) => {
@@ -443,8 +451,11 @@ export const AnalysisTab: React.FC = () => {
                   <div className="flex-1 text-center text-sm app-text-muted">
                     {group.rows.length} {group.rows.length === 1 ? (viewMode === 'area' ? 'área' : 'asignatura') : (viewMode === 'area' ? 'áreas' : 'asignaturas')}
                   </div>
-                  <div className="w-24 text-right font-bold app-text">
-                    {group.aggregates.promActual?.toFixed(2) ?? '-'}
+                  <div className="w-32 text-right font-bold app-text flex flex-col">
+                    <span>Calc: {group.aggregates.promActual?.toFixed(2) ?? '-'}</span>
+                    {group.rows[0]?.oficialPRO !== undefined && group.rows[0]?.oficialPRO !== null && (
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400">PRO Ofic: {group.rows[0].oficialPRO.toFixed(2)}</span>
+                    )}
                   </div>
                 </div>
                 
@@ -466,11 +477,14 @@ export const AnalysisTab: React.FC = () => {
                           {hasP4 && (
                             <th className="font-semibold pb-2 w-1/12 text-center">P4</th>
                           )}
+                          <th className="font-semibold pb-2 w-1/12 text-center">
+                            Acum.
+                          </th>
                           <th className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('tendencia')}>
                             Tendencia {getSortIcon('tendencia')}
                           </th>
                           <th className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('promActual')}>
-                            Prom {getSortIcon('promActual')}
+                            Prom.Calc {getSortIcon('promActual')}
                           </th>
                           <th className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none" onClick={() => handleSort('p4Min')}>
                             {hasP4 ? 'Mín. P4' : 'Mín. P3'} {getSortIcon('p4Min')}
@@ -491,8 +505,13 @@ export const AnalysisTab: React.FC = () => {
                           p3?: number | null;
                           defP4?: number | null;
                           p4?: number | null;
+                          defA?: number | null;
+                          a?: number | null;
                           tendencia: Trend;
                           promActual: number | null;
+                          oficialPRO?: number | null;
+                          oficialRAK?: number | null;
+                          desempeños?: any;
                           p4Min: number | null;
                           estado: { text: string; color: string };
                         }, idx) => {
@@ -556,6 +575,9 @@ export const AnalysisTab: React.FC = () => {
                                     />
                                   </td>
                                 )}
+                                <td className="py-2 text-center font-bold app-text">
+                                  {viewMode === 'area' ? row.defA?.toFixed(2) ?? '-' : row.a?.toFixed(2) ?? '-'}
+                                </td>
                                 <td className="py-2 text-center text-xl" title={`Tendencia: ${row.tendencia}`}>
                                   {row.tendencia === 'up' ? '↗️' : row.tendencia === 'down' ? '↘️' : row.tendencia === 'flat' ? '➡️' : '-'}
                                 </td>
@@ -587,8 +609,9 @@ export const AnalysisTab: React.FC = () => {
                                             <th className="font-semibold p-2 text-center">P2</th>
                                             <th className="font-semibold p-2 text-center">P3</th>
                                             {hasP4 && <th className="font-semibold p-2 text-center">P4</th>}
+                                            <th className="font-semibold p-2 text-center">Acum.</th>
                                             <th className="font-semibold p-2 text-center">Tendencia</th>
-                                            <th className="font-semibold p-2 text-center">Promedio</th>
+                                            <th className="font-semibold p-2 text-center">Prom.Calc</th>
                                             <th className="font-semibold p-2 text-center">{hasP4 ? 'Mín. P4' : 'Mín. P3'}</th>
                                             <th className="font-semibold p-2 text-center">Estado</th>
                                           </tr>
@@ -650,6 +673,9 @@ export const AnalysisTab: React.FC = () => {
                                                     />
                                                   </td>
                                                 )}
+                                                <td className="p-2 text-center font-bold app-text">
+                                                  {sub.a?.toFixed(2) ?? '-'}
+                                                </td>
                                                 <td className="p-2 text-center text-base" title={`Tendencia: ${subTendencia}`}>
                                                   {subTendencia === 'up' ? '↗️' : subTendencia === 'down' ? '↘️' : subTendencia === 'flat' ? '➡️' : '-'}
                                                 </td>

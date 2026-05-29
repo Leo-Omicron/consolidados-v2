@@ -9,10 +9,14 @@ import type { Estudiante, RowArea, RowAsignatura, SubjectWeightConfig } from '..
 // ---------------------------------------------------------------------------
 
 /** Sent from main thread to worker to trigger a parse. */
+export interface FileData {
+  buffer: ArrayBuffer;
+  name: string;
+}
+
 export interface WorkerRequest {
   type: 'PARSE';
-  fileData: ArrayBuffer;
-  fileName: string;
+  files: FileData[];
 }
 
 /** Posted by worker to report pipeline progress. */

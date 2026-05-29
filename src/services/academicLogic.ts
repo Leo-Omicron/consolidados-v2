@@ -72,6 +72,18 @@ export function calcularMinimoRequerido(
   return Math.round(requiredGrade * 100) / 100;
 }
 
+export function calcularAcumuladoBase(
+  notas: PeriodoNotas,
+  config: PeriodConfig,
+  evaluated = { P1: false, P2: false, P3: false, P4: false }
+): number | null {
+  const { sumProduct, sumWeight, totalWeight } = getAccumulatedWeightAndProduct(notas, config, evaluated);
+  if (sumWeight === 0) return null;
+  
+  const a = sumProduct / totalWeight;
+  return Math.round(a * 100) / 100;
+}
+
 export function determinarEstado(
   notas: PeriodoNotas,
   config: PeriodConfig,
@@ -129,13 +141,7 @@ export function getEvaluatedPeriods(students: Estudiante[]) {
 
   students.forEach(student => {
     Object.values(student.areas).forEach(area => {
-      // Check Area-level DEF
-      if (area.DEF.P1 !== null && area.DEF.P1 !== undefined) hasP1 = true;
-      if (area.DEF.P2 !== null && area.DEF.P2 !== undefined) hasP2 = true;
-      if (area.DEF.P3 !== null && area.DEF.P3 !== undefined) hasP3 = true;
-      if (area.DEF.P4 !== null && area.DEF.P4 !== undefined) hasP4 = true;
-
-      // Check Subject-level grades
+      // Only check Subject-level grades because the platform exports fake 0.0s for future periods in the Area DEF column
       Object.values(area.asignaturas).forEach(asig => {
         if (asig.P1 !== null && asig.P1 !== undefined) hasP1 = true;
         if (asig.P2 !== null && asig.P2 !== undefined) hasP2 = true;
@@ -174,6 +180,7 @@ export function applyAcademicLogic(
           });
         }
 
+        asig.A = calcularAcumuladoBase(asig, config, evaluated);
         asig.promedioActual = calcularPromedioActual(asig, config, evaluated);
         asig.p4Min = calcularMinimoRequerido(asig, config, evaluated);
         asig.estado = determinarEstado(asig, config, evaluated);
@@ -213,6 +220,9 @@ export function applyAcademicLogic(
           });
           if (hasGrade) {
             area.DEF[period] = roundToOneDecimal(sum);
+          } else {
+            // Overwrite any fake 0.0 exported by the platform with null since there are no grades
+            area.DEF[period] = null;
           }
         });
       }
@@ -253,6 +263,7 @@ export function applyAcademicLogic(
       }
 
       // Calculate area stats based on area DEF
+      area.DEF.A = calcularAcumuladoBase(area.DEF, config, evaluated);
       area.areaStats = {
         promedioActual: calcularPromedioActual(area.DEF, config, evaluated),
         p4Min: calcularMinimoRequerido(area.DEF, config, evaluated),
@@ -284,12 +295,60 @@ export function getPresetWeights(areaName: string, subjects: string[]): Record<s
     const hasCatedra = normSubjects.some(s => s.includes('CATEDRA') || s.includes('CÁTEDRA'));
     const hasGeo = normSubjects.includes('GEOGRAFIA') || normSubjects.includes('GEOGRAFÍA');
     const hasHist = normSubjects.includes('HISTORIA') || normSubjects.includes('HISTORÍA');
+    const hasCompCiud = normSubjects.some(s => s.includes('COMPETENCIA') || s.includes('CIUDADANA'));
+    const hasEco = normSubjects.some(s => s.includes('ECONOMIA') || s.includes('ECONOMÍA'));
+
+    // Sexto a Octavo: Historia (50%), Geografía (25%), Cátedra (25%)
     if (hasCatedra && hasGeo && hasHist) {
       const catKey = subjects.find(s => s.toUpperCase().trim().includes('CATEDRA') || s.toUpperCase().trim().includes('CÁTEDRA')) || '';
       const geoKey = subjects.find(s => s.toUpperCase().trim() === 'GEOGRAFIA' || s.toUpperCase().trim() === 'GEOGRAFÍA') || '';
       const histKey = subjects.find(s => s.toUpperCase().trim() === 'HISTORIA' || s.toUpperCase().trim() === 'HISTORÍA') || '';
       if (catKey && geoKey && histKey) {
         return { [catKey]: 0.25, [geoKey]: 0.25, [histKey]: 0.50 };
+      }
+    }
+    
+    // Noveno: Historia (50%), Cátedra (25%), Competencias Ciudadanas (25%)
+    if (hasCatedra && hasHist && hasCompCiud && !hasGeo) {
+      const catKey = subjects.find(s => s.toUpperCase().trim().includes('CATEDRA') || s.toUpperCase().trim().includes('CÁTEDRA')) || '';
+      const histKey = subjects.find(s => s.toUpperCase().trim() === 'HISTORIA' || s.toUpperCase().trim() === 'HISTORÍA') || '';
+      const compKey = subjects.find(s => s.toUpperCase().trim().includes('COMPETENCIA') || s.toUpperCase().trim().includes('CIUDADANA')) || '';
+      if (catKey && histKey && compKey) {
+        return { [catKey]: 0.25, [histKey]: 0.50, [compKey]: 0.25 };
+      }
+    }
+
+    // Décimo y Undécimo: Economía (50%), Competencias Ciudadanas (50%)
+    if (hasEco && hasCompCiud) {
+      const ecoKey = subjects.find(s => s.toUpperCase().trim().includes('ECONOMIA') || s.toUpperCase().trim().includes('ECONOMÍA')) || '';
+      const compKey = subjects.find(s => s.toUpperCase().trim().includes('COMPETENCIA') || s.toUpperCase().trim().includes('CIUDADANA')) || '';
+      if (ecoKey && compKey) {
+        return { [ecoKey]: 0.50, [compKey]: 0.50 };
+      }
+    }
+  }
+
+  if (normArea === 'CIENCIAS NATURALES Y AMBIENTALES' || normArea === 'CIENCIAS NATURALES' || normArea === 'NATURALES') {
+    const hasEduAmb = normSubjects.some(s => s.includes('AMBIENTAL'));
+    const hasBio = normSubjects.includes('BIOLOGIA') || normSubjects.includes('BIOLOGÍA');
+    const hasQui = normSubjects.includes('QUIMICA') || normSubjects.includes('QUÍMICA');
+    const hasFis = normSubjects.includes('FISICA') || normSubjects.includes('FÍSICA');
+
+    // Sexto a Noveno: Educación Ambiental (50%), Biología (50%)
+    if (hasEduAmb && hasBio) {
+      const ambKey = subjects.find(s => s.toUpperCase().trim().includes('AMBIENTAL')) || '';
+      const bioKey = subjects.find(s => s.toUpperCase().trim() === 'BIOLOGIA' || s.toUpperCase().trim() === 'BIOLOGÍA') || '';
+      if (ambKey && bioKey) {
+        return { [ambKey]: 0.50, [bioKey]: 0.50 };
+      }
+    }
+
+    // Décimo y Undécimo: Química (50%), Física (50%)
+    if (hasQui && hasFis) {
+      const quiKey = subjects.find(s => s.toUpperCase().trim() === 'QUIMICA' || s.toUpperCase().trim() === 'QUÍMICA') || '';
+      const fisKey = subjects.find(s => s.toUpperCase().trim() === 'FISICA' || s.toUpperCase().trim() === 'FÍSICA') || '';
+      if (quiKey && fisKey) {
+        return { [quiKey]: 0.50, [fisKey]: 0.50 };
       }
     }
   }

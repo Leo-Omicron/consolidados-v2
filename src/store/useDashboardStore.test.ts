@@ -24,7 +24,7 @@ vi.mock('../services/rowFlattener', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock excelWorkerClient (used by processFile)
+// Mock excelWorkerClient (used by processFiles)
 // ---------------------------------------------------------------------------
 vi.mock('../services/excelWorkerClient', () => ({
   parseFileInWorker: vi.fn(),
@@ -127,9 +127,9 @@ describe('useDashboardStore', () => {
   });
 
   // -----------------------------------------------------------------------
-  // processFile — worker client integration
+  // processFiles — worker client integration
   // -----------------------------------------------------------------------
-  describe('processFile (worker integration)', () => {
+  describe('processFiles (worker integration)', () => {
     let parseFileMock: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
@@ -140,21 +140,21 @@ describe('useDashboardStore', () => {
     it('delegates to excelWorkerClient.parseFileInWorker', async () => {
       parseFileMock.mockResolvedValue(mockParsedResult);
 
-      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      await useDashboardStore.getState().processFile(file);
+      
+      await useDashboardStore.getState().processFiles([]);
 
       expect(parseFileMock).toHaveBeenCalledTimes(1);
-      expect(parseFileMock).toHaveBeenCalledWith(file, expect.objectContaining({
+      expect(parseFileMock).toHaveBeenCalledWith(expect.any(Array), expect.objectContaining({
         onProgress: expect.any(Function),
         onDiagnostic: expect.any(Function)
       }));
     });
 
     it('sets loading=true and parsingProgress at start', () => {
-      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
 
-      // Call processFile but don't await — check intermediate state
-      useDashboardStore.getState().processFile(file);
+      // Call processFiles but don't await — check intermediate state
+      useDashboardStore.getState().processFiles([]);
 
       expect(useDashboardStore.getState().loading).toBe(true);
       expect(useDashboardStore.getState().parsingProgress).toBe('Leyendo archivo...');
@@ -169,10 +169,10 @@ describe('useDashboardStore', () => {
         return mockParsedResult;
       });
 
-      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      await useDashboardStore.getState().processFile(file);
+      
+      await useDashboardStore.getState().processFiles([]);
 
-      // After processFile completes, parsingProgress should be null
+      // After processFiles completes, parsingProgress should be null
       expect(useDashboardStore.getState().parsingProgress).toBeNull();
     });
 
@@ -189,8 +189,8 @@ describe('useDashboardStore', () => {
         return { ...mockParsedResult, diagnosticReport: warnReport };
       });
 
-      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      await useDashboardStore.getState().processFile(file);
+      
+      await useDashboardStore.getState().processFiles([]);
 
       expect(useDashboardStore.getState().diagnosticReport?.isValid).toBe(true);
       expect(useDashboardStore.getState().diagnosticReport?.issues[0].code).toBe('EMPTY_GRADE');
@@ -199,10 +199,10 @@ describe('useDashboardStore', () => {
     it('populates all state fields on successful RESULT', async () => {
       parseFileMock.mockResolvedValue(mockParsedResult);
 
-      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
       useDashboardStore.getState().setGrupo('X');
 
-      await useDashboardStore.getState().processFile(file);
+      await useDashboardStore.getState().processFiles([]);
 
       const state = useDashboardStore.getState();
       expect(state.loading).toBe(false);
@@ -218,8 +218,8 @@ describe('useDashboardStore', () => {
     it('sets error and loading=false on worker rejection', async () => {
       parseFileMock.mockRejectedValue(new Error('parse failed'));
 
-      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      await useDashboardStore.getState().processFile(file);
+      
+      await useDashboardStore.getState().processFiles([]);
 
       const state = useDashboardStore.getState();
       expect(state.loading).toBe(false);
@@ -239,8 +239,8 @@ describe('useDashboardStore', () => {
         throw new Error('No hay hojas válidas');
       });
 
-      const file = new File(['dummy'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      await useDashboardStore.getState().processFile(file);
+      
+      await useDashboardStore.getState().processFiles([]);
 
       const state = useDashboardStore.getState();
       expect(state.loading).toBe(false);

@@ -73,8 +73,8 @@ describe('excelWorker — handleParse', () => {
   it('posts DIAGNOSTIC after workbook validation', async () => {
     const request: WorkerRequest = {
       type: 'PARSE',
-      fileData: new ArrayBuffer(8),
-      fileName: 'test.xlsx'
+      files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
+      
     };
 
     await handleParse(request, postMessageSpy);
@@ -91,8 +91,8 @@ describe('excelWorker — handleParse', () => {
   it('posts PROGRESS messages in order: reading → extracting → calculating → applying', async () => {
     const request: WorkerRequest = {
       type: 'PARSE',
-      fileData: new ArrayBuffer(8),
-      fileName: 'test.xlsx'
+      files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
+      
     };
 
     await handleParse(request, postMessageSpy);
@@ -114,8 +114,8 @@ describe('excelWorker — handleParse', () => {
   it('posts RESULT with complete ParsedExcelData on success', async () => {
     const request: WorkerRequest = {
       type: 'PARSE',
-      fileData: new ArrayBuffer(8),
-      fileName: 'test.xlsx'
+      files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
+      
     };
 
     await handleParse(request, postMessageSpy);
@@ -143,8 +143,8 @@ describe('excelWorker — handleParse', () => {
 
     const request: WorkerRequest = {
       type: 'PARSE',
-      fileData: new ArrayBuffer(8),
-      fileName: 'corrupt.xlsx'
+      files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
+      
     };
 
     await handleParse(request, postMessageSpy);
@@ -164,8 +164,8 @@ describe('excelWorker — handleParse', () => {
 
     const request: WorkerRequest = {
       type: 'PARSE',
-      fileData: new ArrayBuffer(8),
-      fileName: 'empty.xlsx'
+      files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
+      
     };
 
     await handleParse(request, postMessageSpy);
@@ -188,8 +188,8 @@ describe('excelWorker — handleParse', () => {
 
     const request: WorkerRequest = {
       type: 'PARSE',
-      fileData: new ArrayBuffer(8),
-      fileName: 'bad.xlsx'
+      files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
+      
     };
 
     await handleParse(request, postMessageSpy);
@@ -226,8 +226,8 @@ describe('excelWorker — handleParse', () => {
 
     const request: WorkerRequest = {
       type: 'PARSE',
-      fileData: new ArrayBuffer(8),
-      fileName: 'groups.xlsx'
+      files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
+      
     };
 
     await handleParse(request, postMessageSpy);

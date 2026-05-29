@@ -39,7 +39,6 @@ export function validateWorkbook(workbook: XLSX.WorkBook): DiagnosticReport {
     }
 
     totalSheetsProcessed++;
-
     const worksheet = workbook.Sheets[sheetName];
     const hasRef = !!worksheet && !!worksheet['!ref'];
     const rows: unknown[][] = hasRef ? XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null }) : [];
@@ -55,120 +54,27 @@ export function validateWorkbook(workbook: XLSX.WorkBook): DiagnosticReport {
       return;
     }
 
-    if (rows.length < 4) {
+    // Find header row (the row containing "ESTUDIANTE")
+    let headerRowIndex = -1;
+    for (let i = 0; i < rows.length; i++) {
+      if (normalizeText(rows[i]?.[1]) === 'ESTUDIANTE' || normalizeText(rows[i]?.[0]) === 'ESTUDIANTE') {
+        headerRowIndex = i;
+        break;
+      }
+    }
+
+    if (headerRowIndex === -1 || headerRowIndex < 2) {
       issues.push({
         code: 'MISSING_SCHEMA',
         severity: 'CRITICAL',
         sheet: sheetName,
-        message: `La hoja "${sheetName}" tiene menos de 4 filas y no cuenta con una estructura válida de encabezados y estudiantes.`,
-        action: 'Asegúrese de usar la plantilla oficial con tres filas de encabezados y al menos una fila de estudiantes.'
+        message: `La hoja "${sheetName}" no contiene la estructura esperada (falta la fila de "ESTUDIANTE" o no tiene suficientes filas previas para jerarquía).`,
+        action: 'Asegúrese de usar el reporte consolidado oficial.'
       });
       return;
     }
 
-    // Header Schema Scan (rows 0-2, col 0 and col 1)
-    let hasCol0Header = false;
-    let hasCol1Header = false;
-    for (let i = 0; i < 3; i++) {
-      const col0Val = normalizeText(rows[i]?.[0]);
-      const col1Val = normalizeText(rows[i]?.[1]);
-      if (['ID', '#', 'NO', 'N°'].includes(col0Val)) {
-        hasCol0Header = true;
-      }
-      if (['NAME', 'ESTUDIANTE', 'NOMBRE'].includes(col1Val)) {
-        hasCol1Header = true;
-      }
-    }
-
-    if (!hasCol0Header || !hasCol1Header) {
-      issues.push({
-        code: 'MISSING_SCHEMA',
-        severity: 'CRITICAL',
-        sheet: sheetName,
-        message: `La hoja "${sheetName}" no contiene los encabezados obligatorios de identificación ("ID" o "#") en la primera columna o de estudiante ("ESTUDIANTE" o "NOMBRE") en la segunda columna.`,
-        action: 'Modifique las tres primeras filas de la hoja para incluir los encabezados correspondientes en las columnas A y B.'
-      });
-      return;
-    }
-
-    // Parse headers to detect period columns
-    const headerRows = rows.slice(0, 3);
-    const { headers } = parseHeaders(headerRows);
-    const periodHeaders = headers.filter(h => ['P1', 'P2', 'P3', 'P4'].includes(h.componente));
-
-    // Data rows scan
-    const dataRows = rows.slice(3);
-    dataRows.forEach((row, dataIdx) => {
-      const rowIdx = dataIdx + 3; // 0-indexed in dataRows corresponds to row 3 in rows, so rowIdx is 0-indexed in rows
-      const studentName = normalizeText(row[1]);
-
-      // If name is blank but row is populated
-      if (studentName === '') {
-        const hasOtherValues = row.some((cell, colIdx) => colIdx !== 1 && cell !== null && cell !== undefined && String(cell).trim() !== '');
-        if (hasOtherValues) {
-          issues.push({
-            code: 'MISSING_NAME',
-            severity: 'WARNING',
-            sheet: sheetName,
-            row: rowIdx + 1, // 1-indexed for Excel
-            col: 'B',
-            message: `Fila ${rowIdx + 1} tiene datos pero tiene el nombre en blanco.`,
-            action: 'Ingrese el nombre del estudiante correspondiente en la columna B o elimine la fila si es basura.'
-          });
-        }
-      } else {
-        // Validate grades for this student
-        periodHeaders.forEach(h => {
-          const cellVal = row[h.index];
-          const colLetter = getColumnLetter(h.index);
-          if (cellVal === null || cellVal === undefined || String(cellVal).trim() === '') {
-            issues.push({
-              code: 'EMPTY_GRADE',
-              severity: 'WARNING',
-              sheet: sheetName,
-              row: rowIdx + 1,
-              col: colLetter,
-              message: `Calificación vacía en la celda ${colLetter}${rowIdx + 1} (${h.area} - ${h.asignatura} - ${h.componente}) para el estudiante "${studentName}".`,
-              action: 'Ingrese una calificación válida entre 1.0 y 5.0 o deje un cero si corresponde.'
-            });
-          } else {
-            let num: number;
-            let isValidNumber = true;
-            if (typeof cellVal === 'number') {
-              num = cellVal;
-            } else {
-              const cleaned = String(cellVal).trim().replace(',', '.');
-              num = parseFloat(cleaned);
-              if (isNaN(num)) {
-                isValidNumber = false;
-              }
-            }
-
-            if (!isValidNumber) {
-              issues.push({
-                code: 'INVALID_GRADE',
-                severity: 'WARNING',
-                sheet: sheetName,
-                row: rowIdx + 1,
-                col: colLetter,
-                message: `Calificación no es un número ("${cellVal}") en la celda ${colLetter}${rowIdx + 1} para el estudiante "${studentName}".`,
-                action: 'Modifique el valor por un número decimal válido entre 1.0 y 5.0.'
-              });
-            } else if (num < 1.0 || num > 5.0) {
-              issues.push({
-                code: 'INVALID_GRADE',
-                severity: 'WARNING',
-                sheet: sheetName,
-                row: rowIdx + 1,
-                col: colLetter,
-                message: `Calificación fuera de rango (${num}) en la celda ${colLetter}${rowIdx + 1} para el estudiante "${studentName}".`,
-                action: 'Asegúrese de que la calificación esté entre 1.0 y 5.0.'
-              });
-            }
-          }
-        });
-      }
-    });
+    // The validation could be extended here, but for now we trust the platform's format.
   });
 
   if (totalSheetsProcessed === 0) {
@@ -177,7 +83,7 @@ export function validateWorkbook(workbook: XLSX.WorkBook): DiagnosticReport {
       severity: 'CRITICAL',
       sheet: 'Global',
       message: 'No se encontraron hojas válidas para procesar en el archivo Excel.',
-      action: 'Asegúrese de cargar un archivo Excel válido que contenga las hojas de los grupos (ej. 10A, 10B, etc.).'
+      action: 'Asegúrese de cargar un archivo Excel válido.'
     });
   }
 
@@ -194,7 +100,7 @@ export interface HeaderComponent {
   index: number;
   area: string;
   asignatura: string;
-  componente: string;
+  componente: string; // P1, P2, P3, P4, A, PRO, RAK, BAJ, BAS, ALT, SUP
 }
 
 export function normalizeText(t: unknown): string {
@@ -203,12 +109,10 @@ export function normalizeText(t: unknown): string {
 }
 
 /**
- * Parses the top 3 rows of an XLSX to construct valid headers.
- * Implements forward-filling for merged cells in Excel.
- * Detects whether we have 3 or 4 periods dynamically.
+ * Parses the 3 header rows to construct valid headers.
+ * The raw rows are from indices (headerRowIndex - 2), (headerRowIndex - 1), (headerRowIndex)
  */
 export function parseHeaders(headerRows: unknown[][]): { headers: HeaderComponent[], totalPeriods: number } {
-  // Ensure same length
   const maxLen = Math.max(...headerRows.map(r => r.length));
   const [rawAreas, rawAsignaturas, rawComponentes] = headerRows.map(row => {
     const fullRow = [...row];
@@ -242,109 +146,214 @@ export function parseHeaders(headerRows: unknown[][]): { headers: HeaderComponen
     componente: normalizeText(comp)
   }));
 
-  // Omit the first two columns (ID and Name)
-  let structuredHeaders = headers.slice(2);
-  structuredHeaders = structuredHeaders.filter(h => h.area && h.asignatura && h.componente);
+  // Omit the first two columns (ID and Name usually, but we filter dynamically)
 
-  // Detect periods
-  let hasP4 = false;
-  structuredHeaders.forEach(h => {
-    if (h.componente === 'P4') hasP4 = true;
-  });
+  
+  const structuredHeaders = headers.filter(h => h.area && h.componente);
 
-  return { headers: structuredHeaders, totalPeriods: hasP4 ? 4 : 3 };
+  // Detect periods (max period)
+  let totalPeriods = 3;
+  if (structuredHeaders.some(h => h.componente === 'P4')) totalPeriods = 4;
+
+  return { headers: structuredHeaders, totalPeriods };
 }
 
-export function extractStudents(dataRows: unknown[][], headers: HeaderComponent[], curso: string, grupo: string = ''): Estudiante[] {
-  const students: Estudiante[] = [];
+function extractNumber(val: unknown): number | null {
+  if (typeof val === 'number') return val;
+  if (typeof val === 'string') {
+    const clean = val.replace('R:', '').trim().replace(',', '.');
+    const parsed = parseFloat(clean);
+    if (!isNaN(parsed)) return parsed;
+  }
+  return null;
+}
 
-  dataRows.forEach(row => {
-    const id = normalizeText(row[0]);
-    const name = normalizeText(row[1]);
+export function extractStudents(dataRows: unknown[][], headers: HeaderComponent[], defaultCurso: string, defaultGrupo: string = '', director: string = ''): Estudiante[] {
+  const students: Estudiante[] = [];
+  let lastStudent: Estudiante | null = null;
+
+  dataRows.forEach((row) => {
+    // Check if it's a recovery row (R:)
+    const isRecoveryRow = row.some(cell => typeof cell === 'string' && cell.includes('R:'));
     
+    if (isRecoveryRow && lastStudent) {
+      // It's a recovery row, apply grades to last student
+      headers.forEach(h => {
+        const rawVal = row[h.index];
+        if (typeof rawVal === 'string' && rawVal.includes('R:')) {
+          const note = extractNumber(rawVal);
+          if (note !== null && note >= 0 && note <= 5) {
+            applyGradeToStudent(lastStudent!, h, note);
+          }
+        }
+      });
+      return; // done with this row
+    }
+
+    const id = normalizeText(row[0]);
+    let name = normalizeText(row[1]);
+
+    // Ignore summary rows at the bottom of the Excel sheet
+    const firstCell = String(row[0] || '').trim().toUpperCase();
+    if (['PROM. ASIGNATURA', 'BAJO', 'BASICO', 'ALTO', 'SUPERIOR', 'RAK: RANKING O PUESTO'].includes(firstCell) || firstCell.startsWith('ADMINISTRADOR:')) {
+      return;
+    }
+    
+    // If name is empty, it could be a garbage row, but we also check if it has valid ID in column 1 sometimes.
+    if (!name && id && isNaN(Number(id))) {
+       name = id; // Sometimes name is in the first column
+    }
+
     if (!name) return;
 
     const student: Estudiante = {
       id: id || name,
       name,
-      CURSO: curso,
-      grupo: grupo || curso,
-      areas: {}
+      CURSO: defaultCurso,
+      grupo: defaultGrupo || defaultCurso,
+      director,
+      areas: {},
+      promedios: {},
+      rankings: {},
+      desempeños: {}
     };
 
+    // Pre-initialize all areas and subjects to ensure they exist even if grades are empty
     headers.forEach(h => {
-      const { area, asignatura, componente, index } = h;
-      if (!student.areas[area]) {
-        student.areas[area] = { asignaturas: {}, DEF: { P1: null, P2: null, P3: null, P4: null } };
+      if (['PRO', 'RAK', 'BAJ', 'BAS', 'ALT', 'SUP'].includes(h.area)) return;
+      if (!student.areas[h.area]) {
+        student.areas[h.area] = { asignaturas: {}, DEF: { P1: null, P2: null, P3: null, P4: null, A: null } };
       }
-
-      const rawVal = row[index];
-      let note: number | null = null;
-      if (typeof rawVal === 'number') {
-        note = rawVal;
-      } else if (typeof rawVal === 'string') {
-        const parsed = parseFloat(rawVal.replace(',', '.'));
-        if (!isNaN(parsed)) note = parsed;
+      if (h.asignatura !== 'DEF' && !student.areas[h.area].asignaturas[h.asignatura]) {
+        student.areas[h.area].asignaturas[h.asignatura] = {
+          P1: null, P2: null, P3: null, P4: null, A: null,
+          promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' }
+        };
       }
-      
-      if (note !== null && (note < 0 || note > 5)) {
-        note = null;
-      }
+    });
 
-      // Check if it's an expected component P1-P4
-      const isPeriod = ['P1', 'P2', 'P3', 'P4'].includes(componente);
-
-      const areaHasDefColumn = headers.some(h => h.area === area && h.asignatura === 'DEF');
-      const isAreaDef = asignatura === 'DEF' || (!areaHasDefColumn && asignatura === area);
-
-      if (isAreaDef) {
-        // It's the area's DEF
-        if (isPeriod) {
-          const compKey = componente as 'P1' | 'P2' | 'P3' | 'P4';
-          student.areas[area].DEF[compKey] = note;
-        }
-      } else {
-        if (!student.areas[area].asignaturas[asignatura]) {
-          student.areas[area].asignaturas[asignatura] = {
-            P1: null, P2: null, P3: null, P4: null,
-            promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' }
-          };
-        }
-        if (isPeriod) {
-          const compKey = componente as 'P1' | 'P2' | 'P3' | 'P4';
-          student.areas[area].asignaturas[asignatura][compKey] = note;
-        }
+    headers.forEach(h => {
+      const rawVal = row[h.index];
+      const note = extractNumber(rawVal);
+      if (note !== null) {
+        applyGradeToStudent(student, h, note);
       }
     });
 
     students.push(student);
+    lastStudent = student;
   });
 
   return students;
 }
 
+function applyGradeToStudent(student: Estudiante, h: HeaderComponent, value: number) {
+  const { area, asignatura, componente } = h;
 
+  // Global Metrics
+  if (area === 'PRO') {
+    student.promedios![componente] = value;
+    return;
+  }
+  if (area === 'RAK') {
+    student.rankings![componente] = value;
+    return;
+  }
+  if (['BAJ', 'BAS', 'ALT', 'SUP'].includes(area)) {
+    if (!student.desempeños![componente]) {
+      student.desempeños![componente] = { BAJ: 0, BAS: 0, ALT: 0, SUP: 0 };
+    }
+    // Typecast since we know area is one of the keys
+    (student.desempeños![componente] as unknown as Record<string, number>)[area] = value;
+    return;
+  }
+
+  // Academic Areas
+  if (!student.areas[area]) {
+    student.areas[area] = { asignaturas: {}, DEF: { P1: null, P2: null, P3: null, P4: null, A: null } };
+  }
+
+  // Determine if this is the Area DEF column
+  const isPeriod = ['P1', 'P2', 'P3', 'P4', 'A', 'DEF'].includes(componente);
+  // Only DEF explicitly marks the definitive area grade
+  const isAreaDef = asignatura === 'DEF';
+
+  if (isAreaDef) {
+    if (isPeriod) {
+      const compKey = componente === 'DEF' ? 'A' : componente; // Fallback
+      if (['P1', 'P2', 'P3', 'P4', 'A'].includes(compKey)) {
+        (student.areas[area].DEF as unknown as Record<string, number | null>)[compKey] = value;
+      }
+    }
+  } else {
+    if (!student.areas[area].asignaturas[asignatura]) {
+      student.areas[area].asignaturas[asignatura] = {
+        P1: null, P2: null, P3: null, P4: null, A: null,
+        promedioActual: 0, p4Min: 0, estado: { text: 'N/A', color: 'gray' }
+      };
+    }
+    if (isPeriod) {
+      const compKey = componente === 'DEF' ? 'A' : componente; // Fallback
+      if (['P1', 'P2', 'P3', 'P4', 'A'].includes(compKey)) {
+        (student.areas[area].asignaturas[asignatura] as unknown as Record<string, number | null>)[compKey] = value;
+      }
+    }
+  }
+}
 
 export function parseWorkbook(workbook: XLSX.WorkBook, curso: string): Estudiante[] {
   let allStudents: Estudiante[] = [];
 
   workbook.SheetNames.forEach(sheetName => {
-    if (normalizeText(sheetName) === 'RESUMEN') {
-      return;
-    }
+    if (normalizeText(sheetName) === 'RESUMEN') return;
 
     const worksheet = workbook.Sheets[sheetName];
     const rows: unknown[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-    if (rows.length < 4) {
-      return; // Skip invalid sheets
+    if (rows.length < 15) return; // Too short for the new format
+
+    let headerRowIndex = -1;
+    for (let i = 0; i < rows.length; i++) {
+      if (normalizeText(rows[i]?.[1]) === 'ESTUDIANTE' || normalizeText(rows[i]?.[0]) === 'ESTUDIANTE') {
+        headerRowIndex = i;
+        break;
+      }
     }
 
-    const headerRows = rows.slice(0, 3);
-    const dataRows = rows.slice(3);
+    if (headerRowIndex < 2) return; // Invalid format
+
+    // Try to extract group name from row 12 (index 12) if it contains "Consolidado Curso"
+    let extractGrupo = curso;
+    for (let i = 0; i < headerRowIndex; i++) {
+      const text = String(rows[i]?.find(c => typeof c === 'string' && c.includes('Consolidado Curso')) || '');
+      if (text) {
+        // e.g. "Consolidado Curso - Año 2026 - IE EL CARMEN SEDE PRINCIPAL - SEXTO UNO- Jornada Tarde"
+        const parts = text.split('-');
+        if (parts.length > 3) {
+          extractGrupo = parts[parts.length - 2].trim(); // "SEXTO UNO"
+        }
+      }
+    }
+
+    // Try to extract director from A15 (index 14) or anywhere before headerRowIndex
+    let extractDirector = 'Director de Curso';
+    if (rows[14] && typeof rows[14][0] === 'string' && rows[14][0].toUpperCase().includes('DIRECTOR')) {
+      extractDirector = rows[14][0].replace(/DIRECTOR DE GRUPO:/i, '').trim();
+    } else {
+      for (let i = 0; i < headerRowIndex; i++) {
+        const text = String(rows[i]?.find(c => typeof c === 'string' && c.toUpperCase().includes('DIRECTOR')) || '');
+        if (text) {
+          extractDirector = text.replace(/DIRECTOR DE GRUPO:/i, '').trim();
+          break;
+        }
+      }
+    }
+
+    const headerRows = [rows[headerRowIndex], rows[headerRowIndex + 1], rows[headerRowIndex + 2]];
+    const dataRows = rows.slice(headerRowIndex + 3);
 
     const { headers } = parseHeaders(headerRows);
-    const students = extractStudents(dataRows, headers, curso, sheetName);
+    const students = extractStudents(dataRows, headers, curso, extractGrupo, extractDirector);
     
     allStudents = allStudents.concat(students);
   });

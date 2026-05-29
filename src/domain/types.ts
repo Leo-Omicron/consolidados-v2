@@ -18,8 +18,15 @@ export interface PeriodoNotas {
   P2: number | null;
   P3: number | null;
   P4?: number | null;
+  A?: number | null;
 }
 
+export interface MetricasDesempeño {
+  BAJ: number;
+  BAS: number;
+  ALT: number;
+  SUP: number;
+}
 export interface EvaluacionStats {
   promedioActual: number;
   p4Min: number;
@@ -40,6 +47,12 @@ export interface Estudiante {
   CURSO: string;
   grupo: string;
   areas: Record<string, Area>;
+  promedios?: Record<string, number | null>;
+  rankings?: Record<string, number | null>;
+  desempeños?: Record<string, MetricasDesempeño | null>;
+  oficialPRO?: number | null;
+  oficialRAK?: number | null;
+  director?: string;
 }
 
 export interface RowArea {
@@ -52,12 +65,16 @@ export interface RowArea {
   defP2: number | null;
   defP3: number | null;
   defP4?: number | null;
+  defA?: number | null;
   promActual: number | null;
   p4Min: number | null;
   estado: EstadoAcademico;
   CURSO_NORM: string;
   AREA_NORM: string;
   EST_NORM: string;
+  oficialPRO?: number | null;
+  oficialRAK?: number | null;
+  desempeños?: MetricasDesempeño | null;
 }
 
 export interface RowAsignatura {
@@ -71,6 +88,7 @@ export interface RowAsignatura {
   p2: number | null;
   p3: number | null;
   p4?: number | null;
+  a?: number | null;
   promActual: number | null;
   p4Min: number | null;
   estado: EstadoAcademico;
@@ -78,6 +96,9 @@ export interface RowAsignatura {
   AREA_NORM: string;
   ASIG_NORM: string;
   EST_NORM: string;
+  oficialPRO?: number | null;
+  oficialRAK?: number | null;
+  desempeños?: MetricasDesempeño | null;
 }
 
 export type Trend = 'up' | 'down' | 'flat' | 'none';
@@ -130,6 +151,8 @@ export interface OutstandingStudent {
   name: string;
   average: number;
   percentile: number;
+  officialRanking?: number | null;
+  officialAverage?: number | null;
 }
 
 export interface AcademicRiskStudent {

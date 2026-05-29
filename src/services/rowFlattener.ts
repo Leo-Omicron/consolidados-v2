@@ -17,12 +17,16 @@ export function flattenRows(students: Estudiante[]): { rowsArea: RowArea[], rows
           defP2: areaData.DEF.P2,
           defP3: areaData.DEF.P3,
           defP4: areaData.DEF.P4,
+          defA: areaData.DEF.A,
           promActual: areaData.areaStats.promedioActual,
           p4Min: areaData.areaStats.p4Min,
           estado: areaData.areaStats.estado,
           CURSO_NORM: student.CURSO.toUpperCase(),
           AREA_NORM: areaName.toUpperCase(),
-          EST_NORM: student.name.toUpperCase()
+          EST_NORM: student.name.toUpperCase(),
+          oficialPRO: student.promedios ? student.promedios['DEF'] : null,
+          oficialRAK: student.rankings ? student.rankings['DEF'] : null,
+          desempeños: student.desempeños && student.desempeños['DEF'] ? student.desempeños['DEF'] : null
         });
       }
 
@@ -41,13 +45,17 @@ export function flattenRows(students: Estudiante[]): { rowsArea: RowArea[], rows
             p2: asigData.P2,
             p3: asigData.P3,
             p4: asigData.P4,
+            a: asigData.A,
             promActual: asigData.promedioActual,
             p4Min: asigData.p4Min,
             estado: asigData.estado,
             CURSO_NORM: student.CURSO.toUpperCase(),
             AREA_NORM: areaName.toUpperCase(),
             ASIG_NORM: asigName.toUpperCase(),
-            EST_NORM: student.name.toUpperCase()
+            EST_NORM: student.name.toUpperCase(),
+            oficialPRO: student.promedios ? student.promedios['DEF'] : null,
+            oficialRAK: student.rankings ? student.rankings['DEF'] : null,
+            desempeños: student.desempeños && student.desempeños['DEF'] ? student.desempeños['DEF'] : null
           });
         });
       } else if (areaData.areaStats) {
@@ -62,13 +70,17 @@ export function flattenRows(students: Estudiante[]): { rowsArea: RowArea[], rows
           p2: areaData.DEF.P2,
           p3: areaData.DEF.P3,
           p4: areaData.DEF.P4,
+          a: areaData.DEF.A,
           promActual: areaData.areaStats.promedioActual,
           p4Min: areaData.areaStats.p4Min,
           estado: areaData.areaStats.estado,
           CURSO_NORM: student.CURSO.toUpperCase(),
           AREA_NORM: areaName.toUpperCase(),
           ASIG_NORM: areaName.toUpperCase(),
-          EST_NORM: student.name.toUpperCase()
+          EST_NORM: student.name.toUpperCase(),
+          oficialPRO: student.promedios ? student.promedios['DEF'] : null,
+          oficialRAK: student.rankings ? student.rankings['DEF'] : null,
+          desempeños: student.desempeños && student.desempeños['DEF'] ? student.desempeños['DEF'] : null
         });
       }
     });

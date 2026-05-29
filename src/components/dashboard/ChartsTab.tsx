@@ -4,6 +4,7 @@ import { useDashboardStore } from '../../store/useDashboardStore';
 import { useThemeStore, type ThemeMode } from '../../store/useThemeStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
 import { roundToOneDecimal } from '../../services/academicLogic';
+import { generateGroupComparisonReport } from '../../services/reportEngine';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -171,6 +172,30 @@ export const ChartsTab: React.FC = () => {
     };
   }, [filteredRows, viewMode]);
 
+  const groupComparisonChartData = useMemo(() => {
+    // We pass an empty config as PeriodConfig is not heavily used in this basic aggregation
+    const report = generateGroupComparisonReport(estudiantes, { period: '1P', config: {} } as any);
+    
+    // Sort groups alphanumerically
+    const sortedGroups = report.groups.sort((a, b) => a.grupo.localeCompare(b.grupo));
+    
+    const labels = sortedGroups.map(g => `Grupo ${g.grupo}`);
+    const data = sortedGroups.map(g => g.average);
+    
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Promedio General del Grupo',
+          data,
+          backgroundColor: 'rgba(139, 92, 246, 0.5)',
+          borderColor: 'rgb(139, 92, 246)',
+          borderWidth: 1,
+        }
+      ]
+    };
+  }, [estudiantes]);
+
   if (estudiantes.length === 0) {
     return <div className="p-8 text-center app-text-muted">No hay datos para visualizar. Cargue un archivo Excel.</div>;
   }
@@ -253,6 +278,41 @@ export const ChartsTab: React.FC = () => {
             <Pie 
               data={statusChartData} 
               options={commonChartOptions} 
+            />
+          </div>
+        </section>
+      </div>
+
+      <div className="mt-8">
+        <section className="app-surface p-4 rounded-lg border app-border shadow-sm" role="region" aria-label="Comparativa de Grupos">
+          <h3 className="text-sm font-medium app-text mb-4 text-center">Comparativa de Promedios entre Grupos</h3>
+          <div className="h-72">
+            <Bar 
+              data={groupComparisonChartData} 
+              options={{ 
+                ...commonChartOptions,
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    max: 5,
+                    ticks: {
+                      color: chartTheme.text,
+                    },
+                    grid: {
+                      color: chartTheme.grid,
+                    },
+                  },
+                  x: {
+                    ticks: {
+                      color: chartTheme.text,
+                    },
+                    grid: {
+                      color: chartTheme.grid,
+                    },
+                  }
+                }
+              }} 
+              plugins={[thresholdLinePlugin]}
             />
           </div>
         </section>

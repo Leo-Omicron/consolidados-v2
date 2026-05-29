@@ -87,6 +87,9 @@ export function calculateCompetitionRanking(averages: number[]): number[] {
 
 // Private helper to calculate student overall average (mean of their areas' averages)
 function getStudentAverage(student: Estudiante): number {
+  if (student.promedios && typeof student.promedios['DEF'] === 'number') {
+    return student.promedios['DEF'];
+  }
   const areaStatsList = Object.values(student.areas)
     .map(area => area.areaStats?.promedioActual)
     .filter((v): v is number => typeof v === 'number');
@@ -193,16 +196,31 @@ export function generateOutstandingStudentsReport(students: Estudiante[], grupo:
   const studentAverages = groupStudents.map(s => getStudentAverage(s));
   const percentiles = calculatePercentileRanks(studentAverages);
   
-  const mapped = groupStudents.map((s, idx) => ({
-    id: s.id,
-    name: s.name,
-    average: studentAverages[idx],
-    percentile: percentiles[idx],
-  }));
+  const mapped = groupStudents.map((s, idx) => {
+    const officialRanking = s.rankings && typeof s.rankings['DEF'] === 'number' ? s.rankings['DEF'] : null;
+    const officialAverage = s.promedios && typeof s.promedios['DEF'] === 'number' ? s.promedios['DEF'] : null;
+    
+    return {
+      id: s.id,
+      name: s.name,
+      average: studentAverages[idx],
+      percentile: percentiles[idx],
+      officialRanking,
+      officialAverage
+    };
+  });
   
   const outstanding = mapped
-    .filter(item => item.percentile >= 90)
+    .filter(item => {
+      if (item.officialRanking !== null) {
+        return item.officialRanking <= 3; // Top 3 if official ranking exists
+      }
+      return item.percentile >= 90; // Otherwise top 10%
+    })
     .sort((a, b) => {
+      if (a.officialRanking !== null && b.officialRanking !== null) {
+        return a.officialRanking - b.officialRanking;
+      }
       if (b.average !== a.average) {
         return b.average - a.average;
       }
@@ -424,7 +442,7 @@ export function generateTeacherFeedbackReportForGroup(
 
   // Calculate averages and rankings
   const studentAverages = groupStudents.map(s => getStudentAverage(s));
-  const rankings = calculateCompetitionRanking(studentAverages);
+  const calcRankings = calculateCompetitionRanking(studentAverages);
 
   const totalAvgSum = studentAverages.reduce((acc, val) => acc + val, 0);
   const promedioGrupo = Math.round((totalAvgSum / totalEstudiantesGrupo) * 100) / 100;
@@ -474,6 +492,9 @@ export function generateTeacherFeedbackReportForGroup(
       adviceText = 'Tu situación académica es crítica. Es indispensable establecer un plan de recuperación inmediato junto con tus profesores y acudiente.';
     }
     
+    const officialRank = student.rankings && typeof student.rankings['DEF'] === 'number' ? student.rankings['DEF'] : calcRankings[idx];
+    const officialAvg = student.promedios && typeof student.promedios['DEF'] === 'number' ? student.promedios['DEF'] : avg;
+
     return {
       studentId: student.id,
       studentName: student.name,
@@ -482,9 +503,9 @@ export function generateTeacherFeedbackReportForGroup(
       strengths,
       weaknesses,
       adviceText,
-      promedioActual: avg,
+      promedioActual: officialAvg,
       promedioGrupo,
-      puestoGrupo: rankings[idx],
+      puestoGrupo: officialRank,
       totalEstudiantesGrupo,
       totalAreasCount,
       failedAreasCount,

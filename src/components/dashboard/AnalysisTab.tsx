@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
-import type { Trend, SubjectWeightConfig } from '../../domain/types';
+import type { Trend, SubjectWeightConfig, MetricasDesempeño } from '../../domain/types';
 import { useUIStore } from '../../store/useUIStore';
 import { useSimulationStore } from '../../store/useSimulationStore';
 import { getSimulatedRows } from '../../services/simulationLogic';
@@ -511,7 +511,7 @@ export const AnalysisTab: React.FC = () => {
                           promActual: number | null;
                           oficialPRO?: number | null;
                           oficialRAK?: number | null;
-                          desempeños?: any;
+                          desempeños?: Record<string, MetricasDesempeño | null>;
                           p4Min: number | null;
                           estado: { text: string; color: string };
                         }, idx) => {

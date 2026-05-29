@@ -85,7 +85,7 @@ describe('excelWorker — handleParse', () => {
 
     expect(diagnosticCall).toBeDefined();
     expect(diagnosticCall!.type).toBe('DIAGNOSTIC');
-    expect(diagnosticCall!.report).toBe(mockDiagnostic);
+    expect(diagnosticCall!.report).toStrictEqual(mockDiagnostic);
   });
 
   it('posts PROGRESS messages in order: reading → extracting → calculating → applying', async () => {
@@ -101,14 +101,13 @@ describe('excelWorker — handleParse', () => {
       .map(c => c[0])
       .filter((msg): msg is WorkerProgress => msg.type === 'PROGRESS');
 
-    expect(progressCalls).toHaveLength(4);
+    expect(progressCalls).toHaveLength(3);
 
     // Order check: phase strings should appear in pipeline order
     const phases = progressCalls.map(p => p.phase);
     expect(phases[0]).toContain('Leyendo');
-    expect(phases[1]).toContain('Extrayendo');
-    expect(phases[2]).toContain('Calculando');
-    expect(phases[3]).toContain('Aplicando');
+    expect(phases[1]).toContain('Calculando');
+    expect(phases[2]).toContain('Aplicando');
   });
 
   it('posts RESULT with complete ParsedExcelData on success', async () => {
@@ -126,13 +125,13 @@ describe('excelWorker — handleParse', () => {
 
     expect(resultCall).toBeDefined();
     const result = resultCall!.data;
-    expect(result.estudiantes).toBe(mockStudents);
+    expect(result.estudiantes).toStrictEqual(mockStudents);
     expect(result.rowsArea).toHaveLength(1);
     expect(result.rowsAsignatura).toEqual([]);
     expect(result.availableGroups).toContain('Todos');
     expect(result.availableGroups).toContain('10A');
     expect(result.availableGroups).toContain('10B');
-    expect(result.diagnosticReport).toBe(mockDiagnostic);
+    expect(result.diagnosticReport).toStrictEqual(mockDiagnostic);
   });
 
   it('posts ERROR when XLSX.read throws (corrupt file)', async () => {

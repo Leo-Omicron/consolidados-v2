@@ -157,13 +157,13 @@ describe('useDashboardStore', () => {
       useDashboardStore.getState().processFiles([]);
 
       expect(useDashboardStore.getState().loading).toBe(true);
-      expect(useDashboardStore.getState().parsingProgress).toBe('Leyendo archivo...');
+      expect(useDashboardStore.getState().parsingProgress).toBe('Leyendo archivos...');
     });
 
     it('updates parsingProgress from onProgress callback', async () => {
       // Capture the callbacks
       parseFileMock.mockImplementation(async (_file: File, callbacks: ParseCallbacks) => {
-        callbacks?.onProgress?.('Leyendo archivo...', '10%');
+        callbacks?.onProgress?.('Leyendo archivos...', '10%');
         callbacks?.onProgress?.('Extrayendo estudiantes...', '50%');
         callbacks?.onProgress?.('Calculando pesos...', '75%');
         return mockParsedResult;

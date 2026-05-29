@@ -54,8 +54,6 @@ describe('excelWorkerClient', () => {
   }
 
   it('parses a file and resolves with ParsedExcelData', async () => {
-    
-
     const promise = parseFileInWorker([]);
 
     // Flush microtasks so arrayBuffer().then() runs
@@ -65,7 +63,8 @@ describe('excelWorkerClient', () => {
     expect(mockWorkerPostMessage).toHaveBeenCalledTimes(1);
     const posted = mockWorkerPostMessage.mock.calls[0];
     expect(posted[0].type).toBe('PARSE');
-    expect(posted[0].fileName).toBe('test.xlsx');
+    // New API sends files array, not a single fileName
+    expect(posted[0].files).toBeDefined();
 
     // Simulate worker response
     simulateWorkerMessage({ type: 'RESULT', data: mockParsedData });
@@ -89,28 +88,26 @@ describe('excelWorkerClient', () => {
 
   it('calls onProgress callback with phase and message', async () => {
     const onProgress = vi.fn();
-    
 
-    const promise = parseFileInWorker([]);
+    const promise = parseFileInWorker([], { onProgress });
     await flushMicrotasks();
 
     // Simulate progress and result
-    simulateWorkerMessage({ type: 'PROGRESS', phase: 'Leyendo archivo...', message: '10%' });
-    simulateWorkerMessage({ type: 'PROGRESS', phase: 'Extrayendo estudiantes...', message: '50%' });
+    simulateWorkerMessage({ type: 'PROGRESS', phase: 'Leyendo archivos...', message: '10%' });
+    simulateWorkerMessage({ type: 'PROGRESS', phase: 'Calculando pesos...', message: '50%' });
     simulateWorkerMessage({ type: 'RESULT', data: mockParsedData });
 
     await promise;
 
     expect(onProgress).toHaveBeenCalledTimes(2);
-    expect(onProgress).toHaveBeenCalledWith('Leyendo archivo...', '10%');
-    expect(onProgress).toHaveBeenCalledWith('Extrayendo estudiantes...', '50%');
+    expect(onProgress).toHaveBeenCalledWith('Leyendo archivos...', '10%');
+    expect(onProgress).toHaveBeenCalledWith('Calculando pesos...', '50%');
   });
 
   it('calls onDiagnostic callback with report', async () => {
     const onDiagnostic = vi.fn();
-    
 
-    const promise = parseFileInWorker([]);
+    const promise = parseFileInWorker([], { onDiagnostic });
     await flushMicrotasks();
 
     const report = { isValid: false, totalSheetsProcessed: 0, issues: [{ code: 'MISSING_SCHEMA' as const, severity: 'CRITICAL' as const, sheet: 'Sheet1', message: 'bad', action: 'fix' }] };
@@ -125,15 +122,13 @@ describe('excelWorkerClient', () => {
 
   it('transfers ArrayBuffer via transfer list (zero-copy)', async () => {
     const buffer = new ArrayBuffer(16);
-    // Override arrayBuffer to return our controlled buffer
-    
-    const file = new File([], "dummy");
+    const file = new File([], 'dummy.xlsx');
     Object.defineProperty(file, 'arrayBuffer', {
       value: vi.fn().mockResolvedValue(buffer),
       writable: true
     });
 
-    const promise = parseFileInWorker([]);
+    const promise = parseFileInWorker([file]);
     await flushMicrotasks();
 
     const posted = mockWorkerPostMessage.mock.calls[0];

@@ -8,16 +8,16 @@ vi.mock('../../store/useDashboardStore', () => ({
 }));
 
 describe('FileUploadArea', () => {
-  let processFileMock: any;
+  let processFilesMock: any;
   let setConfigMock: any;
 
   beforeEach(() => {
-    processFileMock = vi.fn();
+    processFilesMock = vi.fn();
     setConfigMock = vi.fn();
     
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
-        processFile: processFileMock,
+        processFiles: processFilesMock,
         setConfig: setConfigMock,
         loading: false,
         error: null,
@@ -37,7 +37,7 @@ describe('FileUploadArea', () => {
   it('shows loading state', () => {
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
-        processFile: processFileMock,
+        processFiles: processFilesMock,
         setConfig: setConfigMock,
         loading: true,
         error: null,
@@ -54,7 +54,7 @@ describe('FileUploadArea', () => {
   it('shows parsing progress text from store when available', () => {
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
-        processFile: processFileMock,
+        processFiles: processFilesMock,
         setConfig: setConfigMock,
         loading: true,
         error: null,
@@ -74,7 +74,7 @@ describe('FileUploadArea', () => {
   it('falls back to "Procesando..." when loading but no parsingProgress', () => {
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
-        processFile: processFileMock,
+        processFiles: processFilesMock,
         setConfig: setConfigMock,
         loading: true,
         error: null,
@@ -90,7 +90,7 @@ describe('FileUploadArea', () => {
   it('shows error state', () => {
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
-        processFile: processFileMock,
+        processFiles: processFilesMock,
         setConfig: setConfigMock,
         loading: false,
         error: 'Test error message'
@@ -126,7 +126,7 @@ describe('FileUploadArea', () => {
       }
     });
 
-    expect(processFileMock).toHaveBeenCalledWith(file);
+    expect(processFilesMock).toHaveBeenCalledWith([file]);
     expect((screen.getByRole('button', { name: 'Cargar Excel' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
@@ -156,7 +156,7 @@ describe('FileUploadArea', () => {
     
     fireEvent.change(fileInput, { target: { files: [file] } });
     
-    expect(processFileMock).toHaveBeenCalledWith(file);
+    expect(processFilesMock).toHaveBeenCalledWith([file]);
   });
 
   it('calls setConfig when valid json file is selected', async () => {
@@ -199,7 +199,7 @@ describe('FileUploadArea', () => {
 
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
-        processFile: processFileMock,
+        processFiles: processFilesMock,
         setConfig: setConfigMock,
         loading: false,
         error: null,
@@ -253,7 +253,7 @@ describe('FileUploadArea', () => {
 
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
-        processFile: processFileMock,
+        processFiles: processFilesMock,
         setConfig: setConfigMock,
         loading: false,
         error: null,

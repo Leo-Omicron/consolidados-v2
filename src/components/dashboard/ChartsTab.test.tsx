@@ -124,10 +124,11 @@ describe('ChartsTab', () => {
       useDashboardStore.setState({ selectedGrupo: '10B' });
       render(<ChartsTab />);
 
-      const barElement = screen.getByTestId('bar-chart');
+      // There are now 2 Bar charts (area + group comparison), use getAllByTestId
+      const barElements = screen.getAllByTestId('bar-chart');
       const pieElement = screen.getByTestId('pie-chart');
 
-      const barData = JSON.parse(barElement.getAttribute('data-data') || '{}');
+      const barData = JSON.parse(barElements[0].getAttribute('data-data') || '{}');
       const pieData = JSON.parse(pieElement.getAttribute('data-data') || '{}');
 
       // For 10B, only PEDRO exists. Area MATEMATICAS = 4.5
@@ -149,7 +150,8 @@ describe('ChartsTab', () => {
       useThemeStore.setState({ mode: 'light' });
       render(<ChartsTab />);
 
-      const barOptions = JSON.parse(screen.getByTestId('bar-chart').getAttribute('data-options') || '{}');
+      const barElements = screen.getAllByTestId('bar-chart');
+      const barOptions = JSON.parse(barElements[0].getAttribute('data-options') || '{}');
       const pieOptions = JSON.parse(screen.getByTestId('pie-chart').getAttribute('data-options') || '{}');
 
       expect(barOptions.scales.y.ticks.color).toBe('#475569');
@@ -161,7 +163,8 @@ describe('ChartsTab', () => {
       useThemeStore.setState({ mode: 'dark' });
       render(<ChartsTab />);
 
-      const barOptions = JSON.parse(screen.getByTestId('bar-chart').getAttribute('data-options') || '{}');
+      const barElements = screen.getAllByTestId('bar-chart');
+      const barOptions = JSON.parse(barElements[0].getAttribute('data-options') || '{}');
       const pieOptions = JSON.parse(screen.getByTestId('pie-chart').getAttribute('data-options') || '{}');
 
       expect(barOptions.scales.y.ticks.color).toBe('#cbd5e1');

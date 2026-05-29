@@ -511,7 +511,7 @@ export const AnalysisTab: React.FC = () => {
                           promActual: number | null;
                           oficialPRO?: number | null;
                           oficialRAK?: number | null;
-                          desempeños?: Record<string, MetricasDesempeño | null>;
+                          desempeños?: MetricasDesempeño | null;
                           p4Min: number | null;
                           estado: { text: string; color: string };
                         }, idx) => {

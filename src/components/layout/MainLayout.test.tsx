@@ -52,7 +52,7 @@ describe('MainLayout', () => {
   it('changes active tab when header tab is clicked', () => {
     render(<MainLayout />);
     
-    fireEvent.click(screen.getByText('Charts'));
+    fireEvent.click(screen.getByText('Estadísticas'));
     expect(screen.getByTestId('charts-tab')).toBeDefined();
     expect(screen.queryByTestId('analysis-tab')).toBeNull();
 

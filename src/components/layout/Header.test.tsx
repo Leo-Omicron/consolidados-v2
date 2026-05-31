@@ -22,7 +22,7 @@ describe('Header', () => {
     render(<Header activeTab="analysis" setActiveTab={() => {}} />);
     expect(screen.getByText('Dashboard de Consolidados')).toBeDefined();
     expect(screen.getByText('Analysis')).toBeDefined();
-    expect(screen.getByText('Charts')).toBeDefined();
+    expect(screen.getByText('Estadísticas')).toBeDefined();
     expect(screen.getByText('Reports')).toBeDefined();
   });
 
@@ -30,14 +30,14 @@ describe('Header', () => {
     render(<Header activeTab="analysis" setActiveTab={() => {}} />);
 
     expect(screen.getByRole('button', { name: 'Analysis' }).getAttribute('aria-current')).toBe('page');
-    expect(screen.getByRole('button', { name: 'Charts' }).getAttribute('aria-current')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Estadísticas' }).getAttribute('aria-current')).toBeNull();
   });
 
   it('calls setActiveTab when a tab is clicked', () => {
     const setActiveTab = vi.fn();
     render(<Header activeTab="analysis" setActiveTab={setActiveTab} />);
     
-    fireEvent.click(screen.getByText('Charts'));
+    fireEvent.click(screen.getByText('Estadísticas'));
     expect(setActiveTab).toHaveBeenCalledWith('charts');
   });
 

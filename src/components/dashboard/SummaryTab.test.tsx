@@ -52,7 +52,8 @@ describe('SummaryTab', () => {
     useDashboardStore.setState({
       estudiantes: [
         {
-          id: '1', name: 'Ana', grupo: '10A', areas: {
+          id: '1', name: 'Ana', grupo: '10A', CURSO: '10A',
+          areas: {
             'Matemáticas': { DEF: { P1: 3.5, P2: null, P3: null, P4: null, A: null }, areaStats: { promedioActual: 3.5, p4Min: 0, estado: { text: 'Ganado', color: 'green' } }, asignaturas: {} }
           }
         }
@@ -81,20 +82,30 @@ describe('SummaryTab', () => {
     ];
 
     const testRowsArea = [
-      { estudiante: 'JUAN', grupo: '10A', area: 'MATEMATICAS', promActual: 3.5, estado: { text: 'Ganado', color: 'green' }, defP1: 3.5, defP2: 3.5, defP3: 3.5 },
-      { estudiante: 'JUAN', grupo: '10A', area: 'HUMANIDADES', promActual: 4.0, estado: { text: 'Ganado', color: 'green' }, defP1: 4.0, defP2: 4.0, defP3: 4.0 },
-      { estudiante: 'MARIA', grupo: '10A', area: 'MATEMATICAS', promActual: 2.0, estado: { text: 'Perdido', color: 'red' }, defP1: 2.0, defP2: 2.0, defP3: 2.0 },
-      { estudiante: 'MARIA', grupo: '10A', area: 'HUMANIDADES', promActual: 2.5, estado: { text: 'Perdido', color: 'red' }, defP1: 2.5, defP2: 2.5, defP3: 2.5 },
-      { estudiante: 'MARIA', grupo: '10A', area: 'CIENCIAS', promActual: 1.5, estado: { text: 'Perdido', color: 'red' }, defP1: 1.5, defP2: 1.5, defP3: 1.5 },
+      { estudiante: 'JUAN', grupo: '10A',
+    CURSO: '10A', area: 'MATEMATICAS', promActual: 3.5, estado: { text: 'Ganado', color: 'green' }, defP1: 3.5, defP2: 3.5, defP3: 3.5 },
+      { estudiante: 'JUAN', grupo: '10A',
+    CURSO: '10A', area: 'HUMANIDADES', promActual: 4.0, estado: { text: 'Ganado', color: 'green' }, defP1: 4.0, defP2: 4.0, defP3: 4.0 },
+      { estudiante: 'MARIA', grupo: '10A',
+    CURSO: '10A', area: 'MATEMATICAS', promActual: 2.0, estado: { text: 'Perdido', color: 'red' }, defP1: 2.0, defP2: 2.0, defP3: 2.0 },
+      { estudiante: 'MARIA', grupo: '10A',
+    CURSO: '10A', area: 'HUMANIDADES', promActual: 2.5, estado: { text: 'Perdido', color: 'red' }, defP1: 2.5, defP2: 2.5, defP3: 2.5 },
+      { estudiante: 'MARIA', grupo: '10A',
+    CURSO: '10A', area: 'CIENCIAS', promActual: 1.5, estado: { text: 'Perdido', color: 'red' }, defP1: 1.5, defP2: 1.5, defP3: 1.5 },
       { estudiante: 'PEDRO', grupo: '10B', area: 'MATEMATICAS', promActual: 4.5, estado: { text: 'Ganado', color: 'green' }, defP1: 4.5, defP2: 4.5, defP3: 4.5 }
     ];
 
     const testRowsAsignatura = [
-      { estudiante: 'JUAN', grupo: '10A', asignatura: 'ALGEBRA', promActual: 3.5, estado: { text: 'Ganado', color: 'green' }, p1: 3.5, p2: 3.5, p3: 3.5 },
-      { estudiante: 'JUAN', grupo: '10A', asignatura: 'LECTURA', promActual: 4.0, estado: { text: 'Ganado', color: 'green' }, p1: 4.0, p2: 4.0, p3: 4.0 },
-      { estudiante: 'MARIA', grupo: '10A', asignatura: 'ALGEBRA', promActual: 2.0, estado: { text: 'Perdido', color: 'red' }, p1: 2.0, p2: 2.0, p3: 2.0 },
-      { estudiante: 'MARIA', grupo: '10A', asignatura: 'LECTURA', promActual: 2.5, estado: { text: 'Perdido', color: 'red' }, p1: 2.5, p2: 2.5, p3: 2.5 },
-      { estudiante: 'MARIA', grupo: '10A', asignatura: 'QUIMICA', promActual: 1.5, estado: { text: 'Perdido', color: 'red' }, p1: 1.5, p2: 1.5, p3: 1.5 },
+      { estudiante: 'JUAN', grupo: '10A',
+    CURSO: '10A', asignatura: 'ALGEBRA', promActual: 3.5, estado: { text: 'Ganado', color: 'green' }, p1: 3.5, p2: 3.5, p3: 3.5 },
+      { estudiante: 'JUAN', grupo: '10A',
+    CURSO: '10A', asignatura: 'LECTURA', promActual: 4.0, estado: { text: 'Ganado', color: 'green' }, p1: 4.0, p2: 4.0, p3: 4.0 },
+      { estudiante: 'MARIA', grupo: '10A',
+    CURSO: '10A', asignatura: 'ALGEBRA', promActual: 2.0, estado: { text: 'Perdido', color: 'red' }, p1: 2.0, p2: 2.0, p3: 2.0 },
+      { estudiante: 'MARIA', grupo: '10A',
+    CURSO: '10A', asignatura: 'LECTURA', promActual: 2.5, estado: { text: 'Perdido', color: 'red' }, p1: 2.5, p2: 2.5, p3: 2.5 },
+      { estudiante: 'MARIA', grupo: '10A',
+    CURSO: '10A', asignatura: 'QUIMICA', promActual: 1.5, estado: { text: 'Perdido', color: 'red' }, p1: 1.5, p2: 1.5, p3: 1.5 },
       { estudiante: 'PEDRO', grupo: '10B', asignatura: 'ALGEBRA', promActual: 4.5, estado: { text: 'Ganado', color: 'green' }, p1: 4.5, p2: 4.5, p3: 4.5 }
     ];
 

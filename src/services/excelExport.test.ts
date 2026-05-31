@@ -128,7 +128,7 @@ describe('excelExport', () => {
 
     it('mapFeedbackToAOA maps correctly', () => {
       const aoa = mapFeedbackToAOA([{
-        grupo: '10A', studentId: '1', studentName: 'Ana', puestoGrupo: 1, promedioActual: 4.5, promedioGrupo: 3.8,
+        grupo: '10A', studentId: '1', studentName: 'Ana', puestoGrupo: 1, promedioActual: 4.5, promedioGrupo: 3.8, totalEstudiantesGrupo: 30, totalAreasCount: 5, failedAreasCount: 0, weaknesses: [],
         overallStatus: 'Aprobado', strengths: ['Math'], weaknessesDetail: [{ areaName: 'Science', requiredGrade: 4.0, isImpossible: false }, { areaName: 'Art', requiredGrade: 0, isImpossible: true }], adviceText: 'Keep going'
       }]);
       expect(aoa[0]).toContain('10A');
@@ -199,13 +199,13 @@ describe('excelExport', () => {
 
     it('does nothing if window is undefined', async () => {
       const originalWindow = window;
-      // @ts-expect-error - we need to delete window for test
+      // 
       delete (globalThis as any).window;
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       await triggerDownload({} as WorkBook, 'test.xlsx');
       expect(consoleErrorSpy).not.toHaveBeenCalled();
       consoleErrorSpy.mockRestore();
-      // @ts-expect-error - restore window for test
+      // 
       (globalThis as any).window = originalWindow;
     });
   });

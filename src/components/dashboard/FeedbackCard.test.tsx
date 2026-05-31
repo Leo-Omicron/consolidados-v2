@@ -4,6 +4,10 @@ import { FeedbackCard } from './FeedbackCard';
 import type { TeacherFeedbackReport } from '../../domain/types';
 
 const mockReportBase: TeacherFeedbackReport = {
+  studentId: '1',
+  weaknesses: [],
+  promedioGrupo: 3.5,
+  totalAreasCount: 5,
   studentName: 'John Doe',
   grupo: 'Grupo A',
   promedioActual: 3.5,

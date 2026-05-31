@@ -336,7 +336,7 @@ describe('academicLogic', () => {
       // Area DEF: P1 = (3*0.5 + 3*0.5) = 3.0. P2 = (4*0.5 + 2*0.5) = 3.0.
       expect(area.DEF.P1).toBe(3.0);
       expect(area.DEF.P2).toBe(3.0);
-      expect(area.areaStats.promedioActual).toBe(3.0);
+      expect(area.areaStats!.promedioActual).toBe(3.0);
     });
 
     it('falls back to uniform weights when none are provided', () => {

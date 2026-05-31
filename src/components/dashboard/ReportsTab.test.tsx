@@ -306,7 +306,7 @@ describe('ReportsTab', () => {
       const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: '10A', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
       return selector(state);
     });
-    const _alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
     render(<ReportsTab />);
     
     // Group performance export

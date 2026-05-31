@@ -1,14 +1,13 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { FeedbackCard } from './FeedbackCard';
-import { TeacherFeedbackReport } from '../../domain/types';
+import type { TeacherFeedbackReport } from '../../domain/types';
 
 const mockReportBase: TeacherFeedbackReport = {
   studentName: 'John Doe',
   grupo: 'Grupo A',
   promedioActual: 3.5,
-  overallStatus: 'En Riesgo',
+  overallStatus: 'Compromisos',
   failedAreasCount: 0,
   strengths: [],
   weaknessesDetail: [],
@@ -23,7 +22,7 @@ describe('FeedbackCard', () => {
     
     expect(screen.getByText('John Doe')).toBeInTheDocument();
     expect(screen.getByText('Grupo A')).toBeInTheDocument();
-    expect(screen.getByText('En Riesgo')).toBeInTheDocument();
+    expect(screen.getByText('Compromisos')).toBeInTheDocument();
     expect(screen.getByText('3.50')).toBeInTheDocument();
     expect(screen.getByText('Puesto: 15 de 30')).toBeInTheDocument();
     expect(screen.getByText('Estudiante requiere atención.')).toBeInTheDocument();

@@ -1,6 +1,6 @@
 import { render, screen, act } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import 'vitest-axe/extend-expect';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SummaryTab, thresholdLinePlugin } from './SummaryTab';
 import { useDashboardStore } from '../../store/useDashboardStore';
@@ -52,7 +52,7 @@ describe('SummaryTab', () => {
     useDashboardStore.setState({
       estudiantes: [
         {
-          id: '1', nombre: 'Ana', grupo: '10A', areas: {
+          id: '1', name: 'Ana', grupo: '10A', areas: {
             'Matemáticas': { DEF: { P1: 3.5, P2: null, P3: null, P4: null, A: null }, areaStats: { promedioActual: 3.5, p4Min: 0, estado: { text: 'Ganado', color: 'green' } }, asignaturas: {} }
           }
         }

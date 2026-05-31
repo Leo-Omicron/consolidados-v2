@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import 'vitest-axe/extend-expect';
+import 'vitest-axe/extend-expect';
 import { TutorsTab } from './TutorsTab';
 import { useDashboardStore } from '../../store/useDashboardStore';
 

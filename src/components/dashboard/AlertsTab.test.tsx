@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import 'vitest-axe/extend-expect';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AlertsTab } from './AlertsTab';
 import { useDashboardStore } from '../../store/useDashboardStore';

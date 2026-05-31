@@ -23,20 +23,20 @@ describe('flattenRows', () => {
                 P1: 4.0, P2: 4.0, P3: 4.0, P4: null, A: null,
                 promedioActual: 4.0,
                 p4Min: 0,
-                estado: 'Ganado'
+                estado: { text: 'Ganado', color: 'green' }
               }
             },
             DEF: { P1: 4.0, P2: 4.0, P3: 4.0, P4: null, A: null },
             areaStats: {
               promedioActual: 4.0,
               p4Min: 0,
-              estado: 'Ganado'
+              estado: { text: 'Ganado', color: 'green' }
             }
           }
         },
         promedios: { 'DEF': 4.0 },
         rankings: { 'DEF': 1 },
-        desempeños: { 'DEF': 'ALTO' }
+        desempeños: { 'DEF': { BAJ: 0, BAS: 0, ALT: 1, SUP: 0 } }
       }
     ];
 
@@ -52,13 +52,13 @@ describe('flattenRows', () => {
       grupo: '10A',
       defP1: 4.0,
       promActual: 4.0,
-      estado: 'Ganado',
+      estado: { text: 'Ganado', color: 'green' },
       CURSO_NORM: '10A',
       AREA_NORM: 'MATH',
       EST_NORM: 'ANA',
       oficialPRO: 4.0,
       oficialRAK: 1,
-      desempeños: 'ALTO'
+      desempeños: { BAJ: 0, BAS: 0, ALT: 1, SUP: 0 }
     });
 
     expect(result.rowsAsignatura[0]).toMatchObject({
@@ -70,14 +70,14 @@ describe('flattenRows', () => {
       grupo: '10A',
       p1: 4.0,
       promActual: 4.0,
-      estado: 'Ganado',
+      estado: { text: 'Ganado', color: 'green' },
       CURSO_NORM: '10A',
       AREA_NORM: 'MATH',
       ASIG_NORM: 'ALGEBRA',
       EST_NORM: 'ANA',
       oficialPRO: 4.0,
       oficialRAK: 1,
-      desempeños: 'ALTO'
+      desempeños: { BAJ: 0, BAS: 0, ALT: 1, SUP: 0 }
     });
   });
 
@@ -95,7 +95,7 @@ describe('flattenRows', () => {
             areaStats: {
               promedioActual: 3.0,
               p4Min: 3.0,
-              estado: 'En riesgo'
+              estado: { text: 'En riesgo', color: 'yellow' }
             }
           }
         }
@@ -115,14 +115,14 @@ describe('flattenRows', () => {
                 P1: 3.0, P2: 3.0, P3: 3.0, P4: null, A: null,
                 promedioActual: 3.0,
                 p4Min: 3.0,
-                estado: 'En riesgo'
+                estado: { text: 'En riesgo', color: 'yellow' }
               }
             },
             DEF: { P1: 3.0, P2: 3.0, P3: 3.0, P4: null, A: null },
             areaStats: {
               promedioActual: 3.0,
               p4Min: 3.0,
-              estado: 'En riesgo'
+              estado: { text: 'En riesgo', color: 'yellow' }
             }
           }
         },
@@ -142,14 +142,14 @@ describe('flattenRows', () => {
                 P1: 4.0, P2: 4.0, P3: 4.0, P4: null, A: null,
                 promedioActual: 4.0,
                 p4Min: 0,
-                estado: 'Ganado'
+                estado: { text: 'Ganado', color: 'green' }
               }
             },
             DEF: { P1: 4.0, P2: 4.0, P3: 4.0, P4: null, A: null },
             areaStats: {
               promedioActual: 4.0,
               p4Min: 0,
-              estado: 'Ganado'
+              estado: { text: 'Ganado', color: 'green' }
             }
           }
         } // Missing promedios, rankings, desempeños WITH asignaturas
@@ -201,7 +201,7 @@ describe('flattenRows', () => {
           'PE': {
             asignaturas: {},
             DEF: { P1: null, P2: null, P3: null, P4: null, A: null },
-            areaStats: { promedioActual: 3.0, p4Min: 3.0, estado: 'En riesgo' }
+            areaStats: { promedioActual: 3.0, p4Min: 3.0, estado: { text: 'En riesgo', color: 'yellow' } }
           }
         },
         promedios: {},
@@ -217,12 +217,12 @@ describe('flattenRows', () => {
           'PE': {
             asignaturas: {},
             DEF: { P1: null, P2: null, P3: null, P4: null, A: null },
-            areaStats: { promedioActual: 3.0, p4Min: 3.0, estado: 'En riesgo' }
+            areaStats: { promedioActual: 3.0, p4Min: 3.0, estado: { text: 'En riesgo', color: 'yellow' } }
           }
         },
         promedios: { 'DEF': 4.0 },
         rankings: { 'DEF': 1 },
-        desempeños: { 'DEF': 'ALTO' }
+        desempeños: { 'DEF': { BAJ: 0, BAS: 0, ALT: 1, SUP: 0 } }
       }
     ];
 

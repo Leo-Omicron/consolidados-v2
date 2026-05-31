@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
+import 'vitest-axe/extend-expect';
 import { Header } from './Header';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { THEME_STORAGE_KEY, useThemeStore } from '../../store/useThemeStore';

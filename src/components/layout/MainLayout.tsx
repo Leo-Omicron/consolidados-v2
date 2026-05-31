@@ -5,6 +5,9 @@ import { AnalysisTab } from '../dashboard/AnalysisTab';
 import { ChartsTab } from '../dashboard/ChartsTab';
 import { ReportsTab } from '../dashboard/ReportsTab';
 import { AlertsTab } from '../dashboard/AlertsTab';
+import { TutorsTab } from '../dashboard/TutorsTab';
+import { HeatmapTab } from '../dashboard/HeatmapTab';
+import { VolatilityTab } from '../dashboard/VolatilityTab';
 import { useThemeStore } from '../../store/useThemeStore';
 
 export const MainLayout: React.FC = () => {
@@ -25,6 +28,12 @@ export const MainLayout: React.FC = () => {
         return <ReportsTab />;
       case 'alerts':
         return <AlertsTab />;
+      case 'tutors':
+        return <TutorsTab />;
+      case 'volatility':
+        return <VolatilityTab />;
+      case 'heatmap':
+        return <HeatmapTab />;
       default:
         return <AnalysisTab />;
     }

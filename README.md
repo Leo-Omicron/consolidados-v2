@@ -1,73 +1,50 @@
-# React + TypeScript + Vite
+# Consolidados IEEC - Plataforma de Analítica Pedagógica
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<p align="center">
+  <img src="./archivos/escudo-el-carmen.jpg" width="180" alt="Escudo IE El Carmen" />
+</p>
 
-Currently, two official plugins are available:
+Plataforma cliente-servidor (100% frontend) diseñada para la **Institución Educativa El Carmen**. Empodera a docentes y directivas al transformar reportes de Excel crudos en tableros de control interactivos, simuladores de rendimiento y sistemas de alertas tempranas, respetando al máximo la privacidad de los datos y manteniendo costos operativos en cero.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Impacto y Filosofía
 
-## React Compiler
+- **Privacidad Absoluta:** Los archivos Excel de los estudiantes NUNCA salen del computador. Todo se procesa en el navegador (Web Worker).
+- **Cero Costos:** Sin base de datos, sin backend. Alojado de forma gratuita en Vercel.
+- **Decisiones Basadas en Datos:** Adiós a las percepciones. Hola a las proyecciones matemáticas exactas.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Funcionalidades Brutales (Lo Bueno)
 
-## Expanding the ESLint configuration
+| Módulo | Utilidad Pedagógica |
+|--------|---------------------|
+| **Parseo Web Worker** | Procesa Excels pesados con miles de celdas en milisegundos sin congelar la pantalla. |
+| **Diagnóstico de Calidad** | Auditoría automática. Detecta notas atípicas, vacíos de información o formatos rotos antes de analizar. |
+| **Alertas Tempranas** | Detecta al instante estudiantes en "Riesgo Imposible" (necesitan > 5.0) o "Severo" y genera reportes para intervención. |
+| **Mentores Pares** | Identifica a los estudiantes más sobresalientes de cada área para asignarlos como tutores de sus compañeros en riesgo. ¡Aprendizaje colaborativo! |
+| **Volatilidad Académica** | Mide la consistencia del rendimiento a lo largo del año. Detecta estudiantes "En Caída Libre" o en "Montaña Rusa" analizando la desviación estándar de sus notas. |
+| **Mapa de Calor** | Matriz visual de todo el salón. Colores intuitivos para detectar de un vistazo en qué asignaturas está fallando el grupo entero o qué estudiante requiere atención. |
+| **Estadísticas Generales** | Resumen directivo con promedios generales, tasas de aprobación y comparación competitiva entre diferentes grupos. |
+| **Soporte Legacy & Dinámico** | Detecta plantillas antiguas automáticamente (fallback) y adapta todas las proyecciones y gráficos según si el año tiene 3, 4 o N periodos activos. |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## ⚠️ Limitaciones Conocidas (Lo Malo)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Sin Persistencia Centralizada:** Al no haber base de datos, el docente debe arrastrar el archivo Excel cada vez que abre la plataforma. 
+- **Acoplamiento al Formato:** La herramienta depende de la estructura del Excel escolar. Aunque cuenta con un parser secundario para formatos antiguos (legacy fallback), cambios drásticos futuros requerirán actualización de la lógica de extracción.
+- **Cálculo de Pesos Inferidos:** La plataforma debe deducir los pesos porcentuales (ej. 25/25/50 en Sociales) leyendo los promedios. Anomaílas en el reporte original impactan la predicción.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🛠️ Tech Stack & Ingeniería
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **Core:** React 19 + TypeScript + Vite.
+- **Estado:** Zustand (arquitectura de micro-stores).
+- **Estilos:** Tailwind CSS 4.
+- **Datos y Gráficos:** SheetJS (xlsx) + Chart.js.
+- **Calidad:** TDD estricto con Vitest y React Testing Library (100% de cobertura en lógica académica).
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🚦 Pasos Rápidos (Desarrollo)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. `npm install`
+2. `npm run dev` (Levanta el servidor local)
+3. `npm test -- --run` (Corre la barrera de validación de 185+ tests)
+4. `npm run build` (Prepara para Vercel)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+*Construido con disciplina, TDD estricto y código limpio. Zero Vibecoding.*

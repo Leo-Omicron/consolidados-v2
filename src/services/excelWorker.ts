@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { validateWorkbook, parseWorkbook } from './excelParser';
+import { validateWorkbook, parseWorkbook, isLegacyFormat, parseLegacyFormat } from './excelParser';
 import { flattenRows } from './rowFlattener';
 import { applyAcademicLogic, inferSubjectWeights } from './academicLogic';
 import type { WorkerRequest, WorkerMessage } from './workerTypes';
@@ -21,7 +21,25 @@ export async function handleParse(
       const fileData = request.files[i];
       const workbook = XLSX.read(fileData.buffer, { type: 'array' });
       
+      const curso = fileData.name.replace(/\.[^/.]+$/, '');
       const report = validateWorkbook(workbook);
+      
+      let isLegacy = false;
+      if (!report.isValid) {
+        // Check if ANY sheet matches legacy format
+        isLegacy = workbook.SheetNames.some(sheetName => {
+          if (sheetName.toUpperCase() === 'RESUMEN') return false;
+          const ws = workbook.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+          return isLegacyFormat(rows as unknown[][]);
+        });
+      }
+
+      if (isLegacy) {
+        // Clean critical issues because we'll use legacy parser
+        report.issues = report.issues.filter(i => i.severity !== 'CRITICAL');
+        report.isValid = true;
+      }
       
       sheetsProcessed += report.totalSheetsProcessed;
       if (!report.isValid) {
@@ -29,8 +47,7 @@ export async function handleParse(
       }
       allDiagnosticIssues.push(...report.issues);
 
-      const curso = fileData.name.replace(/\.[^/.]+$/, '');
-      const students = parseWorkbook(workbook, curso);
+      const students = isLegacy ? parseLegacyFormat(workbook, curso) : parseWorkbook(workbook, curso);
       allStudents = allStudents.concat(students);
     }
 

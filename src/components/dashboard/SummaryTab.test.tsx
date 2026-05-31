@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SummaryTab } from './SummaryTab';
 import { useDashboardStore } from '../../store/useDashboardStore';
@@ -95,8 +95,9 @@ describe('SummaryTab', () => {
 
       expect(screen.getByText('3.0')).toBeTruthy();
 
-      useDashboardStore.setState({ selectedGrupo: '10A' });
-      render(<SummaryTab />);
+      act(() => {
+        useDashboardStore.setState({ selectedGrupo: '10A' });
+      });
 
       expect(screen.getAllByText('2.7').length).toBeGreaterThan(0);
       expect(screen.getAllByText('50.0%').length).toBeGreaterThan(0);
@@ -106,8 +107,9 @@ describe('SummaryTab', () => {
     it('reacts to viewMode toggles', () => {
       render(<SummaryTab />);
 
-      useDashboardStore.setState({ viewMode: 'subject' });
-      render(<SummaryTab />);
+      act(() => {
+        useDashboardStore.setState({ viewMode: 'subject' });
+      });
 
       expect(screen.getAllByText('3.0').length).toBeGreaterThan(0);
       expect(screen.getAllByText('66.7%').length).toBeGreaterThan(0);

@@ -44,16 +44,33 @@ export const FeedbackCard: React.FC<{ report: TeacherFeedbackReport }> = ({ repo
           </h3>
           <div className="space-y-3">
             {report.weaknessesDetail.map((weakness, i) => (
-              <div key={i} className={`p-4 rounded-lg border ${weakness.isImpossible ? 'bg-red-50 border-red-300' : 'bg-orange-50 border-orange-300'} flex justify-between items-center`}>
-                <div className="font-bold text-slate-800">{weakness.areaName}</div>
-                <div className="text-right">
-                  <div className="text-xs uppercase text-slate-500 mb-1">Nota mínima requerida para pasar:</div>
-                  {weakness.isImpossible ? (
-                    <div className="text-red-600 font-black text-xl">Imposible ({weakness.requiredGrade.toFixed(2)})</div>
-                  ) : (
-                    <div className="text-orange-600 font-black text-xl">{weakness.requiredGrade.toFixed(2)}</div>
-                  )}
+              <div key={i} className={`p-4 rounded-lg border ${weakness.isImpossible ? 'bg-red-50 border-red-300' : 'bg-orange-50 border-orange-300'} flex flex-col`}>
+                <div className="flex justify-between items-center">
+                  <div className="font-bold text-slate-800">{weakness.areaName}</div>
+                  <div className="text-right">
+                    <div className="text-xs uppercase text-slate-500 mb-1">Nota mínima requerida para pasar:</div>
+                    {weakness.isImpossible ? (
+                      <div className="text-red-600 font-black text-xl">Imposible ({weakness.requiredGrade.toFixed(2)})</div>
+                    ) : (
+                      <div className="text-orange-600 font-black text-xl">{weakness.requiredGrade.toFixed(2)}</div>
+                    )}
+                  </div>
                 </div>
+                {weakness.rescueRoute && weakness.rescueRoute.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-orange-200">
+                    <div className="text-xs font-bold uppercase text-orange-800 mb-2 flex items-center">
+                      <span className="mr-1">🎯</span> Ruta de Rescate (Nota Sugerida):
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {weakness.rescueRoute.map((route, j) => (
+                        <div key={j} className="bg-white px-3 py-1.5 rounded-md border border-orange-100 flex justify-between items-center shadow-sm">
+                          <span className="text-xs font-semibold text-slate-700 truncate mr-2" title={route.asignatura}>{route.asignatura}</span>
+                          <span className="text-sm font-black text-orange-600 bg-orange-100 px-2 py-0.5 rounded">{route.targetGrade.toFixed(1)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

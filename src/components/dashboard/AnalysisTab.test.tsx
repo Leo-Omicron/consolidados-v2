@@ -724,7 +724,9 @@ describe('AnalysisTab', () => {
     expect(useSimulationStore.getState().activeSimulations).toEqual({});
     
     // Cleanup store
-    useSimulationStore.setState({ activeSimulations: {} });
+    act(() => {
+      useSimulationStore.setState({ activeSimulations: {} });
+    });
   });
 
   it('clears all simulations when clicking the global reset button in the banner', () => {
@@ -866,6 +868,8 @@ describe('AnalysisTab', () => {
     expect(screen.getByText('4.20')).toBeDefined();
 
     // Cleanup store
-    useSimulationStore.setState({ activeSimulations: {} });
+    act(() => {
+      useSimulationStore.setState({ activeSimulations: {} });
+    });
   });
 });

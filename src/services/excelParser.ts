@@ -207,7 +207,7 @@ export function extractStudents(dataRows: unknown[][], headers: HeaderComponent[
     if (!name) return;
 
     const student: Estudiante = {
-      id: id || name,
+      id: `${defaultGrupo || defaultCurso}-${id || name}`,
       name,
       CURSO: defaultCurso,
       grupo: defaultGrupo || defaultCurso,
@@ -360,3 +360,36 @@ export function parseWorkbook(workbook: XLSX.WorkBook, curso: string): Estudiant
 
   return allStudents;
 }
+
+export function isLegacyFormat(rows: unknown[][]): boolean {
+  if (rows.length < 3) return false;
+  return normalizeText(rows[0]?.[1]) === 'ESTUDIANTE' || normalizeText(rows[0]?.[0]) === 'ESTUDIANTE';
+}
+
+export function parseLegacyFormat(workbook: XLSX.WorkBook, curso: string): Estudiante[] {
+  let allStudents: Estudiante[] = [];
+
+  workbook.SheetNames.forEach(sheetName => {
+    if (normalizeText(sheetName) === 'RESUMEN') return;
+
+    const worksheet = workbook.Sheets[sheetName];
+    const rows: unknown[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+    if (!isLegacyFormat(rows)) return;
+
+    const headerRowIndex = 0; // Legacy format always has headers at row 0
+    const extractGrupo = sheetName; // Use sheet name as fallback group, or curso
+    const extractDirector = 'Director de Curso'; 
+
+    const headerRows = [rows[headerRowIndex], rows[headerRowIndex + 1], rows[headerRowIndex + 2]];
+    const dataRows = rows.slice(headerRowIndex + 3);
+
+    const { headers } = parseHeaders(headerRows);
+    const students = extractStudents(dataRows, headers, curso, extractGrupo, extractDirector);
+    
+    allStudents = allStudents.concat(students);
+  });
+
+  return allStudents;
+}
+

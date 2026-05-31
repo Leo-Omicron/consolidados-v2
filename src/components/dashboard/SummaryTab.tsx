@@ -142,9 +142,9 @@ export const SummaryTab: React.FC = () => {
         }
       }
 
-      if (row.estado && (row.estado.color === 'green' || row.estado.text === 'Ganado')) {
+      if (row.promActual !== null && row.promActual >= 3.0) {
         aprobados++;
-      } else {
+      } else if (row.promActual !== null && row.promActual < 3.0) {
         reprobados++;
       }
     });

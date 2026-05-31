@@ -16,7 +16,9 @@ vi.mock('./excelParser', () => ({
   parseHeaders: vi.fn(),
   extractStudents: vi.fn(),
   getColumnLetter: vi.fn(),
-  normalizeText: vi.fn()
+  normalizeText: vi.fn(),
+  isLegacyFormat: vi.fn(),
+  parseLegacyFormat: vi.fn()
 }));
 
 vi.mock('./rowFlattener', () => ({

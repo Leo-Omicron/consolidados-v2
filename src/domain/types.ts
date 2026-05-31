@@ -251,7 +251,12 @@ export interface TeacherFeedbackReport {
   totalEstudiantesGrupo: number;
   totalAreasCount: number;
   failedAreasCount: number;
-  weaknessesDetail: Array<{ areaName: string; requiredGrade: number; isImpossible: boolean }>;
+  weaknessesDetail: Array<{ 
+    areaName: string; 
+    requiredGrade: number; 
+    isImpossible: boolean;
+    rescueRoute?: Array<{ asignatura: string; targetGrade: number }>;
+  }>;
 }
 
 export interface OfficialRecordsReport {

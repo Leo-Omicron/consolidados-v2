@@ -453,7 +453,12 @@ export function generateTeacherFeedbackReportForGroup(
     
     const strengths: string[] = [];
     const weaknesses: string[] = [];
-    const weaknessesDetail: Array<{ areaName: string; requiredGrade: number; isImpossible: boolean }> = [];
+    const weaknessesDetail: Array<{ 
+      areaName: string; 
+      requiredGrade: number; 
+      isImpossible: boolean;
+      rescueRoute?: Array<{ asignatura: string; targetGrade: number }>;
+    }> = [];
     
     const totalAreasCount = Object.keys(student.areas).length;
     let failedAreasCount = 0;
@@ -466,10 +471,21 @@ export function generateTeacherFeedbackReportForGroup(
           weaknesses.push(areaName);
           failedAreasCount++;
           
+          const isImpossible = area.areaStats.estado.text === 'Perdido' || area.areaStats.p4Min > 5.0;
+          let rescueRoute: Array<{ asignatura: string; targetGrade: number }> | undefined = undefined;
+          
+          if (!isImpossible && Object.keys(area.asignaturas).length > 1) {
+            rescueRoute = Object.keys(area.asignaturas).map(asigName => ({
+              asignatura: asigName,
+              targetGrade: area.areaStats!.p4Min
+            }));
+          }
+
           weaknessesDetail.push({
             areaName,
             requiredGrade: area.areaStats.p4Min,
-            isImpossible: area.areaStats.estado.text === 'Perdido' || area.areaStats.p4Min > 5.0
+            isImpossible,
+            rescueRoute
           });
         }
       }

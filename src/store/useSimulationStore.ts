@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import LZString from 'lz-string';
 import type { PeriodoNotas } from '../domain/types';
 
 export interface SimulationState {
@@ -6,9 +7,11 @@ export interface SimulationState {
   setSimulation: (rowId: string, period: keyof PeriodoNotas, value: number | null) => void;
   clearSimulation: (rowId: string) => void;
   clearAllSimulations: () => void;
+  exportToHash: () => string;
+  importFromHash: (hash: string) => boolean;
 }
 
-export const useSimulationStore = create<SimulationState>((set) => ({
+export const useSimulationStore = create<SimulationState>((set, get) => ({
   activeSimulations: {},
   
   setSimulation: (rowId, period, value) => {
@@ -60,4 +63,26 @@ export const useSimulationStore = create<SimulationState>((set) => ({
     }),
 
   clearAllSimulations: () => set({ activeSimulations: {} }),
+
+  exportToHash: () => {
+    const data = get().activeSimulations;
+    if (Object.keys(data).length === 0) return '';
+    return LZString.compressToEncodedURIComponent(JSON.stringify(data));
+  },
+
+  importFromHash: (hash: string) => {
+    try {
+      if (!hash) return false;
+      const cleanHash = hash.replace(/^#sim=/, '');
+      if (!cleanHash) return false;
+      const decompressed = LZString.decompressFromEncodedURIComponent(cleanHash);
+      if (!decompressed) return false;
+      const data = JSON.parse(decompressed);
+      set({ activeSimulations: data });
+      return true;
+    } catch (e) {
+      console.error('Failed to import simulations from hash', e);
+      return false;
+    }
+  }
 }));

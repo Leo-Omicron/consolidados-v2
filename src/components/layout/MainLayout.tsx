@@ -4,6 +4,7 @@ import { FileUploadArea } from '../dashboard/FileUploadArea';
 import { AnalysisTab } from '../dashboard/AnalysisTab';
 import { ChartsTab } from '../dashboard/ChartsTab';
 import { ReportsTab } from '../dashboard/ReportsTab';
+import { AlertsTab } from '../dashboard/AlertsTab';
 import { useThemeStore } from '../../store/useThemeStore';
 
 export const MainLayout: React.FC = () => {
@@ -22,6 +23,8 @@ export const MainLayout: React.FC = () => {
         return <ChartsTab />;
       case 'reports':
         return <ReportsTab />;
+      case 'alerts':
+        return <AlertsTab />;
       default:
         return <AnalysisTab />;
     }

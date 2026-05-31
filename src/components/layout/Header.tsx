@@ -10,7 +10,8 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
   const tabs = [
     { id: 'analysis', label: 'Analysis' },
-    { id: 'charts', label: 'Charts' },
+    { id: 'alerts', label: 'Alertas' },
+    { id: 'charts', label: 'Estadísticas' },
     { id: 'reports', label: 'Reports' },
   ];
 

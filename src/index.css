@@ -297,18 +297,34 @@ body {
   }
 
   /* Premium High-Contrast and Flat Layout Settings */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   body {
-    background-color: white !important;
-    color: black !important;
+    background-color: white;
+    color: black;
     font-size: 9pt !important;
   }
 
-  [data-theme='dark'] body,
+  /* Reset Dark mode variables to light mode for printing */
+  [data-theme='dark'] {
+    --app-bg: #ffffff !important;
+    --app-surface: #ffffff !important;
+    --app-surface-muted: #f8fafc !important;
+    --app-text: #000000 !important;
+    --app-text-muted: #475569 !important;
+    --app-border: rgba(226, 232, 240, 0.75) !important;
+  }
+
   .app-bg,
-  .app-surface,
-  .app-surface-muted {
+  .app-surface {
     background-color: white !important;
-    color: black !important;
+  }
+
+  .app-surface-muted {
+    background-color: #f8fafc !important;
   }
 
   /* Force table contents to scale gracefully without overflowing standard margins */
@@ -338,12 +354,9 @@ body {
   }
 
   [data-report-preview],
-  [data-report-preview] *,
-  [data-theme='dark'] [data-report-preview],
-  [data-theme='dark'] [data-report-preview] * {
+  [data-theme='dark'] [data-report-preview] {
     background-color: white !important;
     color: black !important;
-    border-color: #cbd5e1 !important;
     box-shadow: none !important;
   }
 

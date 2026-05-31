@@ -72,6 +72,26 @@ export function calcularMinimoRequerido(
   return Math.round(requiredGrade * 100) / 100;
 }
 
+export function calcularNotaRequeridaParaObjetivo(
+  notas: PeriodoNotas,
+  config: PeriodConfig,
+  objetivo: number,
+  evaluated = { P1: false, P2: false, P3: false, P4: false }
+): number | null {
+  const { sumProduct, sumWeight, totalWeight } = getAccumulatedWeightAndProduct(notas, config, evaluated);
+  
+  const remainingWeight = totalWeight - sumWeight;
+  
+  // If no periods left, we can't achieve a new target by adding grades
+  if (remainingWeight <= 0) return null;
+  
+  const neededProduct = (objetivo * totalWeight) - sumProduct;
+  
+  const requiredGrade = neededProduct / remainingWeight;
+  
+  return Math.round(requiredGrade * 100) / 100;
+}
+
 export function calcularAcumuladoBase(
   notas: PeriodoNotas,
   config: PeriodConfig,
@@ -95,7 +115,6 @@ export function determinarEstado(
   const acumuladoFinalProyectadoMax = roundToOneDecimal((sumProduct + (MAX_GRADE * remainingWeight)) / totalWeight);
   const acumuladoActual = roundToOneDecimal(sumProduct / totalWeight);
   const minimoRequerido = calcularMinimoRequerido(notas, config, evaluated);
-  const promedioHistorico = calcularPromedioActual(notas, config, evaluated);
 
   // Ya se terminó de evaluar todo el año
   if (remainingWeight <= 0) {
@@ -117,10 +136,8 @@ export function determinarEstado(
     return { text: 'Perdido', color: 'red' };
   }
 
-  // Dynamic Risk Evaluation: High Risk when required significantly exceeds historical
-  // Using +1.0 as the heuristic for "significant"
-  if (minimoRequerido > (promedioHistorico + 1.0) || minimoRequerido > 4.5) {
-    // Se requiere un esfuerzo significativamente mayor a su rendimiento histórico
+  // Riesgo Vital: Alerta Amarilla si el estudiante requiere sacar 3.2 o más para salvar la materia
+  if (minimoRequerido >= 3.2) {
     return { text: 'En riesgo', color: 'yellow' };
   }
   

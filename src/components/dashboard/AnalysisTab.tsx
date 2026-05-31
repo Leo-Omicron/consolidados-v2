@@ -5,6 +5,8 @@ import type { Trend, SubjectWeightConfig, MetricasDesempeño } from '../../domai
 import { useUIStore } from '../../store/useUIStore';
 import { useSimulationStore } from '../../store/useSimulationStore';
 import { getSimulatedRows } from '../../services/simulationLogic';
+import { getEvaluatedPeriods, calcularNotaRequeridaParaObjetivo } from '../../services/academicLogic';
+import type { PeriodoNotas, PeriodConfig } from '../../domain/types';
 
 interface StatusBadgeProps {
   text: string;
@@ -135,6 +137,72 @@ const EditableGradeCell: React.FC<{
   );
 };
 
+const GoalSeekCell: React.FC<{
+  rowId: string;
+  currentValue: number | null;
+  notas: PeriodoNotas;
+  config: PeriodConfig;
+  evaluated: Record<'P1' | 'P2' | 'P3' | 'P4', boolean>;
+  hasP4: boolean;
+  onGoalSet: (rowId: string, period: 'P1' | 'P2' | 'P3' | 'P4', requiredGrade: number) => void;
+}> = ({ rowId, currentValue, notas, config, evaluated, hasP4, onGoalSet }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [value, setValue] = useState('');
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    if (value.trim() !== '') {
+      const target = parseFloat(value);
+      if (!isNaN(target)) {
+        const required = calcularNotaRequeridaParaObjetivo(notas, config, target, evaluated);
+        if (required !== null) {
+          const nextPeriod = hasP4 ? 'P4' : 'P3';
+          onGoalSet(rowId, nextPeriod, required);
+        }
+      }
+    }
+    setValue('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setValue('');
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        min="0"
+        max="5"
+        step="0.1"
+        placeholder={currentValue?.toFixed(2) ?? ''}
+        className="w-16 px-1 py-0.5 text-center border rounded border-indigo-500 bg-white dark:bg-neutral-900 text-indigo-900 dark:text-indigo-100 font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        autoFocus
+        title="Ingresa el promedio que deseas alcanzar"
+      />
+    );
+  }
+
+  return (
+    <span
+      onClick={() => setIsEditing(true)}
+      title="Click para buscar un objetivo de promedio"
+      className="px-1.5 py-0.5 rounded font-medium cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors select-none"
+    >
+      {currentValue !== null && currentValue !== undefined ? currentValue.toFixed(2) : '-'}
+    </span>
+  );
+};
+
 export const AnalysisTab: React.FC = () => {
   const estudiantes = useDashboardStore(state => state.estudiantes);
   const rowsArea = useDashboardStore(state => state.rowsArea);
@@ -157,13 +225,32 @@ export const AnalysisTab: React.FC = () => {
   const setSimulation = useSimulationStore(state => state.setSimulation);
   const clearSimulation = useSimulationStore(state => state.clearSimulation);
   const clearAllSimulations = useSimulationStore(state => state.clearAllSimulations);
+  const exportToHash = useSimulationStore(state => state.exportToHash);
+  const importFromHash = useSimulationStore(state => state.importFromHash);
 
-  // Limpiar simulaciones cuando cambie el archivo cargado
   useEffect(() => {
-    clearAllSimulations();
-  }, [estudiantes, clearAllSimulations]);
-  
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#sim=')) {
+        const success = importFromHash(hash);
+        if (success) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      }
+    };
+
+    // Run on mount
+    handleHashChange();
+
+    // Listen for manual hash changes (pasting URL)
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [importFromHash]);
+
+
   const hasP4 = config.P4 !== undefined && config.P4 > 0;
+  
+  const evaluated = useMemo(() => getEvaluatedPeriods(estudiantes || []), [estudiantes]);
   
   const simulatedData = useMemo(() => {
     return getSimulatedRows(estudiantes, activeSimulations, config, subjectWeights);
@@ -192,6 +279,11 @@ export const AnalysisTab: React.FC = () => {
       : {};
   }, [subjectWeights, selectedGrupo]);
   
+  const { kpis: originalKpis } = useAnalysisPipeline(
+    (viewMode === 'area' ? rowsArea : rowsAsignatura) || [],
+    selectedGrupo, filters, sortConfig, viewMode
+  );
+
   const { groupedAndSorted, kpis } = useAnalysisPipeline(activeRows, selectedGrupo, filters, sortConfig, viewMode);
   
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -244,12 +336,27 @@ export const AnalysisTab: React.FC = () => {
               <p className="text-xs text-amber-800 dark:text-amber-400">Estás viendo promedios e indicadores académicos hipotéticos. Los datos reales no se han alterado.</p>
             </div>
           </div>
-          <button
-            onClick={clearAllSimulations}
-            className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-amber-300 dark:border-amber-800 bg-white dark:bg-neutral-900 hover:bg-amber-100 dark:hover:bg-amber-950 text-amber-900 dark:text-amber-200 transition-premium cursor-pointer shadow-sm app-focus"
-          >
-            Restaurar datos reales
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              onClick={() => {
+                const hash = exportToHash();
+                const url = new URL(window.location.href);
+                url.hash = `sim=${hash}`;
+                navigator.clipboard.writeText(url.toString());
+                alert('¡Enlace de simulación copiado al portapapeles! Cualquiera con este enlace verá estas mismas simulaciones.');
+              }}
+              className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-indigo-300 dark:border-indigo-800 bg-white dark:bg-neutral-900 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 transition-premium cursor-pointer shadow-sm app-focus"
+              title="Copia un enlace para compartir estas simulaciones"
+            >
+              🔗 Compartir URL
+            </button>
+            <button
+              onClick={clearAllSimulations}
+              className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-amber-300 dark:border-amber-800 bg-white dark:bg-neutral-900 hover:bg-amber-100 dark:hover:bg-amber-950 text-amber-900 dark:text-amber-200 transition-premium cursor-pointer shadow-sm app-focus"
+            >
+              Restaurar datos reales
+            </button>
+          </div>
         </div>
       )}
 
@@ -372,15 +479,41 @@ export const AnalysisTab: React.FC = () => {
           <div className="app-text-muted text-sm font-medium uppercase mb-1">Grupo Activo</div>
           <div className="text-2xl font-bold app-text">{selectedGrupo === 'Todos' ? 'Todos los grupos' : `Grupo ${selectedGrupo}`}</div>
         </div>
-        <div className="app-surface p-4 rounded-lg shadow border app-border flex flex-col justify-center items-center">
+        <div className="app-surface p-4 rounded-lg shadow border app-border flex flex-col justify-center items-center relative overflow-hidden">
           <div className="app-text-muted text-sm font-medium uppercase mb-1">Promedio General</div>
-          <div className="text-3xl font-bold app-text">{kpis.promedioGeneral.toFixed(2)}</div>
+          <div className="text-3xl font-bold app-text flex items-center gap-2">
+            <span className="transition-all duration-500 ease-in-out">{kpis.promedioGeneral.toFixed(2)}</span>
+            {Object.keys(activeSimulations).length > 0 && Math.abs(kpis.promedioGeneral - originalKpis.promedioGeneral) > 0.001 && (
+              <span className={`text-lg font-bold transition-all duration-500 animate-fade-in ${kpis.promedioGeneral > originalKpis.promedioGeneral ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {kpis.promedioGeneral > originalKpis.promedioGeneral ? '▲' : '▼'} {Math.abs(kpis.promedioGeneral - originalKpis.promedioGeneral).toFixed(2)}
+              </span>
+            )}
+          </div>
         </div>
         <div className="app-surface p-4 rounded-lg shadow border app-border">
           <div className="app-text-muted text-sm font-medium uppercase mb-2 text-center">Distribución de Estados</div>
+          {Object.keys(activeSimulations).length > 0 && (
+            <div className="mb-3 flex justify-center animate-fade-in">
+              {(() => {
+                const origRisk = (originalKpis.statusDistribution['Perdido'] || 0) + (originalKpis.statusDistribution['En riesgo'] || 0);
+                const currRisk = (kpis.statusDistribution['Perdido'] || 0) + (kpis.statusDistribution['En riesgo'] || 0);
+                const diff = origRisk - currRisk;
+                if (diff > 0) {
+                  const label = viewMode === 'area' ? (diff === 1 ? 'área salió' : 'áreas salieron') : (diff === 1 ? 'asignatura salió' : 'asignaturas salieron');
+                  return <span className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200 dark:border-emerald-800">🎉 {diff} {label} de riesgo vital</span>;
+                }
+                if (diff < 0) {
+                  const abs = Math.abs(diff);
+                  const label = viewMode === 'area' ? (abs === 1 ? 'área cayó' : 'áreas cayeron') : (abs === 1 ? 'asignatura cayó' : 'asignaturas cayeron');
+                  return <span className="bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 px-3 py-1 rounded-full text-xs font-bold border border-rose-200 dark:border-rose-800">⚠️ {abs} {label} en riesgo vital</span>;
+                }
+                return null;
+              })()}
+            </div>
+          )}
           <div className="flex flex-wrap gap-2 justify-center">
             {Object.entries(kpis.statusDistribution).map(([status, count]) => (
-              <div key={status} className="app-surface-muted px-3 py-1 rounded text-sm">
+              <div key={status} className="app-surface-muted px-3 py-1 rounded text-sm transition-all duration-300">
                 <span className="font-semibold">{status}:</span> {count}
               </div>
             ))}
@@ -408,7 +541,8 @@ export const AnalysisTab: React.FC = () => {
             <div className="p-8 text-center app-text-muted">No se encontraron resultados.</div>
           )}
           {groupedAndSorted.map(group => {
-            const isExpanded = expandedGroups[group.estudiante];
+            const isGroupAtRisk = group.rows.some(r => r.estado.text === 'Perdido' || r.estado.text === 'En riesgo');
+            const isExpanded = expandedGroups[group.estudiante] ?? isGroupAtRisk;
             const hasStudentSimulations = group.rows.some(row => activeSimulations[row.id] !== undefined);
             
             return (
@@ -581,9 +715,27 @@ export const AnalysisTab: React.FC = () => {
                                 <td className="py-2 text-center text-xl" title={`Tendencia: ${row.tendencia}`}>
                                   {row.tendencia === 'up' ? '↗️' : row.tendencia === 'down' ? '↘️' : row.tendencia === 'flat' ? '➡️' : '-'}
                                 </td>
-                                <td className="py-2 text-center font-semibold app-text">{row.promActual?.toFixed(2) ?? '-'}</td>
+                                <td className="py-2 text-center font-semibold app-text">
+                                  <GoalSeekCell
+                                    rowId={row.id}
+                                    currentValue={row.promActual}
+                                    notas={viewMode === 'area' ? { P1: row.defP1 ?? null, P2: row.defP2 ?? null, P3: row.defP3 ?? null, P4: row.defP4 ?? null } : { P1: row.p1 ?? null, P2: row.p2 ?? null, P3: row.p3 ?? null, P4: row.p4 ?? null }}
+                                    config={config}
+                                    evaluated={evaluated}
+                                    hasP4={hasP4}
+                                    onGoalSet={setSimulation}
+                                  />
+                                </td>
                                 <td className="py-2 text-center app-text-muted">
-                                  {row.p4Min !== null && row.p4Min !== undefined && row.p4Min <= 5.0 ? row.p4Min.toFixed(2) : '-'}
+                                  {row.p4Min !== null && row.p4Min !== undefined && row.p4Min <= 5.0 ? (
+                                    <span 
+                                      className="cursor-pointer hover:text-amber-500 transition-colors border-b border-dashed border-amber-300 dark:border-amber-700" 
+                                      title="Click para auto-completar nota mínima aprobatoria"
+                                      onClick={() => setSimulation(row.id, hasP4 ? 'P4' : 'P3', row.p4Min!)}
+                                    >
+                                      {row.p4Min.toFixed(2)}
+                                    </span>
+                                  ) : '-'}
                                 </td>
                                 <td className="py-2 text-center">
                                   <StatusBadge text={row.estado.text} color={row.estado.color} />
@@ -679,9 +831,27 @@ export const AnalysisTab: React.FC = () => {
                                                 <td className="p-2 text-center text-base" title={`Tendencia: ${subTendencia}`}>
                                                   {subTendencia === 'up' ? '↗️' : subTendencia === 'down' ? '↘️' : subTendencia === 'flat' ? '➡️' : '-'}
                                                 </td>
-                                                <td className="p-2 text-center font-semibold app-text">{sub.promActual?.toFixed(2) ?? '-'}</td>
+                                                <td className="p-2 text-center font-semibold app-text">
+                                                  <GoalSeekCell
+                                                    rowId={sub.id}
+                                                    currentValue={sub.promActual}
+                                                    notas={{ P1: sub.p1 ?? null, P2: sub.p2 ?? null, P3: sub.p3 ?? null, P4: sub.p4 ?? null }}
+                                                    config={config}
+                                                    evaluated={evaluated}
+                                                    hasP4={hasP4}
+                                                    onGoalSet={setSimulation}
+                                                  />
+                                                </td>
                                                 <td className="p-2 text-center app-text-muted">
-                                                  {sub.p4Min !== null && sub.p4Min !== undefined && sub.p4Min <= 5.0 ? sub.p4Min.toFixed(2) : '-'}
+                                                  {sub.p4Min !== null && sub.p4Min !== undefined && sub.p4Min <= 5.0 ? (
+                                                    <span 
+                                                      className="cursor-pointer hover:text-amber-500 transition-colors border-b border-dashed border-amber-300 dark:border-amber-700" 
+                                                      title="Click para auto-completar nota mínima aprobatoria"
+                                                      onClick={() => setSimulation(sub.id, hasP4 ? 'P4' : 'P3', sub.p4Min!)}
+                                                    >
+                                                      {sub.p4Min.toFixed(2)}
+                                                    </span>
+                                                  ) : '-'}
                                                 </td>
                                                 <td className="p-2 text-center">
                                                   <StatusBadge text={sub.estado.text} color={sub.estado.color} isMini />

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calcularPromedioActual, calcularMinimoRequerido, determinarEstado, applyAcademicLogic, inferSubjectWeights, roundToOneDecimal } from './academicLogic';
+import { calcularPromedioActual, calcularMinimoRequerido, calcularNotaRequeridaParaObjetivo, determinarEstado, applyAcademicLogic, inferSubjectWeights, roundToOneDecimal } from './academicLogic';
 import type { PeriodConfig, PeriodoNotas, Estudiante } from '../domain/types';
 
 describe('academicLogic', () => {
@@ -71,6 +71,40 @@ describe('academicLogic', () => {
     });
   });
 
+  describe('calcularNotaRequeridaParaObjetivo', () => {
+    it('calculates the exact grade needed to reach a specific target average', () => {
+      const notas: PeriodoNotas = { P1: 2.0, P2: 3.0, P3: null };
+      // Goal: 4.0
+      // Current: 2*33.3 + 3*33.3 = 66.6 + 99.9 = 166.5
+      // Target: 4.0 * 100 = 400
+      // Needed: 400 - 166.5 = 233.5
+      // Remaining weight: 33.4
+      // Required grade: 233.5 / 33.4 = 6.99
+      expect(calcularNotaRequeridaParaObjetivo(notas, config3Periods, 4.0)).toBe(6.99);
+
+      // Goal: 3.0
+      // Target: 300
+      // Needed: 300 - 166.5 = 133.5
+      // Required grade: 133.5 / 33.4 = 3.997...
+      expect(calcularNotaRequeridaParaObjetivo(notas, config3Periods, 3.0)).toBe(4.0);
+    });
+
+    it('returns a negative grade if the target is already surpassed by a lot', () => {
+      const notas: PeriodoNotas = { P1: 5.0, P2: 5.0, P3: null };
+      // Goal: 3.0
+      // Target: 300
+      // Current: 5*33.3 + 5*33.3 = 333
+      // Needed: 300 - 333 = -33
+      // Required: -33 / 33.4 = -0.99
+      expect(calcularNotaRequeridaParaObjetivo(notas, config3Periods, 3.0)).toBe(-0.99);
+    });
+
+    it('returns null if no periods are left', () => {
+      const notas: PeriodoNotas = { P1: 3.0, P2: 3.0, P3: 3.0 };
+      expect(calcularNotaRequeridaParaObjetivo(notas, config3Periods, 4.0)).toBe(null);
+    });
+  });
+
   describe('determinarEstado', () => {
     it('returns Ganado if accumulated is already enough to pass without remaining periods', () => {
       const notas: PeriodoNotas = { P1: 5.0, P2: 5.0, P3: null }; // 10 * 33.3 = 333 > 300
@@ -90,17 +124,17 @@ describe('academicLogic', () => {
       expect(determinarEstado(notas, config3Periods).text).toBe('En riesgo');
     });
 
-    it('returns Recuperable if required grade is achievable based on historical average', () => {
+    it('returns Recuperable if required grade is < 3.2', () => {
       const notas: PeriodoNotas = { P1: 3.0, P2: 2.0, P3: null };
       // Historical average: 2.5
       // Product: 3*33.3 + 2*33.3 = 166.5. Required: (300 - 166.5) / 33.4 = 133.5 / 33.4 = ~3.99.
-      // 3.99 > 2.5 + 1.0 => 3.99 > 3.5, so En riesgo.
+      // 4.0 >= 3.2 => En riesgo.
       expect(determinarEstado(notas, config3Periods).text).toBe('En riesgo');
 
-      const notasRec: PeriodoNotas = { P1: 3.0, P2: 2.8, P3: null };
-      // Historical average: 2.9
-      // Product: 99.9 + 93.24 = 193.14. Required: (300 - 193.14) / 33.4 = 106.86 / 33.4 = ~3.19.
-      // 3.19 is NOT > 2.9 + 1.0 (3.9). So it is not En riesgo. But it's > 3.0, so Recuperable.
+      const notasRec: PeriodoNotas = { P1: 3.0, P2: 2.9, P3: null };
+      // Historical average: 2.95
+      // Product: 99.9 + 96.57 = 196.47. Required: (300 - 196.47) / 33.4 = 103.53 / 33.4 = ~3.09.
+      // 3.1 < 3.2, so Recuperable.
       expect(determinarEstado(notasRec, config3Periods).text).toBe('Recuperable');
     });
 

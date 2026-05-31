@@ -40,37 +40,31 @@ export const TutorsTab: React.FC = () => {
     return Array.from(aSet).sort();
   }, [data, selectedGroup]);
 
-  // Set default area
-  React.useEffect(() => {
-    if (areas.length > 0 && !selectedArea) {
-      setSelectedArea(areas[0]);
-    } else if (areas.length > 0 && !areas.includes(selectedArea)) {
-      setSelectedArea(areas[0]);
-    }
-  }, [areas, selectedArea]);
+  // Derive active area safely during render instead of using useEffect
+  const activeArea = (selectedArea && areas.includes(selectedArea)) ? selectedArea : (areas.length > 0 ? areas[0] : '');
 
   const matches = useMemo(() => {
-    if (!selectedGroup || !selectedArea) return null;
+    if (!selectedGroup || !activeArea) return null;
 
     const students = data.filter((s: Estudiante) => s.grupo === selectedGroup);
     
     // Tutors: Grade >= 4.0
     const tutors = students.filter((s: Estudiante) => {
-      const a = s.areas[selectedArea];
+      const a = s.areas[activeArea];
       return a && a.areaStats && typeof a.areaStats.promedioActual === 'number' && a.areaStats.promedioActual >= 4.0;
-    }).sort((a: Estudiante, b: Estudiante) => (b.areas[selectedArea]?.areaStats?.promedioActual || 0) - (a.areas[selectedArea]?.areaStats?.promedioActual || 0));
+    }).sort((a: Estudiante, b: Estudiante) => (b.areas[activeArea]?.areaStats?.promedioActual || 0) - (a.areas[activeArea]?.areaStats?.promedioActual || 0));
 
-    // Mentees: Grade < 3.0 (and hasn't lost the year completely mathematically if possible)
+    // Mentees: Grade < 3.0
     const mentees = students.filter((s: Estudiante) => {
-      const a = s.areas[selectedArea];
+      const a = s.areas[activeArea];
       return a && a.areaStats && typeof a.areaStats.promedioActual === 'number' && a.areaStats.promedioActual < 3.0;
-    }).sort((a: Estudiante, b: Estudiante) => (a.areas[selectedArea]?.areaStats?.promedioActual || 0) - (b.areas[selectedArea]?.areaStats?.promedioActual || 0));
+    }).sort((a: Estudiante, b: Estudiante) => (a.areas[activeArea]?.areaStats?.promedioActual || 0) - (b.areas[activeArea]?.areaStats?.promedioActual || 0));
 
     // Round-robin matching: assigning up to 3 mentees per tutor evenly
     const results: Match[] = tutors.map(tutor => ({
       tutor,
       mentees: [],
-      areaName: selectedArea
+      areaName: activeArea
     }));
     
     const unassignedMentees = [...mentees];
@@ -93,7 +87,7 @@ export const TutorsTab: React.FC = () => {
     const matches = results.filter(r => r.mentees.length > 0);
 
     return { matches, unassignedMentees, totalTutors: tutors.length, totalMentees: mentees.length };
-  }, [data, selectedGroup, selectedArea]);
+  }, [data, selectedGroup, activeArea]);
 
   if (data.length === 0) {
     return (
@@ -122,15 +116,17 @@ export const TutorsTab: React.FC = () => {
             ))}
           </select>
           
-          <select
-            className="px-4 py-2 bg-white border border-slate-300 rounded-md font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={selectedArea}
-            onChange={(e) => setSelectedArea(e.target.value)}
-          >
-            {areas.map(a => (
-              <option key={a} value={a}>{a}</option>
-            ))}
-          </select>
+          {areas.length > 0 && (
+            <select
+              className="px-4 py-2 bg-white border border-slate-300 rounded-md font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={activeArea}
+              onChange={(e) => setSelectedArea(e.target.value)}
+            >
+              {areas.map(a => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -171,7 +167,7 @@ export const TutorsTab: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-black text-emerald-600">{match.tutor.areas[selectedArea].areaStats!.promedioActual.toFixed(2)}</div>
+                    <div className="text-2xl font-black text-emerald-600">{(match.tutor.areas[activeArea]?.areaStats?.promedioActual || 0).toFixed(2)}</div>
                   </div>
                 </div>
                 
@@ -182,7 +178,7 @@ export const TutorsTab: React.FC = () => {
                       <div key={mentee.id} className="flex justify-between items-center bg-slate-50 rounded-md px-3 py-2 border border-slate-100">
                         <div className="font-medium text-slate-700">{mentee.name}</div>
                         <div className="text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded text-sm border border-red-100">
-                          {mentee.areas[selectedArea].areaStats!.promedioActual.toFixed(2)}
+                          {(mentee.areas[activeArea]?.areaStats?.promedioActual || 0).toFixed(2)}
                         </div>
                       </div>
                     ))}

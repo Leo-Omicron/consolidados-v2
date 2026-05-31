@@ -1,6 +1,8 @@
 import { render, screen, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { axe } from 'vitest-axe';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SummaryTab } from './SummaryTab';
+import { SummaryTab, thresholdLinePlugin } from './SummaryTab';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useThemeStore } from '../../store/useThemeStore';
 
@@ -27,10 +29,39 @@ vi.mock('react-chartjs-2', () => ({
 }));
 
 describe('SummaryTab', () => {
-  it('renders empty state when no students', () => {
-    useDashboardStore.setState({ estudiantes: [] });
+  it('renders an empty state when there are no students', () => {
+    useDashboardStore.setState({
+      estudiantes: [],
+      config: { P1: 25, P2: 25, P3: 25, P4: 25 },
+    });
     render(<SummaryTab />);
-    expect(screen.getByText('No hay datos para visualizar. Cargue un archivo Excel.')).toBeTruthy();
+    expect(screen.getByText('No hay datos para visualizar. Cargue un archivo Excel.')).toBeDefined();
+  });
+
+  it('has no accessibility violations when empty', async () => {
+    useDashboardStore.setState({
+      estudiantes: [],
+      config: { P1: 25, P2: 25, P3: 25, P4: 25 },
+    });
+    const { container } = render(<SummaryTab />);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+
+  it('has no accessibility violations with data', async () => {
+    useDashboardStore.setState({
+      estudiantes: [
+        {
+          id: '1', nombre: 'Ana', grupo: '10A', areas: {
+            'Matemáticas': { DEF: { P1: 3.5, P2: null, P3: null, P4: null, A: null }, areaStats: { promedioActual: 3.5, p4Min: 0, estado: { text: 'Ganado', color: 'green' } }, asignaturas: {} }
+          }
+        }
+      ],
+      config: { P1: 100, P2: 0, P3: 0, P4: 0 },
+    });
+    const { container } = render(<SummaryTab />);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 
   describe('Reactive KPIs and Charts', () => {
@@ -163,6 +194,42 @@ describe('SummaryTab', () => {
       expect(barOptions.scales.y.ticks.color).toBe('#cbd5e1');
       expect(barOptions.scales.y.grid.color).toBe('rgba(148, 163, 184, 0.22)');
       expect(pieOptions.plugins.legend.labels.color).toBe('#cbd5e1');
+    });
+  });
+
+  describe('thresholdLinePlugin', () => {
+    it('draws a threshold line at 3.0', () => {
+      const mockCtx = {
+        save: vi.fn(),
+        restore: vi.fn(),
+        beginPath: vi.fn(),
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+        stroke: vi.fn(),
+        setLineDash: vi.fn(),
+        fillText: vi.fn(),
+      };
+      
+      const mockChart = {
+        ctx: mockCtx,
+        chartArea: { left: 10, right: 100 },
+        scales: {
+          y: {
+            getPixelForValue: vi.fn().mockReturnValue(50)
+          }
+        }
+      };
+
+      thresholdLinePlugin.afterDraw(mockChart as any);
+
+      expect(mockChart.scales.y.getPixelForValue).toHaveBeenCalledWith(3.0);
+      expect(mockCtx.save).toHaveBeenCalled();
+      expect(mockCtx.beginPath).toHaveBeenCalled();
+      expect(mockCtx.moveTo).toHaveBeenCalledWith(10, 50);
+      expect(mockCtx.lineTo).toHaveBeenCalledWith(100, 50);
+      expect(mockCtx.stroke).toHaveBeenCalled();
+      expect(mockCtx.fillText).toHaveBeenCalledWith('Mínimo: 3.0', 18, 44);
+      expect(mockCtx.restore).toHaveBeenCalled();
     });
   });
 });

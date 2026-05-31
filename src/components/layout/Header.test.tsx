@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { axe } from 'vitest-axe';
 import { Header } from './Header';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { THEME_STORAGE_KEY, useThemeStore } from '../../store/useThemeStore';
@@ -15,7 +17,9 @@ describe('Header', () => {
     (useDashboardStore as any).mockReturnValue({
       availableGroups: [],
       selectedGrupo: 'Todos',
-      setGrupo: vi.fn()
+      setGrupo: vi.fn(),
+      clearAllData: vi.fn(),
+      estudiantes: []
     });
   });
   it('renders all tabs and the title', () => {
@@ -24,6 +28,12 @@ describe('Header', () => {
     expect(screen.getByText('Analysis')).toBeDefined();
     expect(screen.getByText('Estadísticas')).toBeDefined();
     expect(screen.getByText('Reports')).toBeDefined();
+  });
+
+  it('has no accessibility violations', async () => {
+    const { container } = render(<Header activeTab="analysis" setActiveTab={() => {}} />);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 
   it('exposes the active tab to assistive technology', () => {
@@ -74,7 +84,9 @@ describe('Header', () => {
     (useDashboardStore as any).mockReturnValue({
       availableGroups: ['Todos'],
       selectedGrupo: 'Todos',
-      setGrupo: vi.fn()
+      setGrupo: vi.fn(),
+      clearAllData: vi.fn(),
+      estudiantes: []
     });
     render(<Header activeTab="analysis" setActiveTab={() => {}} />);
     expect(screen.queryByRole('combobox')).toBeNull();
@@ -85,7 +97,9 @@ describe('Header', () => {
     (useDashboardStore as any).mockReturnValue({
       availableGroups: ['Todos', 'A', 'B'],
       selectedGrupo: 'Todos',
-      setGrupo: setGrupoMock
+      setGrupo: setGrupoMock,
+      clearAllData: vi.fn(),
+      estudiantes: []
     });
     render(<Header activeTab="analysis" setActiveTab={() => {}} />);
     
@@ -97,5 +111,36 @@ describe('Header', () => {
     
     fireEvent.change(select, { target: { value: 'A' } });
     expect(setGrupoMock).toHaveBeenCalledWith('A');
+  });
+
+  it('renders Cerrar Archivo button when data is present and calls clearAllData on confirm', () => {
+    const clearAllDataMock = vi.fn();
+    (useDashboardStore as any).mockReturnValue({
+      availableGroups: ['Todos'],
+      selectedGrupo: 'Todos',
+      setGrupo: vi.fn(),
+      clearAllData: clearAllDataMock,
+      estudiantes: [{ id: 1 }] // hasData becomes true
+    });
+    
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    
+    // Test confirm = true
+    confirmSpy.mockReturnValueOnce(true);
+    render(<Header activeTab="analysis" setActiveTab={() => {}} />);
+    
+    const closeBtn = screen.getByText('Cerrar Archivo');
+    expect(closeBtn).toBeDefined();
+    
+    fireEvent.click(closeBtn);
+    expect(confirmSpy).toHaveBeenCalledWith('¿Estás seguro de que deseas cerrar el archivo actual y limpiar los datos locales?');
+    expect(clearAllDataMock).toHaveBeenCalledTimes(1);
+    
+    // Test confirm = false
+    confirmSpy.mockReturnValueOnce(false);
+    fireEvent.click(closeBtn);
+    expect(clearAllDataMock).toHaveBeenCalledTimes(1); // not called again
+    
+    confirmSpy.mockRestore();
   });
 });

@@ -251,4 +251,67 @@ describe('ReportsTab', () => {
     expect(screen.getAllByText('Ciencias').length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Nota Req:/i).length).toBeGreaterThan(0);
   });
+
+  it('renders "Análisis de Asignaturas" tab', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: '10A', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
+      return selector(state);
+    });
+    render(<ReportsTab />);
+    fireEvent.click(screen.getByRole('button', { name: /Análisis de Asignaturas/i }));
+    // Wait for the tab to render its content
+    expect(screen.getAllByText(/Álgebra/i).length).toBeGreaterThan(0);
+  });
+
+  it('renders "Comparativa de Grupos" tab', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: 'Todos', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
+      return selector(state);
+    });
+    render(<ReportsTab />);
+    fireEvent.click(screen.getByRole('button', { name: /Comparativa de Grupos/i }));
+    // We expect 10A to be in the group comparison table
+    expect(screen.getAllByText('10A').length).toBeGreaterThan(0);
+  });
+
+  it('renders "Mapa de Calor" tab', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: '10A', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
+      return selector(state);
+    });
+    render(<ReportsTab />);
+    fireEvent.click(screen.getByRole('button', { name: /Mapa de Calor/i }));
+    expect(screen.getAllByText('Ana Perez').length).toBeGreaterThan(0);
+  });
+
+  it('handles printing using window.print', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: '10A', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
+      return selector(state);
+    });
+    const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
+    render(<ReportsTab />);
+    fireEvent.click(screen.getByRole('button', { name: /Imprimir Reporte/i }));
+    expect(printSpy).toHaveBeenCalled();
+    printSpy.mockRestore();
+  });
+
+  it('handles excel export button click (alert fallback)', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = { estudiantes: [], config: {}, selectedGrupo: '10A', availableGroups: [], setGrupo: vi.fn() };
+      return selector(state);
+    });
+    // With no students, it shouldn't export. But wait, if we mock students:
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: '10A', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
+      return selector(state);
+    });
+    const _alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    render(<ReportsTab />);
+    
+    // Group performance export
+    const exportBtn = screen.getByRole('button', { name: /Exportar Excel/i });
+    fireEvent.click(exportBtn);
+    // As it uses ExcelExportServiceImpl, we just check no crashes.
+  });
 });

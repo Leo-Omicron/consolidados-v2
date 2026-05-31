@@ -131,6 +131,7 @@ export const VolatilityTab: React.FC = () => {
         </div>
         
         <select
+          aria-label="Seleccionar grupo"
           className="px-4 py-2 bg-white border border-slate-300 rounded-md font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={activeGroup}
           onChange={(e) => setGlobalGroup(e.target.value)}

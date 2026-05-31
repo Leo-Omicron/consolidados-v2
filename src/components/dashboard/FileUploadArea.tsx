@@ -289,6 +289,7 @@ export const FileUploadArea: React.FC = () => {
               ref={fileInputRef}
               className="hidden"
               multiple
+              aria-label="Subir archivo Excel"
             />
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -316,6 +317,7 @@ export const FileUploadArea: React.FC = () => {
               onChange={handleConfigUpload}
               ref={configInputRef}
               className="hidden"
+              aria-label="Subir archivo de configuración"
             />
             <button
               onClick={() => configInputRef.current?.click()}

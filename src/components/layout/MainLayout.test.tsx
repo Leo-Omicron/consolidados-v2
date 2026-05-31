@@ -19,6 +19,22 @@ vi.mock('../dashboard/ReportsTab', () => ({
   ReportsTab: () => <div data-testid="reports-tab" />
 }));
 
+vi.mock('../dashboard/AlertsTab', () => ({
+  AlertsTab: () => <div data-testid="alerts-tab" />
+}));
+
+vi.mock('../dashboard/TutorsTab', () => ({
+  TutorsTab: () => <div data-testid="tutors-tab" />
+}));
+
+vi.mock('../dashboard/VolatilityTab', () => ({
+  VolatilityTab: () => <div data-testid="volatility-tab" />
+}));
+
+vi.mock('../dashboard/HeatmapTab', () => ({
+  HeatmapTab: () => <div data-testid="heatmap-tab" />
+}));
+
 describe('MainLayout', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -58,5 +74,21 @@ describe('MainLayout', () => {
 
     fireEvent.click(screen.getByText('Reports'));
     expect(screen.getByTestId('reports-tab')).toBeDefined();
+  });
+
+  it('changes active tab to all available options', () => {
+    render(<MainLayout />);
+    
+    fireEvent.click(screen.getByText('Alertas'));
+    expect(screen.getByTestId('alerts-tab')).toBeDefined();
+
+    fireEvent.click(screen.getByText('Mentores'));
+    expect(screen.getByTestId('tutors-tab')).toBeDefined();
+
+    fireEvent.click(screen.getByText('Volatilidad'));
+    expect(screen.getByTestId('volatility-tab')).toBeDefined();
+
+    fireEvent.click(screen.getByText('Mapa de Calor'));
+    expect(screen.getByTestId('heatmap-tab')).toBeDefined();
   });
 });

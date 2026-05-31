@@ -18,9 +18,10 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
     { id: 'reports', label: 'Reports' },
   ];
 
-  const { availableGroups, selectedGrupo, setGrupo } = useDashboardStore();
+  const { availableGroups, selectedGrupo, setGrupo, clearAllData, estudiantes } = useDashboardStore();
   const { mode, toggleMode } = useThemeStore();
   const isDarkMode = mode === 'dark';
+  const hasData = estudiantes.length > 0;
 
   return (
     <header className="sticky top-0 z-50 app-bg backdrop-blur-md border-b app-border transition-premium">
@@ -42,6 +43,20 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
                   </option>
                 ))}
               </select>
+            )}
+            
+            {hasData && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm('¿Estás seguro de que deseas cerrar el archivo actual y limpiar los datos locales?')) {
+                    clearAllData();
+                  }
+                }}
+                className="ml-2 text-sm text-red-600 hover:text-red-700 font-medium transition-colors"
+              >
+                Cerrar Archivo
+              </button>
             )}
           </div>
           <div className="flex items-center gap-3 overflow-x-auto pb-1 hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>

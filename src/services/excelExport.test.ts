@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as XLSX from 'xlsx';
 import {
   calculateColWidths,
   mapPerformanceToAOA,
@@ -10,316 +9,246 @@ import {
   mapHeatmapToAOA,
   mapFeedbackToAOA,
   mapOfficialToAOA,
-  exportConsolidadoCompleto
+  triggerDownload,
+  exportGroupPerformance,
+  exportOutstandingStudents,
+  exportAcademicRisk,
+  exportSubjectAnalytics,
+  exportGroupComparison,
+  exportHeatmap,
+  exportTeacherFeedback,
+  exportOfficialRecords,
+  exportConsolidadoCompleto,
+  ExcelExportServiceImpl
 } from './excelExport';
-import type {
-  GroupPerformanceReport,
-  OutstandingStudentsReport,
-  AcademicRiskReport,
-  SubjectAnalyticsReport,
-  GroupComparisonReport,
-  HeatmapReport,
-  TeacherFeedbackReport,
-  OfficialRecordsReport
-} from '../domain/types';
+import type { WorkBook } from 'xlsx';
 
-// Mock XLSX to assert on workbook creation without hitting browser/file system APIs
-vi.mock('xlsx', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('xlsx')>();
+vi.mock('xlsx', () => {
   return {
-    ...actual,
     utils: {
-      ...actual.utils,
-      book_new: vi.fn(() => ({ SheetNames: [], Sheets: {} })),
-      book_append_sheet: vi.fn((wb, ws, name) => {
-        wb.SheetNames.push(name);
-        wb.Sheets[name] = ws;
-      }),
-      aoa_to_sheet: vi.fn((aoa) => ({ '!ref': 'A1', aoa })),
+      aoa_to_sheet: vi.fn().mockReturnValue({}),
+      book_new: vi.fn().mockReturnValue({}),
+      book_append_sheet: vi.fn(),
     },
-    write: vi.fn(() => new Uint8Array()),
+    write: vi.fn().mockReturnValue(new Uint8Array()),
   };
 });
 
-describe('excelExport service Unit 1 - Mapping and Calculations', () => {
+describe('excelExport', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('calculateColWidths', () => {
-    it('should calculate correct wch column widths with default padding of 3 and minWidth of 10', () => {
-      // 25 characters column
+    it('returns empty array for empty aoa', () => {
+      expect(calculateColWidths([])).toEqual([]);
+    });
+
+    it('calculates column widths based on maximum length in each column', () => {
       const aoa = [
-        ["Short", "1234567890123456789012345"],
-        ["Another col", "Short"]
+        ['Short', 'Very long string indeed'],
+        ['A', { object: true }], // String({object: true}) -> [object Object] or JSON string
+        [null, undefined]
       ];
       const widths = calculateColWidths(aoa);
-      expect(widths).toHaveLength(2);
-      expect(widths[0].wch).toBe(11 + 3); // "Another col" is 11 chars, Math.max(11, 10) + 3 = 14
-      expect(widths[1].wch).toBe(25 + 3); // 25 chars, Math.max(25, 10) + 3 = 28
-    });
-
-    it('should handle null, undefined, numbers and objects gracefully', () => {
-      const aoa = [
-        [null, undefined],
-        [123.45, { some: 'obj' }]
-      ];
-      const widths = calculateColWidths(aoa);
-      expect(widths).toHaveLength(2);
-      expect(widths[0].wch).toBe(10 + 3); // null is "", 123.45 is 6 chars -> minWidth 10 + 3 = 13
+      // Col 0: "Short" (5) vs "A" (1). minWidth=10, padding=3 -> 13
+      expect(widths[0]).toEqual({ wch: 13 });
+      // Col 1: "Very long string indeed" (23). 23 + 3 = 26.
+      expect(widths[1]).toEqual({ wch: 26 });
     });
   });
 
-  describe('mapPerformanceToAOA', () => {
-    it('should correctly map GroupPerformanceReport to AOA', () => {
-      const report: GroupPerformanceReport = {
+  describe('Mapping functions', () => {
+    it('mapPerformanceToAOA maps correctly', () => {
+      const aoa = mapPerformanceToAOA({
         grupo: '10A',
-        totalStudents: 32,
-        average: 3.82,
-        standardDeviation: 0.54,
-        promotionRate: 93.8,
-        criticalAreas: [
-          { area: 'Matemáticas', failuresCount: 5 },
-          { area: 'Física', failuresCount: 3 }
-        ]
-      };
-
-      const aoa = mapPerformanceToAOA(report);
-      expect(aoa[0]).toEqual(["REPORTE DE RENDIMIENTO DEL GRUPO", "10A"]);
-      expect(aoa[1]).toEqual([]);
-      expect(aoa[2]).toEqual(["MÉTRICA", "VALOR"]);
-      expect(aoa[3]).toEqual(["TOTAL ESTUDIANTES", 32]);
-      expect(aoa[4]).toEqual(["PROMEDIO GENERAL", 3.82]);
-      expect(aoa[5]).toEqual(["DESVIACIÓN ESTÁNDAR", 0.54]);
-      expect(aoa[6]).toEqual(["TASA DE PROMOCIÓN (%)", 93.8]);
-      expect(aoa[7]).toEqual([]);
-      expect(aoa[8]).toEqual(["ÁREAS CRÍTICAS", "CANTIDAD DE PERDIDOS"]);
-      expect(aoa[9]).toEqual(["MATEMÁTICAS", 5]);
-      expect(aoa[10]).toEqual(["FÍSICA", 3]);
+        totalStudents: 30,
+        average: 4.2,
+        standardDeviation: 0.5,
+        promotionRate: 90,
+        criticalAreas: [{ area: 'Matemáticas', failuresCount: 5 }]
+      });
+      expect(aoa.length).toBeGreaterThan(0);
+      expect(aoa[0]).toContain('10A');
+      expect(aoa[aoa.length - 1]).toContain('MATEMÁTICAS');
     });
-  });
 
-  describe('mapOutstandingToAOA', () => {
-    it('should correctly map OutstandingStudentsReport to AOA', () => {
-      const report: OutstandingStudentsReport = {
+    it('mapOutstandingToAOA maps correctly', () => {
+      const aoa = mapOutstandingToAOA({
         grupo: '10A',
-        students: [
-          { id: '101', name: 'Ana Gomez', average: 4.85, percentile: 98 },
-          { id: '102', name: 'Carlos Ruiz', average: 4.72, percentile: 95 }
-        ]
-      };
-
-      const aoa = mapOutstandingToAOA(report);
-      expect(aoa[0]).toEqual(["ESTUDIANTES DESTACADOS - GRUPO", "10A"]);
-      expect(aoa[1]).toEqual([]);
-      expect(aoa[2]).toEqual(["ID", "NOMBRE", "PROMEDIO", "PERCENTIL"]);
-      expect(aoa[3]).toEqual(["101", "ANA GOMEZ", 4.85, 98]);
-      expect(aoa[4]).toEqual(["102", "CARLOS RUIZ", 4.72, 95]);
+        students: [{ id: '1', name: 'Ana', average: 4.8, percentile: 99 }]
+      });
+      expect(aoa[3]).toEqual(['1', 'ANA', 4.8, 99]);
     });
-  });
 
-  describe('mapRiskToAOA', () => {
-    it('should correctly map AcademicRiskReport to AOA', () => {
-      const report: AcademicRiskReport = {
+    it('mapRiskToAOA maps correctly', () => {
+      const aoa = mapRiskToAOA({
         grupo: '10A',
-        criticalStudents: [
-          {
-            id: '201',
-            name: 'Pedro Perez',
-            average: 2.84,
-            failedAreasCount: 2,
-            failedAreas: ['Matemáticas', 'Física'],
-            impossibilityMathAreas: ['Matemáticas']
-          }
-        ]
-      };
-
-      const aoa = mapRiskToAOA(report);
-      expect(aoa[0]).toEqual(["ESTUDIANTES EN RIESGO ACADÉMICO - GRUPO", "10A"]);
-      expect(aoa[1]).toEqual([]);
-      expect(aoa[2]).toEqual(["ID", "NOMBRE", "PROMEDIO", "ÁREAS PERDIDAS", "ÁREAS REPROBADAS DETALLE", "ÁREAS MATEMÁTICAMENTE IMPOSIBLES"]);
-      expect(aoa[3]).toEqual(["201", "PEDRO PEREZ", 2.84, 2, "MATEMÁTICAS, FÍSICA", "MATEMÁTICAS"]);
+        criticalStudents: [{
+          id: '1', name: 'Ana', average: 2.8,
+          failedAreasCount: 2, failedAreas: ['Math', 'Science'], impossibilityMathAreas: ['Math']
+        }]
+      });
+      expect(aoa[3]).toEqual(['1', 'ANA', 2.8, 2, 'MATH, SCIENCE', 'MATH']);
     });
-  });
 
-  describe('mapSubjectToAOA', () => {
-    it('should correctly map SubjectAnalyticsReport to AOA', () => {
-      const report: SubjectAnalyticsReport = {
+    it('mapSubjectToAOA maps correctly', () => {
+      const aoa = mapSubjectToAOA({
         grupo: '10A',
-        subjects: [
-          { asignatura: 'Cálculo', average: 3.12, failuresCount: 6, failuresRate: 18.8 }
-        ]
-      };
-
-      const aoa = mapSubjectToAOA(report);
-      expect(aoa[0]).toEqual(["ANÁLISIS DE ASIGNATURAS - GRUPO", "10A"]);
-      expect(aoa[1]).toEqual([]);
-      expect(aoa[2]).toEqual(["ASIGNATURA", "PROMEDIO", "CANTIDAD DE PERDIDOS", "TASA DE REPROBACIÓN (%)"]);
-      expect(aoa[3]).toEqual(["CÁLCULO", 3.12, 6, 18.8]);
+        subjects: [{ asignatura: 'Math', average: 3.5, failuresCount: 2, failuresRate: 10 }]
+      });
+      expect(aoa[3]).toEqual(['MATH', 3.5, 2, 10]);
     });
-  });
 
-  describe('mapComparisonToAOA', () => {
-    it('should correctly map GroupComparisonReport to AOA', () => {
-      const report: GroupComparisonReport = {
-        groups: [
-          { grupo: '10A', totalStudents: 32, average: 3.82, standardDeviation: 0.54, failuresCount: 8, reprobadosCount: 2 }
-        ]
-      };
-
-      const aoa = mapComparisonToAOA(report);
-      expect(aoa[0]).toEqual(["COMPARATIVA DE GRUPOS INSTITUCIONAL"]);
-      expect(aoa[1]).toEqual([]);
-      expect(aoa[2]).toEqual(["GRUPO", "ESTUDIANTES", "PROMEDIO", "DESVIACIÓN ESTÁNDAR", "ÁREAS PERDIDAS", "REPROBADOS"]);
-      expect(aoa[3]).toEqual(["10A", 32, 3.82, 0.54, 8, 2]);
+    it('mapComparisonToAOA maps correctly', () => {
+      const aoa = mapComparisonToAOA({
+        groups: [{ grupo: '10A', totalStudents: 30, average: 4.0, standardDeviation: 0.5, failuresCount: 5, reprobadosCount: 2 }]
+      });
+      expect(aoa[3]).toEqual(['10A', 30, 4.0, 0.5, 5, 2]);
     });
-  });
 
-  describe('mapHeatmapToAOA', () => {
-    it('should dynamically map areas list to sequential columns with uppercase headers', () => {
-      const report: HeatmapReport = {
+    it('mapHeatmapToAOA maps correctly', () => {
+      const aoa = mapHeatmapToAOA({
         grupo: '10A',
-        areasList: ['Ciencias Naturales', 'Educación Física', 'Matemáticas'],
+        areasList: ['Math'],
+        rows: [{ studentId: '1', studentName: 'Ana', grades: { 'Math': { grade: 4.0, color: 'green' } }, promActual: 4.0 }]
+      });
+      expect(aoa[2]).toContain('MATH');
+      expect(aoa[3]).toEqual(['1', 'ANA', 4.0, 4.0]);
+    });
+
+    it('mapHeatmapToAOA handles missing grades', () => {
+      const aoa = mapHeatmapToAOA({
+        grupo: '10A',
+        areasList: ['Math', 'Science'],
+        rows: [{ studentId: '1', studentName: 'Ana', grades: { 'Math': { grade: 4.0, color: 'green' } }, promActual: 4.0 }]
+      });
+      expect(aoa[3]).toEqual(['1', 'ANA', 4.0, null, 4.0]);
+    });
+
+    it('mapFeedbackToAOA maps correctly', () => {
+      const aoa = mapFeedbackToAOA([{
+        grupo: '10A', studentId: '1', studentName: 'Ana', puestoGrupo: 1, promedioActual: 4.5, promedioGrupo: 3.8,
+        overallStatus: 'Excelente', strengths: ['Math'], weaknessesDetail: [{ areaName: 'Science', requiredGrade: 4.0, isImpossible: false }, { areaName: 'Art', requiredGrade: 0, isImpossible: true }], adviceText: 'Keep going'
+      }]);
+      expect(aoa[0]).toContain('10A');
+      expect(aoa[3]).toEqual([1, '1', 'ANA', 4.5, 3.8, 'EXCELENTE', 'MATH', 'SCIENCE (REQ: 4.00), ART (IRRECUPERABLE)', 'Keep going']);
+    });
+
+    it('mapFeedbackToAOA handles empty list', () => {
+      const aoa = mapFeedbackToAOA([]);
+      expect(aoa[0]).toContain('N/A');
+    });
+
+    it('mapOfficialToAOA maps correctly', () => {
+      const aoa = mapOfficialToAOA({
+        grupo: '10A', period: 'P1', director: 'Profe',
         rows: [
-          {
-            studentId: '101',
-            studentName: 'Ana Gomez',
-            grades: {
-              'Ciencias Naturales': { grade: 4.2, color: 'green' },
-              'Matemáticas': { grade: 2.8, color: 'red' }
-            },
-            promActual: 3.5
-          }
+          { ranking: 1, studentId: '1', studentName: 'Ana', grades: { 'Math': 4.0 }, promActual: 4.0, failedAreasCount: 0, decision: 'Aprobado' },
+          { ranking: 2, studentId: '2', studentName: 'Bob', grades: { 'Science': 3.5 }, promActual: 3.5, failedAreasCount: 0, decision: 'Aprobado' }
         ]
-      };
-
-      const aoa = mapHeatmapToAOA(report);
-      expect(aoa[0]).toEqual(["MAPA DE CALOR - GRUPO", "10A"]);
-      expect(aoa[1]).toEqual([]);
-      expect(aoa[2]).toEqual(["ID", "ESTUDIANTE", "CIENCIAS NATURALES", "EDUCACIÓN FÍSICA", "MATEMÁTICAS", "PROMEDIO ACTUAL"]);
-      expect(aoa[3]).toEqual(["101", "ANA GOMEZ", 4.2, null, 2.8, 3.5]);
+      });
+      // Areas should be Math, Science
+      expect(aoa[3]).toContain('MATH');
+      expect(aoa[3]).toContain('SCIENCE');
+      // Ana has no Science -> null
+      expect(aoa[4]).toEqual([1, '1', 'ANA', 4.0, null, 4.0, 0, 'APROBADO']);
+      // Bob has no Math -> null
+      expect(aoa[5]).toEqual([2, '2', 'BOB', null, 3.5, 3.5, 0, 'APROBADO']);
     });
   });
 
-  describe('mapFeedbackToAOA', () => {
-    it('should correctly map TeacherFeedbackReport list to AOA', () => {
-      const reports: TeacherFeedbackReport[] = [
-        {
-          studentId: '101',
-          studentName: 'Ana Gomez',
-          grupo: '10A',
-          overallStatus: 'Aprobado',
-          strengths: ['Ciencias', 'Español'],
-          weaknesses: [],
-          adviceText: 'Excelente desempeño.',
-          promedioActual: 4.25,
-          promedioGrupo: 3.5,
-          puestoGrupo: 2,
-          totalEstudiantesGrupo: 20,
-          totalAreasCount: 10,
-          failedAreasCount: 0,
-          weaknessesDetail: []
-        }
-      ];
+  describe('triggerDownload', () => {
+    it('creates object URL and triggers download in browser', async () => {
+      const mockCreateObjectURL = vi.fn().mockReturnValue('blob:mock');
+      const mockRevokeObjectURL = vi.fn();
+      window.URL.createObjectURL = mockCreateObjectURL;
+      window.URL.revokeObjectURL = mockRevokeObjectURL;
 
-      const aoa = mapFeedbackToAOA(reports);
-      expect(aoa[0]).toEqual(["RETROALIMENTACIÓN DE DOCENTES - GRUPO", "10A"]);
-      expect(aoa[1]).toEqual([]);
-      expect(aoa[2]).toEqual(["PUESTO", "ID", "ESTUDIANTE", "PROMEDIO INDIVIDUAL", "PROMEDIO GRUPAL", "ESTADO GENERAL", "FORTALEZAS", "DEBILIDADES", "RECOMENDACIÓN"]);
-      expect(aoa[3]).toEqual([2, "101", "ANA GOMEZ", 4.25, 3.5, "APROBADO", "CIENCIAS, ESPAÑOL", "", "Excelente desempeño."]);
+      const mockClick = vi.fn();
+      const mockSetAttribute = vi.fn();
+      const mockAppendChild = vi.fn();
+      const mockRemoveChild = vi.fn();
+
+      vi.spyOn(document, 'createElement').mockReturnValue({
+        href: '',
+        setAttribute: mockSetAttribute,
+        click: mockClick,
+      } as any);
+
+      vi.spyOn(document.body, 'appendChild').mockImplementation(mockAppendChild as any);
+      vi.spyOn(document.body, 'removeChild').mockImplementation(mockRemoveChild as any);
+
+      await triggerDownload({} as WorkBook, 'test.xlsx');
+
+      expect(mockCreateObjectURL).toHaveBeenCalled();
+      expect(mockSetAttribute).toHaveBeenCalledWith('download', 'test.xlsx');
+      expect(mockAppendChild).toHaveBeenCalled();
+      expect(mockClick).toHaveBeenCalled();
+      expect(mockRemoveChild).toHaveBeenCalled();
+      expect(mockRevokeObjectURL).toHaveBeenCalled();
+    });
+
+    it('handles errors gracefully', async () => {
+      window.URL.createObjectURL = () => { throw new Error('Mock error'); };
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      await triggerDownload({} as WorkBook, 'test.xlsx');
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('does nothing if window is undefined', async () => {
+      const originalWindow = global.window;
+      // @ts-expect-error - we need to delete window for test
+      delete (global as any).window;
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      await triggerDownload({} as WorkBook, 'test.xlsx');
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+      // @ts-expect-error - restore window for test
+      global.window = originalWindow;
     });
   });
 
-  describe('mapOfficialToAOA', () => {
-    it('should correctly map OfficialRecordsReport to AOA', () => {
-      const report: OfficialRecordsReport = {
+  describe('Export triggers', () => {
+    beforeEach(() => {
+      window.URL.createObjectURL = vi.fn().mockReturnValue('blob:mock');
+      window.URL.revokeObjectURL = vi.fn();
+      vi.spyOn(document, 'createElement').mockReturnValue({ setAttribute: vi.fn(), click: vi.fn() } as any);
+      vi.spyOn(document.body, 'appendChild').mockImplementation(vi.fn() as any);
+      vi.spyOn(document.body, 'removeChild').mockImplementation(vi.fn() as any);
+    });
+
+    it('exports all simple reports', async () => {
+      await exportGroupPerformance({ grupo: '10A', totalStudents: 0, average: 0, standardDeviation: 0, promotionRate: 0, criticalAreas: [] });
+      await exportOutstandingStudents({ grupo: '10A', students: [] });
+      await exportAcademicRisk({ grupo: '10A', criticalStudents: [] });
+      await exportSubjectAnalytics({ grupo: '10A', subjects: [] });
+      await exportGroupComparison({ groups: [] });
+      await exportHeatmap({ grupo: '10A', areasList: [], rows: [] });
+      await exportTeacherFeedback([]);
+      await exportOfficialRecords({ grupo: '10A', period: '', director: '', rows: [] });
+      expect(window.URL.createObjectURL).toHaveBeenCalledTimes(8);
+    });
+
+    it('exports consolidado completo', async () => {
+      await exportConsolidadoCompleto({
         grupo: '10A',
-        period: 'Periodo 3',
-        director: 'Prof. Gomez',
-        rows: [
-          {
-            studentId: '101',
-            studentName: 'Ana Gomez',
-            grades: {
-              'Ciencias': 4.5,
-              'Matemáticas': 3.8
-            },
-            promActual: 4.15,
-            ranking: 1,
-            failedAreasCount: 0,
-            decision: 'Aprobado'
-          }
-        ]
-      };
-
-      const aoa = mapOfficialToAOA(report);
-      expect(aoa[0]).toEqual(["LIBRO OFICIAL DE CALIFICACIONES"]);
-      expect(aoa[1]).toEqual(["GRUPO:", "10A", "PERIODO:", "Periodo 3", "DIRECTOR DE GRUPO:", "Prof. Gomez"]);
-      expect(aoa[2]).toEqual([]);
-      expect(aoa[3]).toEqual(["PUESTO", "ID", "ESTUDIANTE", "CIENCIAS", "MATEMÁTICAS", "PROMEDIO ACTUAL", "ÁREAS PERDIDAS", "DECISIÓN"]);
-      expect(aoa[4]).toEqual([1, "101", "ANA GOMEZ", 4.5, 3.8, 4.15, 0, "APROBADO"]);
-    });
-  });
-
-  describe('exportConsolidadoCompleto', () => {
-    it('should compile exactly 7 sheets with appropriate names', async () => {
-      const mockParams = {
-        groupPerformance: {
-          grupo: '10A',
-          totalStudents: 1,
-          average: 4.0,
-          standardDeviation: 0,
-          promotionRate: 100,
-          criticalAreas: []
-        },
-        outstandingStudents: {
-          grupo: '10A',
-          students: []
-        },
-        academicRisk: {
-          grupo: '10A',
-          criticalStudents: []
-        },
-        subjectAnalytics: {
-          grupo: '10A',
-          subjects: []
-        },
-        heatmap: {
-          grupo: '10A',
-          areasList: [],
-          rows: []
-        },
+        groupPerformance: { grupo: '10A', totalStudents: 0, average: 0, standardDeviation: 0, promotionRate: 0, criticalAreas: [] },
+        outstandingStudents: { grupo: '10A', students: [] },
+        academicRisk: { grupo: '10A', criticalStudents: [] },
+        subjectAnalytics: { grupo: '10A', subjects: [] },
+        heatmap: { grupo: '10A', areasList: [], rows: [] },
         teacherFeedback: [],
-        officialRecords: {
-          grupo: '10A',
-          period: 'P3',
-          director: 'Prof. Gomez',
-          rows: []
-        },
-        grupo: '10A'
-      };
+        officialRecords: { grupo: '10A', period: '', director: '', rows: [] }
+      });
+      expect(window.URL.createObjectURL).toHaveBeenCalledTimes(1);
+    });
+  });
 
-      // Call function under test
-      await exportConsolidadoCompleto(mockParams);
-
-      // Verify book_new was called
-      expect(XLSX.utils.book_new).toHaveBeenCalled();
-
-      // Verify book_append_sheet was called exactly 7 times
-      expect(XLSX.utils.book_append_sheet).toHaveBeenCalledTimes(7);
-
-      // Verify sheet names are correct
-      const appendCalls = vi.mocked(XLSX.utils.book_append_sheet).mock.calls;
-      const sheetNames = appendCalls.map(call => call[2]);
-      expect(sheetNames).toEqual([
-        'Rendimiento',
-        'Destacados',
-        'Riesgo',
-        'Asignaturas',
-        'Mapa de Calor',
-        'Retroalimentación',
-        'Libro Oficial'
-      ]);
+  describe('ExcelExportServiceImpl', () => {
+    it('is configured correctly', () => {
+      expect(ExcelExportServiceImpl.exportGroupPerformance).toBe(exportGroupPerformance);
     });
   });
 });

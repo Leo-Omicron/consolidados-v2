@@ -219,7 +219,7 @@ export function generateOutstandingStudentsReport(students: Estudiante[], grupo:
     })
     .sort((a, b) => {
       if (a.officialRanking !== null && b.officialRanking !== null) {
-        return a.officialRanking - b.officialRanking;
+        if (a.officialRanking !== b.officialRanking) return a.officialRanking - b.officialRanking;
       }
       if (b.average !== a.average) {
         return b.average - a.average;
@@ -319,9 +319,9 @@ export function generateSubjectAnalyticsReport(students: Estudiante[], grupo: st
   const subjects: SubjectMetric[] = Object.entries(subjectGrades).map(([subName, grades]) => {
     const total = grades.length;
     const sum = grades.reduce((acc, val) => acc + val, 0);
-    const average = total > 0 ? Math.round((sum / total) * 100) / 100 : 0;
+    const average = Math.round((sum / total) * 100) / 100;
     const failuresCount = subjectFailures[subName] || 0;
-    const failuresRate = total > 0 ? Math.round((failuresCount / total) * 1000) / 10 : 0;
+    const failuresRate = Math.round((failuresCount / total) * 1000) / 10;
     
     return {
       asignatura: subName,
@@ -357,7 +357,7 @@ export function generateGroupComparisonReport(students: Estudiante[], _config: P
     
     const studentAverages = groupStudents.map(s => getStudentAverage(s));
     const sumAvg = studentAverages.reduce((acc, val) => acc + val, 0);
-    const average = totalStudents > 0 ? Math.round((sumAvg / totalStudents) * 100) / 100 : 0;
+    const average = Math.round((sumAvg / totalStudents) * 100) / 100;
     
     const standardDeviation = calculateStandardDeviation(studentAverages, average);
     

@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
+import type { OfficialRecordRow } from '../../../../domain/types';
 
 export const OfficialRecordsView: React.FC<{ data: any, logic: any }> = ({ data, logic }) => {
   const {
-    activeGroupToUse,
     hasP4,
     directorName,
     setDirectorName,
@@ -71,11 +71,11 @@ export const OfficialRecordsView: React.FC<{ data: any, logic: any }> = ({ data,
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {officialRecordsData.rows.map(row => (
+                    {officialRecordsData.rows.map((row: OfficialRecordRow) => (
                       <tr key={row.studentId} className="hover:bg-slate-50/40">
                         <td className="px-2 py-2 text-center font-bold text-slate-500 print:w-[35px] print:min-w-0 print:text-[8px] print:px-1">{row.ranking}</td>
                         <td className="px-3 py-2 font-bold text-slate-800 print:w-[110px] print:min-w-0 print:text-[8px] print:px-1">{row.studentName}</td>
-                        {Object.entries(row.grades).map(([areaName, grade]) => {
+                        {Object.entries(row.grades).map(([areaName, grade]: [string, number | null]) => {
                           const isFailed = grade !== null && grade < 3.0;
                           return (
                             <td key={areaName} className={`px-2 py-2 text-center print:min-w-0 print:w-auto print:text-[8px] print:px-1 ${isFailed ? 'text-rose-600 font-bold' : 'text-slate-600'}`}>

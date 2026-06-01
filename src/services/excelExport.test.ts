@@ -129,7 +129,7 @@ describe('excelExport', () => {
     it('mapFeedbackToAOA maps correctly', () => {
       const aoa = mapFeedbackToAOA([{
         grupo: '10A', studentId: '1', studentName: 'Ana', puestoGrupo: 1, promedioActual: 4.5, promedioGrupo: 3.8, totalEstudiantesGrupo: 30, totalAreasCount: 5, failedAreasCount: 0, weaknesses: [],
-        overallStatus: 'Aprobado', strengths: ['Math'], weaknessesDetail: [{ areaName: 'Science', requiredGrade: 4.0, isImpossible: false }, { areaName: 'Art', requiredGrade: 0, isImpossible: true }], adviceText: 'Keep going'
+        overallStatus: 'Aprobado', strengths: ['Math'], weaknessesDetail: [{ areaName: 'Science', grade: 2.0, requiredGrade: 4.0, isImpossible: false }, { areaName: 'Art', grade: 2.0, requiredGrade: 0, isImpossible: true }], adviceText: 'Keep going'
       }]);
       expect(aoa[0]).toContain('10A');
       expect(aoa[3]).toEqual([1, '1', 'ANA', 4.5, 3.8, 'APROBADO', 'MATH', 'SCIENCE (REQ: 4.00), ART (IRRECUPERABLE)', 'Keep going']);

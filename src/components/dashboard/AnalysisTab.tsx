@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
-import type { SubjectWeightConfig } from '../../domain/types';
+import type { SubjectWeightConfig, Trend, MetricasDesempeño } from '../../domain/types';
 import { useUIStore } from '../../store/useUIStore';
 import { useSimulationStore } from '../../store/useSimulationStore';
 import { getSimulatedRows } from '../../services/simulationLogic';

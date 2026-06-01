@@ -66,7 +66,7 @@ export const GroupPerformanceView: React.FC<{ data: any, logic?: any }> = ({ dat
               groupPerformanceData.criticalAreas.map((area: any) => (
                 <tr key={area.area} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-2 text-left text-slate-800">{area.area}</td>
-                  <td className="px-4 py-2 text-center font-bold text-rose-600">{area.count}</td>
+                  <td className="px-4 py-2 text-center font-bold text-rose-600">{area.failuresCount}</td>
                 </tr>
               ))
             ) : (

@@ -23,6 +23,7 @@ Plataforma cliente-servidor (100% frontend) diseñada para la **Institución Edu
 | **Volatilidad Académica** | Mide la consistencia del rendimiento a lo largo del año. Detecta estudiantes "En Caída Libre" o en "Montaña Rusa" analizando la desviación estándar de sus notas. |
 | **Mapa de Calor** | Matriz visual de todo el salón. Colores intuitivos para detectar de un vistazo en qué asignaturas está fallando el grupo entero o qué estudiante requiere atención. |
 | **Estadísticas Generales** | Resumen directivo con promedios generales, tasas de aprobación y comparación competitiva entre diferentes grupos. |
+| **Reportes y Exportación** | Generación de consolidados completos en Excel, vistas imprimibles y análisis de rendimiento detallado. |
 | **Soporte Legacy & Dinámico** | Detecta plantillas antiguas automáticamente (fallback) y adapta todas las proyecciones y gráficos según si el año tiene 3, 4 o N periodos activos. |
 
 ## ⚠️ Limitaciones Conocidas (Lo Malo)
@@ -43,7 +44,7 @@ Plataforma cliente-servidor (100% frontend) diseñada para la **Institución Edu
 
 1. `npm install`
 2. `npm run dev` (Levanta el servidor local)
-3. `npm test -- --run` (Corre la barrera de validación de 185+ tests)
+3. `npm test -- --run` (Corre la barrera de validación con más de 270 tests)
 4. `npm run build` (Prepara para Vercel)
 
 ---

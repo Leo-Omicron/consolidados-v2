@@ -22,12 +22,12 @@ describe('Header', () => {
       estudiantes: []
     });
   });
-  it('renders all tabs and the title', () => {
+  it('renders all group names and the title', () => {
     render(<Header activeTab="analysis" setActiveTab={() => {}} />);
     expect(screen.getByText('Dashboard de Consolidados')).toBeDefined();
-    expect(screen.getByText('Analysis')).toBeDefined();
-    expect(screen.getByText('Estadísticas')).toBeDefined();
-    expect(screen.getByText('Reports')).toBeDefined();
+    expect(screen.getByRole('button', { name: /General/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Desempeño/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Seguimiento/ })).toBeDefined();
   });
 
   it('has no accessibility violations', async () => {
@@ -36,17 +36,24 @@ describe('Header', () => {
     expect(results).toHaveNoViolations();
   });
 
-  it('exposes the active tab to assistive technology', () => {
+  it('highlights the active group', () => {
     render(<Header activeTab="analysis" setActiveTab={() => {}} />);
 
-    expect(screen.getByRole('button', { name: 'Analysis' }).getAttribute('aria-current')).toBe('page');
-    expect(screen.getByRole('button', { name: 'Estadísticas' }).getAttribute('aria-current')).toBeNull();
+    const generalGroupBtn = screen.getByRole('button', { name: /General/ });
+    expect(generalGroupBtn.className).toContain('app-tab-active');
+    
+    const desempenoGroupBtn = screen.getByRole('button', { name: /Desempeño/ });
+    expect(desempenoGroupBtn.className).not.toContain('app-tab-active');
   });
 
   it('calls setActiveTab when a tab is clicked', () => {
     const setActiveTab = vi.fn();
     render(<Header activeTab="analysis" setActiveTab={setActiveTab} />);
     
+    // First open the group
+    fireEvent.click(screen.getByRole('button', { name: /Desempeño/ }));
+    
+    // Then click the tab inside
     fireEvent.click(screen.getByText('Estadísticas'));
     expect(setActiveTab).toHaveBeenCalledWith('charts');
   });

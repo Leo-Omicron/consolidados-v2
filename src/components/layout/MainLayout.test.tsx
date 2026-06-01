@@ -70,26 +70,32 @@ describe('MainLayout', () => {
   it('changes active tab when header tab is clicked', async () => {
     render(<MainLayout />);
 
+    fireEvent.click(screen.getByRole('button', { name: /Desempeño/ }));
     fireEvent.click(screen.getByText('Estadísticas'));
     expect(await screen.findByTestId('charts-tab')).toBeDefined();
     expect(screen.queryByTestId('analysis-tab')).toBeNull();
 
-    fireEvent.click(screen.getByText('Reports'));
+    fireEvent.click(screen.getByRole('button', { name: /General/ }));
+    fireEvent.click(screen.getByText('Reportes y PDF'));
     expect(await screen.findByTestId('reports-tab')).toBeDefined();
   });
 
   it('changes active tab to all available options', async () => {
     render(<MainLayout />);
 
-    fireEvent.click(screen.getByText('Alertas'));
+    fireEvent.click(screen.getByRole('button', { name: /Seguimiento/ }));
+    fireEvent.click(screen.getByText('Alertas Tempranas'));
     expect(await screen.findByTestId('alerts-tab')).toBeDefined();
 
+    fireEvent.click(screen.getByRole('button', { name: /Seguimiento/ }));
     fireEvent.click(screen.getByText('Mentores'));
     expect(await screen.findByTestId('tutors-tab')).toBeDefined();
 
+    fireEvent.click(screen.getByRole('button', { name: /Seguimiento/ }));
     fireEvent.click(screen.getByText('Volatilidad'));
     expect(await screen.findByTestId('volatility-tab')).toBeDefined();
 
+    fireEvent.click(screen.getByRole('button', { name: /Desempeño/ }));
     fireEvent.click(screen.getByText('Mapa de Calor'));
     expect(await screen.findByTestId('heatmap-tab')).toBeDefined();
   });

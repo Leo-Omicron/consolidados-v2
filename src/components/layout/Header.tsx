@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useThemeStore } from '../../store/useThemeStore';
 
@@ -7,16 +7,98 @@ interface HeaderProps {
   setActiveTab: (tab: string) => void;
 }
 
+const tabGroups = [
+  {
+    name: 'General',
+    tabs: [
+      { id: 'analysis', label: 'Dashboard Principal' },
+      { id: 'reports', label: 'Reportes y PDF' },
+    ]
+  },
+  {
+    name: 'Desempeño',
+    tabs: [
+      { id: 'charts', label: 'Estadísticas' },
+      { id: 'heatmap', label: 'Mapa de Calor' },
+    ]
+  },
+  {
+    name: 'Seguimiento',
+    tabs: [
+      { id: 'alerts', label: 'Alertas Tempranas' },
+      { id: 'volatility', label: 'Volatilidad' },
+      { id: 'tutors', label: 'Mentores' },
+    ]
+  }
+];
+
+const NavGroup = ({ group, activeTab, setActiveTab }: { group: any, activeTab: string, setActiveTab: (id: string) => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const isActiveGroup = group.tabs.some((t: any) => t.id === activeTab);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center gap-1.5 shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold tracking-premium transition-premium border app-focus ${
+          isActiveGroup
+            ? 'app-tab-active shadow-sm'
+            : 'app-tab-inactive border-transparent'
+        }`}
+      >
+        {group.name}
+        <svg 
+          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      
+      {isOpen && (
+        <div className="absolute right-0 sm:left-0 sm:right-auto mt-2 w-48 rounded-xl shadow-xl border app-border app-bg py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+          {group.tabs.map((tab: any) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
+                  isActive 
+                    ? 'app-text font-bold bg-black/5 dark:bg-white/10' 
+                    : 'opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10'
+                }`}
+              >
+                {isActive && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                )}
+                <span className={isActive ? '' : 'pl-3'}>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
-  const tabs = [
-    { id: 'analysis', label: 'Analysis' },
-    { id: 'alerts', label: 'Alertas' },
-    { id: 'tutors', label: 'Mentores' },
-    { id: 'volatility', label: 'Volatilidad' },
-    { id: 'heatmap', label: 'Mapa de Calor' },
-    { id: 'charts', label: 'Estadísticas' },
-    { id: 'reports', label: 'Reports' },
-  ];
 
   const { availableGroups, selectedGrupo, setGrupo, clearAllData, estudiantes } = useDashboardStore();
   const { mode, toggleMode } = useThemeStore();
@@ -70,25 +152,14 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
               {isDarkMode ? '🌙 Dark' : '☀️ Light'}
             </button>
             <nav className="flex space-x-2 shrink-0" aria-label="Dashboard sections">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab.id;
-
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    aria-current={isActive ? 'page' : undefined}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold tracking-premium transition-premium border app-focus ${
-                      isActive
-                        ? 'app-tab-active shadow-sm'
-                        : 'app-tab-inactive border-transparent'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
+              {tabGroups.map((group) => (
+                <NavGroup 
+                  key={group.name} 
+                  group={group} 
+                  activeTab={activeTab} 
+                  setActiveTab={setActiveTab} 
+                />
+              ))}
             </nav>
           </div>
         </div>

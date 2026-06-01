@@ -51,10 +51,10 @@ const NavGroup = ({ group, activeTab, setActiveTab }: { group: any, activeTab: s
     <div className="relative" ref={ref}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 shrink-0 px-3.5 py-2 rounded-lg text-sm font-semibold tracking-premium transition-premium border app-focus ${
+        className={`flex items-center gap-1.5 shrink-0 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-sm font-semibold tracking-premium transition-premium border app-focus ${
           isActiveGroup
-            ? 'app-tab-active shadow-sm'
-            : 'app-tab-inactive border-transparent'
+            ? 'app-tab-active shadow-sm border-blue-500/30 bg-blue-500/10'
+            : 'app-tab-inactive border-transparent opacity-80 hover:opacity-100'
         }`}
       >
         {group.name}
@@ -69,7 +69,7 @@ const NavGroup = ({ group, activeTab, setActiveTab }: { group: any, activeTab: s
       </button>
       
       {isOpen && (
-        <div className="absolute right-0 sm:left-0 sm:right-auto mt-2 w-48 rounded-xl shadow-xl border app-border app-bg py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 sm:left-0 mt-2 w-48 rounded-xl shadow-xl border app-border app-bg py-1.5 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
           {group.tabs.map((tab: any) => {
             const isActive = activeTab === tab.id;
             return (
@@ -141,7 +141,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
               </button>
             )}
           </div>
-          <div className="flex items-center gap-3 overflow-x-auto pb-1 hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
             <button
               type="button"
               aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}

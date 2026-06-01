@@ -93,7 +93,28 @@ export const AnalysisTab: React.FC = () => {
     selectedGrupo, filters, sortConfig, viewMode
   );
 
-  const { groupedAndSorted, kpis } = useAnalysisPipeline(activeRows, selectedGrupo, filters, sortConfig, viewMode);
+  const { groupedAndSorted: sortedGroups, kpis } = useAnalysisPipeline(
+    activeRows, 
+    selectedGrupo, 
+    filters, 
+    sortConfig, 
+    viewMode
+  );
+
+  const subjectsByStudentArea = useMemo(() => {
+    const map = new Map<string, typeof currentRowsAsignatura>();
+    if (viewMode === 'subject') return map; // optimization
+    for (const asig of (currentRowsAsignatura || [])) {
+      const key = `${asig.estudiante}_${asig.area}`;
+      let list = map.get(key);
+      if (!list) {
+        list = [];
+        map.set(key, list);
+      }
+      list.push(asig);
+    }
+    return map;
+  }, [currentRowsAsignatura, viewMode]);
   
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
@@ -304,10 +325,10 @@ export const AnalysisTab: React.FC = () => {
         </div>
         
         <div className="divide-y app-divide">
-          {groupedAndSorted.length === 0 && (
+          {sortedGroups.length === 0 && (
             <div className="p-8 text-center app-text-muted">No se encontraron resultados.</div>
           )}
-          {groupedAndSorted.map(group => {
+          {sortedGroups.map(group => {
             const isGroupAtRisk = group.rows.some(r => r.estado.text === 'Perdido' || r.estado.text === 'En riesgo');
             const isExpanded = expandedGroups[group.estudiante] ?? isGroupAtRisk;
             const hasStudentSimulations = group.rows.some(row => activeSimulations[row.id] !== undefined);
@@ -418,10 +439,7 @@ export const AnalysisTab: React.FC = () => {
                         }, idx) => {
                           const areaKey = `${group.estudiante}_${row.area}`;
                           const isAreaExpanded = expandedAreas[areaKey];
-                          const subjects = currentRowsAsignatura.filter(asig => 
-                            asig.estudiante === group.estudiante && 
-                            asig.area === row.area
-                          );
+                          const subjects = subjectsByStudentArea.get(areaKey) || [];
 
                           return (
                             <React.Fragment key={idx}>

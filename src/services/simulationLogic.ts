@@ -13,7 +13,7 @@ export function getSimulatedRows(
   }
 
   // Clonar los estudiantes profundamente para no mutar el estado original del store
-  const clonedStudents: Estudiante[] = JSON.parse(JSON.stringify(estudiantes));
+  const clonedStudents: Estudiante[] = structuredClone(estudiantes);
 
   // Aplicar lógica académica completa (incluyendo simulaciones) sobre el clon
   applyAcademicLogic(clonedStudents, config, subjectWeights, activeSimulations);

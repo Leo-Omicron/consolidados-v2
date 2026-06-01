@@ -63,10 +63,12 @@ export const useReportsLogic = () => {
     return 'Periodo Final';
   }, [estudiantes]);
 
-  if (detectedPeriod !== lastDetectedPeriod) {
-    setPeriodName(detectedPeriod);
-    setLastDetectedPeriod(detectedPeriod);
-  }
+  useEffect(() => {
+    if (detectedPeriod !== lastDetectedPeriod) {
+      setPeriodName(detectedPeriod);
+      setLastDetectedPeriod(detectedPeriod);
+    }
+  }, [detectedPeriod, lastDetectedPeriod, setPeriodName]);
 
   const hasP4 = config.P4 !== undefined && config.P4 > 0;
 
@@ -78,16 +80,18 @@ export const useReportsLogic = () => {
 
   const [lastSelectedGrupo, setLastSelectedGrupo] = useState<string>('');
 
-  if (selectedGrupo !== lastSelectedGrupo) {
-    if (selectedGrupo && selectedGrupo !== 'Todos') {
-      setLocalGroup(selectedGrupo);
-      const firstStudentOfGroup = estudiantes.find(s => s.grupo === selectedGrupo);
-      if (firstStudentOfGroup && firstStudentOfGroup.director) {
-        setDirectorName(firstStudentOfGroup.director);
+  useEffect(() => {
+    if (selectedGrupo !== lastSelectedGrupo) {
+      if (selectedGrupo && selectedGrupo !== 'Todos') {
+        setLocalGroup(selectedGrupo);
+        const firstStudentOfGroup = estudiantes.find(s => s.grupo === selectedGrupo);
+        if (firstStudentOfGroup && firstStudentOfGroup.director) {
+          setDirectorName(firstStudentOfGroup.director);
+        }
       }
+      setLastSelectedGrupo(selectedGrupo);
     }
-    setLastSelectedGrupo(selectedGrupo);
-  }
+  }, [selectedGrupo, lastSelectedGrupo, setLocalGroup, setDirectorName, estudiantes]);
 
   useEffect(() => {
     if (localGroup) {
@@ -101,44 +105,44 @@ export const useReportsLogic = () => {
   const activeGroupToUse = selectedGrupo === 'Todos' ? (localGroup || defaultReportGroup) : selectedGrupo;
 
   const groupPerformanceData = useMemo(() => {
-    if (estudiantes.length === 0 || !activeGroupToUse) return null;
+    if (activeTab !== 'group-performance' || estudiantes.length === 0 || !activeGroupToUse) return null;
     return generateGroupPerformanceReport(estudiantes, activeGroupToUse, config);
-  }, [estudiantes, activeGroupToUse, config]);
+  }, [activeTab, estudiantes, activeGroupToUse, config]);
 
   const outstandingStudentsData = useMemo(() => {
-    if (estudiantes.length === 0 || !activeGroupToUse) return null;
+    if (activeTab !== 'outstanding' || estudiantes.length === 0 || !activeGroupToUse) return null;
     return generateOutstandingStudentsReport(estudiantes, activeGroupToUse, config);
-  }, [estudiantes, activeGroupToUse, config]);
+  }, [activeTab, estudiantes, activeGroupToUse, config]);
 
   const academicRiskData = useMemo(() => {
-    if (estudiantes.length === 0 || !activeGroupToUse) return null;
+    if (activeTab !== 'academic-risk' || estudiantes.length === 0 || !activeGroupToUse) return null;
     return generateAcademicRiskReport(estudiantes, activeGroupToUse, config);
-  }, [estudiantes, activeGroupToUse, config]);
+  }, [activeTab, estudiantes, activeGroupToUse, config]);
 
   const subjectAnalyticsData = useMemo(() => {
-    if (estudiantes.length === 0 || !activeGroupToUse) return null;
+    if (activeTab !== 'subject-analytics' || estudiantes.length === 0 || !activeGroupToUse) return null;
     return generateSubjectAnalyticsReport(estudiantes, activeGroupToUse, config);
-  }, [estudiantes, activeGroupToUse, config]);
+  }, [activeTab, estudiantes, activeGroupToUse, config]);
 
   const groupComparisonData = useMemo(() => {
-    if (estudiantes.length === 0) return null;
+    if (activeTab !== 'group-comparison' || estudiantes.length === 0) return null;
     return generateGroupComparisonReport(estudiantes, config);
-  }, [estudiantes, config]);
+  }, [activeTab, estudiantes, config]);
 
   const heatmapData = useMemo(() => {
-    if (estudiantes.length === 0 || !activeGroupToUse) return null;
+    if (activeTab !== 'heatmap' || estudiantes.length === 0 || !activeGroupToUse) return null;
     return generateHeatmapReport(estudiantes, activeGroupToUse);
-  }, [estudiantes, activeGroupToUse]);
+  }, [activeTab, estudiantes, activeGroupToUse]);
 
   const teacherFeedbackData = useMemo(() => {
-    if (estudiantes.length === 0 || !activeGroupToUse) return [];
+    if (activeTab !== 'feedback' || estudiantes.length === 0 || !activeGroupToUse) return [];
     return generateTeacherFeedbackReportForGroup(estudiantes, activeGroupToUse, config);
-  }, [estudiantes, activeGroupToUse, config]);
+  }, [activeTab, estudiantes, activeGroupToUse, config]);
 
   const officialRecordsData = useMemo(() => {
-    if (estudiantes.length === 0 || !activeGroupToUse) return null;
+    if (activeTab !== 'official' || estudiantes.length === 0 || !activeGroupToUse) return null;
     return generateOfficialRecordsReport(estudiantes, activeGroupToUse, config, periodName, directorName);
-  }, [estudiantes, activeGroupToUse, config, periodName, directorName]);
+  }, [activeTab, estudiantes, activeGroupToUse, config, periodName, directorName]);
 
   const printLayoutClass = useMemo(() => {
     if (activeTab === 'heatmap' || activeTab === 'official' || activeTab === 'group-comparison') {
@@ -189,28 +193,27 @@ export const useReportsLogic = () => {
   const handleExportConsolidadoCompleto = async () => {
     if (activeTab === 'group-comparison') return;
 
-    if (
-      !groupPerformanceData ||
-      !outstandingStudentsData ||
-      !academicRiskData ||
-      !subjectAnalyticsData ||
-      !heatmapData ||
-      !teacherFeedbackData ||
-      !officialRecordsData ||
-      !activeGroupToUse
-    ) {
-      alert("Por favor, espere a que se carguen los datos de todos los reportes para este grupo.");
+    if (!activeGroupToUse) {
+      alert("Por favor, seleccione un grupo válido.");
       return;
     }
 
+    const exportGroupPerformanceData = generateGroupPerformanceReport(estudiantes, activeGroupToUse, config);
+    const exportOutstandingStudentsData = generateOutstandingStudentsReport(estudiantes, activeGroupToUse, config);
+    const exportAcademicRiskData = generateAcademicRiskReport(estudiantes, activeGroupToUse, config);
+    const exportSubjectAnalyticsData = generateSubjectAnalyticsReport(estudiantes, activeGroupToUse, config);
+    const exportHeatmapData = generateHeatmapReport(estudiantes, activeGroupToUse);
+    const exportTeacherFeedbackData = generateTeacherFeedbackReportForGroup(estudiantes, activeGroupToUse, config);
+    const exportOfficialRecordsData = generateOfficialRecordsReport(estudiantes, activeGroupToUse, config, periodName, directorName);
+
     await ExcelExportServiceImpl.exportConsolidadoCompleto({
-      groupPerformance: groupPerformanceData,
-      outstandingStudents: outstandingStudentsData,
-      academicRisk: academicRiskData,
-      subjectAnalytics: subjectAnalyticsData,
-      heatmap: heatmapData,
-      teacherFeedback: teacherFeedbackData,
-      officialRecords: officialRecordsData,
+      groupPerformance: exportGroupPerformanceData,
+      outstandingStudents: exportOutstandingStudentsData,
+      academicRisk: exportAcademicRiskData,
+      subjectAnalytics: exportSubjectAnalyticsData,
+      heatmap: exportHeatmapData,
+      teacherFeedback: exportTeacherFeedbackData,
+      officialRecords: exportOfficialRecordsData,
       grupo: activeGroupToUse
     });
   };

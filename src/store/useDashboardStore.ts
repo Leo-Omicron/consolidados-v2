@@ -73,7 +73,7 @@ export const useDashboardStore = create<DashboardState>()(
         updatedWeights[grupo][area][asignatura] = weight;
         
         // Re-apply logic with new weights
-        const newEstudiantes = [...state.estudiantes];
+        const newEstudiantes = structuredClone(state.estudiantes);
         let newRowsArea = state.rowsArea;
         let newRowsAsignatura = state.rowsAsignatura;
 
@@ -93,7 +93,7 @@ export const useDashboardStore = create<DashboardState>()(
       }),
       
       setConfig: (config) => set((state) => {
-        const newEstudiantes = [...state.estudiantes];
+        const newEstudiantes = structuredClone(state.estudiantes);
         let newRowsArea = state.rowsArea;
         let newRowsAsignatura = state.rowsAsignatura;
 
@@ -159,8 +159,6 @@ export const useDashboardStore = create<DashboardState>()(
       storage: createJSONStorage(() => idbStorage),
       partialize: (state) => ({
         estudiantes: state.estudiantes,
-        rowsArea: state.rowsArea,
-        rowsAsignatura: state.rowsAsignatura,
         config: state.config,
         subjectWeights: state.subjectWeights,
         selectedGrupo: state.selectedGrupo,
@@ -168,6 +166,15 @@ export const useDashboardStore = create<DashboardState>()(
         viewMode: state.viewMode,
         diagnosticReport: state.diagnosticReport,
       }),
+      merge: (persistedState: any, currentState) => {
+        const merged = { ...currentState, ...persistedState };
+        if (merged.estudiantes && merged.estudiantes.length > 0) {
+          const flattened = flattenRows(merged.estudiantes);
+          merged.rowsArea = flattened.rowsArea;
+          merged.rowsAsignatura = flattened.rowsAsignatura;
+        }
+        return merged;
+      },
     }
   )
 );

@@ -72,7 +72,7 @@ export function filterRows(
   });
 }
 
-export function calculateKPIs(filteredRows: any[]) {
+export function calculateKPIs(filteredRows: ReturnType<typeof augmentRows>) {
   let sum = 0;
   let count = 0;
   const statusCount: Record<string, number> = {};
@@ -93,7 +93,7 @@ export function calculateKPIs(filteredRows: any[]) {
 }
 
 export function groupRows(
-  filteredRows: any[],
+  filteredRows: ReturnType<typeof augmentRows>,
   viewMode: 'area' | 'subject',
   failedAreasMap: Record<string, number>
 ): StudentGroup<PipelineRow>[] {

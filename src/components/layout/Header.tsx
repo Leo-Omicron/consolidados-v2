@@ -7,6 +7,16 @@ interface HeaderProps {
   setActiveTab: (tab: string) => void;
 }
 
+interface TabItem {
+  id: string;
+  label: string;
+}
+
+interface TabGroupType {
+  name: string;
+  tabs: TabItem[];
+}
+
 const tabGroups = [
   {
     name: 'General',
@@ -32,10 +42,10 @@ const tabGroups = [
   }
 ];
 
-const NavGroup = ({ group, activeTab, setActiveTab }: { group: any, activeTab: string, setActiveTab: (id: string) => void }) => {
+const NavGroup = ({ group, activeTab, setActiveTab }: { group: TabGroupType, activeTab: string, setActiveTab: (id: string) => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const isActiveGroup = group.tabs.some((t: any) => t.id === activeTab);
+  const isActiveGroup = group.tabs.some((t: TabItem) => t.id === activeTab);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -70,7 +80,7 @@ const NavGroup = ({ group, activeTab, setActiveTab }: { group: any, activeTab: s
       
       {isOpen && (
         <div className="absolute right-0 sm:left-0 mt-2 w-48 rounded-xl shadow-xl border app-border app-bg py-1.5 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
-          {group.tabs.map((tab: any) => {
+          {group.tabs.map((tab: TabItem) => {
             const isActive = activeTab === tab.id;
             return (
               <button

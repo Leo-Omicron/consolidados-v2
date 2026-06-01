@@ -166,8 +166,8 @@ export const useDashboardStore = create<DashboardState>()(
         viewMode: state.viewMode,
         diagnosticReport: state.diagnosticReport,
       }),
-      merge: (persistedState: any, currentState) => {
-        const merged = { ...currentState, ...persistedState };
+      merge: (persistedState: unknown, currentState) => {
+        const merged = { ...currentState, ...(persistedState as Partial<DashboardState>) };
         if (merged.estudiantes && merged.estudiantes.length > 0) {
           const flattened = flattenRows(merged.estudiantes);
           merged.rowsArea = flattened.rowsArea;

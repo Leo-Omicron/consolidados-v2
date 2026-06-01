@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useUIStore } from '../../../store/useUIStore';
 import {
@@ -37,7 +37,7 @@ export const useReportsLogic = () => {
   const periodName = useUIStore(state => state.reportsPeriodName);
   const setPeriodName = useUIStore(state => state.setReportsPeriodName);
 
-  const [lastDetectedPeriod, setLastDetectedPeriod] = useState<string>('');
+  const lastDetectedPeriodRef = useRef<string>('');
 
   const detectedPeriod = useMemo(() => {
     if (estudiantes.length === 0) return 'Periodo Final';
@@ -64,11 +64,11 @@ export const useReportsLogic = () => {
   }, [estudiantes]);
 
   useEffect(() => {
-    if (detectedPeriod !== lastDetectedPeriod) {
+    if (detectedPeriod !== lastDetectedPeriodRef.current) {
       setPeriodName(detectedPeriod);
-      setLastDetectedPeriod(detectedPeriod);
+      lastDetectedPeriodRef.current = detectedPeriod;
     }
-  }, [detectedPeriod, lastDetectedPeriod, setPeriodName]);
+  }, [detectedPeriod, setPeriodName]);
 
   const hasP4 = config.P4 !== undefined && config.P4 > 0;
 
@@ -78,10 +78,10 @@ export const useReportsLogic = () => {
     return filtered[0] || '';
   }, [selectedGrupo, availableGroups]);
 
-  const [lastSelectedGrupo, setLastSelectedGrupo] = useState<string>('');
+  const lastSelectedGrupoRef = useRef<string>('');
 
   useEffect(() => {
-    if (selectedGrupo !== lastSelectedGrupo) {
+    if (selectedGrupo !== lastSelectedGrupoRef.current) {
       if (selectedGrupo && selectedGrupo !== 'Todos') {
         setLocalGroup(selectedGrupo);
         const firstStudentOfGroup = estudiantes.find(s => s.grupo === selectedGrupo);
@@ -89,9 +89,9 @@ export const useReportsLogic = () => {
           setDirectorName(firstStudentOfGroup.director);
         }
       }
-      setLastSelectedGrupo(selectedGrupo);
+      lastSelectedGrupoRef.current = selectedGrupo;
     }
-  }, [selectedGrupo, lastSelectedGrupo, setLocalGroup, setDirectorName, estudiantes]);
+  }, [selectedGrupo, setLocalGroup, setDirectorName, estudiantes]);
 
   useEffect(() => {
     if (localGroup) {

@@ -1,207 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
-import type { Trend, SubjectWeightConfig, MetricasDesempeño } from '../../domain/types';
+import type { SubjectWeightConfig } from '../../domain/types';
 import { useUIStore } from '../../store/useUIStore';
 import { useSimulationStore } from '../../store/useSimulationStore';
 import { getSimulatedRows } from '../../services/simulationLogic';
-import { getEvaluatedPeriods, calcularNotaRequeridaParaObjetivo } from '../../services/academicLogic';
-import type { PeriodoNotas, PeriodConfig } from '../../domain/types';
+import { getEvaluatedPeriods } from '../../services/academicLogic';
 
-interface StatusBadgeProps {
-  text: string;
-  color: string;
-  isMini?: boolean;
-}
-
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ text, color, isMini = false }) => {
-  const badgeClasses = useMemo(() => {
-    switch (color) {
-      case 'green':
-        return 'app-status-green border';
-      case 'yellow':
-        return 'app-status-yellow border';
-      case 'red':
-        return 'app-status-red border';
-      case 'cyan':
-        return 'app-status-cyan border';
-      case 'blue':
-        return 'app-status-blue border';
-      default:
-        return 'app-status-default border';
-    }
-  }, [color]);
-
-  return (
-    <span
-      role="status"
-      aria-label={`Estado: ${text}`}
-      className={`px-2 py-0.5 inline-flex ${isMini ? 'text-[10px]' : 'text-xs'} leading-5 font-bold rounded-full transition-premium ${badgeClasses}`}
-    >
-      {text}
-    </span>
-  );
-};
-
-const EditableGradeCell: React.FC<{
-  rowId: string;
-  period: 'P1' | 'P2' | 'P3' | 'P4';
-  originalGrade: number | null | undefined;
-  simulatedGrade: number | null | undefined;
-  onSave: (rowId: string, period: 'P1' | 'P2' | 'P3' | 'P4', value: number | null) => void;
-}> = ({ rowId, period, originalGrade, simulatedGrade, onSave }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [value, setValue] = useState<string>(
-    simulatedGrade !== undefined && simulatedGrade !== null
-      ? simulatedGrade.toString()
-      : originalGrade !== undefined && originalGrade !== null
-      ? originalGrade.toString()
-      : ''
-  );
-
-  const [prevSimulated, setPrevSimulated] = useState(simulatedGrade);
-  const [prevOriginal, setPrevOriginal] = useState(originalGrade);
-
-  if (simulatedGrade !== prevSimulated || originalGrade !== prevOriginal) {
-    setPrevSimulated(simulatedGrade);
-    setPrevOriginal(originalGrade);
-    setValue(
-      simulatedGrade !== undefined && simulatedGrade !== null
-        ? simulatedGrade.toString()
-        : originalGrade !== undefined && originalGrade !== null
-        ? originalGrade.toString()
-        : ''
-    );
-  }
-
-  const isSimulated = simulatedGrade !== undefined && simulatedGrade !== null;
-  const displayGrade = isSimulated ? simulatedGrade : originalGrade;
-
-  const handleBlur = () => {
-    setIsEditing(false);
-    if (value.trim() === '') {
-      onSave(rowId, period, null);
-    } else {
-      const parsed = parseFloat(value);
-      if (!isNaN(parsed)) {
-        onSave(rowId, period, parsed);
-      } else {
-        setValue(originalGrade?.toString() ?? '');
-      }
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.currentTarget.blur();
-    } else if (e.key === 'Escape') {
-      setValue(
-        simulatedGrade !== undefined && simulatedGrade !== null
-          ? simulatedGrade.toString()
-          : originalGrade !== undefined && originalGrade !== null
-          ? originalGrade.toString()
-          : ''
-      );
-      setIsEditing(false);
-    }
-  };
-
-  if (isEditing) {
-    return (
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        min="0"
-        max="5"
-        step="0.1"
-        className="w-16 px-1 py-0.5 text-center border rounded border-amber-500 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50 font-bold focus:outline-none focus:ring-1 focus:ring-amber-500"
-        autoFocus
-      />
-    );
-  }
-
-  return (
-    <span
-      onClick={() => setIsEditing(true)}
-      className={`px-1.5 py-0.5 rounded font-medium cursor-pointer transition-all select-none ${
-        isSimulated
-          ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-bold shadow-sm'
-          : 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
-      }`}
-    >
-      {displayGrade !== null && displayGrade !== undefined ? displayGrade.toFixed(2) : '-'}
-    </span>
-  );
-};
-
-const GoalSeekCell: React.FC<{
-  rowId: string;
-  currentValue: number | null;
-  notas: PeriodoNotas;
-  config: PeriodConfig;
-  evaluated: Record<'P1' | 'P2' | 'P3' | 'P4', boolean>;
-  hasP4: boolean;
-  onGoalSet: (rowId: string, period: 'P1' | 'P2' | 'P3' | 'P4', requiredGrade: number) => void;
-}> = ({ rowId, currentValue, notas, config, evaluated, hasP4, onGoalSet }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [value, setValue] = useState('');
-
-  const handleBlur = () => {
-    setIsEditing(false);
-    if (value.trim() !== '') {
-      const target = parseFloat(value);
-      if (!isNaN(target)) {
-        const required = calcularNotaRequeridaParaObjetivo(notas, config, target, evaluated);
-        if (required !== null) {
-          const nextPeriod = hasP4 ? 'P4' : 'P3';
-          onGoalSet(rowId, nextPeriod, required);
-        }
-      }
-    }
-    setValue('');
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.currentTarget.blur();
-    } else if (e.key === 'Escape') {
-      setIsEditing(false);
-      setValue('');
-    }
-  };
-
-  if (isEditing) {
-    return (
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        min="0"
-        max="5"
-        step="0.1"
-        placeholder={currentValue?.toFixed(2) ?? ''}
-        className="w-16 px-1 py-0.5 text-center border rounded border-indigo-500 bg-white dark:bg-neutral-900 text-indigo-900 dark:text-indigo-100 font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        autoFocus
-        title="Ingresa el promedio que deseas alcanzar"
-      />
-    );
-  }
-
-  return (
-    <span
-      onClick={() => setIsEditing(true)}
-      title="Click para buscar un objetivo de promedio"
-      className="px-1.5 py-0.5 rounded font-medium cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors select-none"
-    >
-      {currentValue !== null && currentValue !== undefined ? currentValue.toFixed(2) : '-'}
-    </span>
-  );
-};
+import { StatusBadge } from '../common/StatusBadge';
+import { EditableGradeCell } from './AnalysisTab/EditableGradeCell';
+import { GoalSeekCell } from './AnalysisTab/GoalSeekCell';
+import { AnalysisKPIs } from './AnalysisTab/AnalysisKPIs';
 
 export const AnalysisTab: React.FC = () => {
   const estudiantes = useDashboardStore(state => state.estudiantes);
@@ -474,55 +283,13 @@ export const AnalysisTab: React.FC = () => {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="app-surface p-4 rounded-lg shadow border app-border flex flex-col justify-center items-center">
-          <div className="app-text-muted text-sm font-medium uppercase mb-1">Grupo Activo</div>
-          <div className="text-2xl font-bold app-text">{selectedGrupo === 'Todos' ? 'Todos los grupos' : `Grupo ${selectedGrupo}`}</div>
-        </div>
-        <div className="app-surface p-4 rounded-lg shadow border app-border flex flex-col justify-center items-center relative overflow-hidden">
-          <div className="app-text-muted text-sm font-medium uppercase mb-1">Promedio General</div>
-          <div className="text-3xl font-bold app-text flex items-center gap-2">
-            <span className="transition-all duration-500 ease-in-out">{kpis.promedioGeneral.toFixed(2)}</span>
-            {Object.keys(activeSimulations).length > 0 && Math.abs(kpis.promedioGeneral - originalKpis.promedioGeneral) > 0.001 && (
-              <span className={`text-lg font-bold transition-all duration-500 animate-fade-in ${kpis.promedioGeneral > originalKpis.promedioGeneral ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {kpis.promedioGeneral > originalKpis.promedioGeneral ? '▲' : '▼'} {Math.abs(kpis.promedioGeneral - originalKpis.promedioGeneral).toFixed(2)}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="app-surface p-4 rounded-lg shadow border app-border">
-          <div className="app-text-muted text-sm font-medium uppercase mb-2 text-center">Distribución de Estados</div>
-          {Object.keys(activeSimulations).length > 0 && (
-            <div className="mb-3 flex justify-center animate-fade-in">
-              {(() => {
-                const origRisk = (originalKpis.statusDistribution['Perdido'] || 0) + (originalKpis.statusDistribution['En riesgo'] || 0);
-                const currRisk = (kpis.statusDistribution['Perdido'] || 0) + (kpis.statusDistribution['En riesgo'] || 0);
-                const diff = origRisk - currRisk;
-                if (diff > 0) {
-                  const label = viewMode === 'area' ? (diff === 1 ? 'área salió' : 'áreas salieron') : (diff === 1 ? 'asignatura salió' : 'asignaturas salieron');
-                  return <span className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200 dark:border-emerald-800">🎉 {diff} {label} de riesgo vital</span>;
-                }
-                if (diff < 0) {
-                  const abs = Math.abs(diff);
-                  const label = viewMode === 'area' ? (abs === 1 ? 'área cayó' : 'áreas cayeron') : (abs === 1 ? 'asignatura cayó' : 'asignaturas cayeron');
-                  return <span className="bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 px-3 py-1 rounded-full text-xs font-bold border border-rose-200 dark:border-rose-800">⚠️ {abs} {label} en riesgo vital</span>;
-                }
-                return null;
-              })()}
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2 justify-center">
-            {Object.entries(kpis.statusDistribution).map(([status, count]) => (
-              <div key={status} className="app-surface-muted px-3 py-1 rounded text-sm transition-all duration-300">
-                <span className="font-semibold">{status}:</span> {count}
-              </div>
-            ))}
-            {Object.keys(kpis.statusDistribution).length === 0 && (
-              <div className="app-text-muted text-sm">No hay datos</div>
-            )}
-          </div>
-        </div>
-      </div>
+      <AnalysisKPIs 
+        selectedGrupo={selectedGrupo}
+        kpis={kpis}
+        originalKpis={originalKpis}
+        activeSimulations={activeSimulations}
+        viewMode={viewMode}
+      />
 
       {/* Grouped Table List */}
       <div className="app-surface max-h-[600px] overflow-auto shadow-sm rounded-lg border app-border transition-premium">

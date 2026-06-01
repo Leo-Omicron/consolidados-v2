@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import { axe } from 'vitest-axe';
+import 'vitest-axe/extend-expect';
 import { AnalysisTab } from './AnalysisTab';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
@@ -64,6 +66,47 @@ describe('AnalysisTab', () => {
   it('renders no data message when rowsArea is empty', () => {
     render(<AnalysisTab />);
     expect(screen.getByText('No hay datos para analizar. Cargue un archivo Excel.')).toBeDefined();
+  });
+
+  it('has no accessibility violations when empty', async () => {
+    const { container } = render(<AnalysisTab />);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+
+  it('has no accessibility violations with data', async () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        rowsArea: [{ area: 'A', estado: { text: 'Ganado' } }],
+        rowsAsignatura: [],
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: 'Grupo A',
+        availableGroups: ['Todos', 'Grupo A'],
+        viewMode: 'subject',
+        setGrupo: vi.fn(),
+        setViewMode: vi.fn(),
+        subjectWeights: {}
+      };
+      return selector(state);
+    });
+    
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'Test3',
+        rows: [{
+          asignatura: 'Math',
+          p1: 3.5,
+          tendencia: 'up',
+          estado: { text: 'Ganado', color: 'green' }
+        }],
+        aggregates: { promActual: 3.5 }
+      }],
+      kpis: { promedioGeneral: 3.5, statusDistribution: {} }
+    });
+
+    const { container } = render(<AnalysisTab />);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 
   it('passes selectedGrupo and viewMode to useAnalysisPipeline', () => {
@@ -870,6 +913,184 @@ describe('AnalysisTab', () => {
     // Cleanup store
     act(() => {
       useSimulationStore.setState({ activeSimulations: {} });
+    });
+  });
+
+  describe('EditableGradeCell and GoalSeekCell behaviors', () => {
+    it('handles input blur and Enter key in EditableGradeCell', () => {
+      (useDashboardStore as any).mockImplementation((selector: any) => {
+        const state = {
+          estudiantes: mockEstudiantes,
+          rowsArea: [{ id: '1', estudiante: 'Juan', area: 'Matemáticas', defP1: 3.5, defP2: 3.0, defP3: null, promActual: 3.25, p4Min: 2.5, estado: { text: 'Ganado' } }],
+          rowsAsignatura: [],
+          viewMode: 'area',
+          config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+          selectedGrupo: 'Todos',
+          availableGroups: ['Todos'],
+          setGrupo: vi.fn(),
+          subjectWeights: {}
+        };
+        return selector(state);
+      });
+
+      (useAnalysisPipeline as any).mockReturnValue({
+        groupedAndSorted: [{
+          estudiante: 'Juan',
+          rows: [{ id: '1', area: 'Matemáticas', defP1: 3.5, defP2: 3.0, promActual: 3.25, p4Min: 2.5, tendencia: 'flat', estado: { text: 'Ganado' } }],
+          aggregates: { promActual: 3.25 }
+        }],
+        kpis: { promedioGeneral: 3.25, statusDistribution: {} }
+      });
+
+      render(<AnalysisTab />);
+      fireEvent.click(screen.getByText('Juan'));
+      
+      const cell = screen.getByText('3.50');
+      fireEvent.click(cell); // enter edit mode
+      
+      const inputs = screen.getAllByRole('spinbutton'); // number input
+      const input = inputs[0] as HTMLInputElement;
+      fireEvent.change(input, { target: { value: '4.0' } });
+      fireEvent.keyDown(input, { key: 'Enter' }); // Should save and exit
+      
+      // Open again and test escape
+      const cell2 = screen.getAllByText('3.00')[0]; // defP2
+      fireEvent.click(cell2);
+      
+      const inputs2 = screen.getAllByRole('spinbutton');
+      const input2 = inputs2[inputs2.length - 1] as HTMLInputElement;
+      fireEvent.change(input2, { target: { value: '5.0' } });
+      fireEvent.keyDown(input2, { key: 'Escape' }); // Should cancel
+    });
+
+    it('handles input blur and Enter key in GoalSeekCell', () => {
+      (useDashboardStore as any).mockImplementation((selector: any) => {
+        const state = {
+          estudiantes: mockEstudiantes,
+          rowsArea: [{ id: '1', estudiante: 'Juan', area: 'Matemáticas', defP1: 3.5, defP2: 3.0, defP3: null, promActual: 3.25, p4Min: 2.5, estado: { text: 'Ganado' } }],
+          rowsAsignatura: [],
+          viewMode: 'area',
+          config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+          selectedGrupo: 'Todos',
+          availableGroups: ['Todos'],
+          setGrupo: vi.fn(),
+          subjectWeights: {}
+        };
+        return selector(state);
+      });
+
+      (useAnalysisPipeline as any).mockReturnValue({
+        groupedAndSorted: [{
+          estudiante: 'Juan',
+          rows: [{ id: '1', area: 'Matemáticas', defP1: 3.5, defP2: 3.0, promActual: 3.25, p4Min: 2.5, tendencia: 'flat', estado: { text: 'Ganado' } }],
+          aggregates: { promActual: 3.25 }
+        }],
+        kpis: { promedioGeneral: 3.25, statusDistribution: {} }
+      });
+
+      render(<AnalysisTab />);
+      fireEvent.click(screen.getByText('Juan'));
+      
+      const goalCell = screen.getAllByTitle('Click para buscar un objetivo de promedio')[0];
+      fireEvent.click(goalCell);
+      
+      const input = screen.getByTitle('Ingresa el promedio que deseas alcanzar') as HTMLInputElement;
+      fireEvent.change(input, { target: { value: '4.5' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+      
+      // Re-open and escape
+      fireEvent.click(screen.getAllByTitle('Click para buscar un objetivo de promedio')[0]);
+      const input2 = screen.getByTitle('Ingresa el promedio que deseas alcanzar') as HTMLInputElement;
+      fireEvent.change(input2, { target: { value: '5.0' } });
+      fireEvent.keyDown(input2, { key: 'Escape' });
+    });
+
+    it('StatusBadge renders different colors correctly', () => {
+      (useDashboardStore as any).mockImplementation((selector: any) => {
+        const state = {
+          estudiantes: mockEstudiantes,
+          rowsArea: [],
+          rowsAsignatura: [],
+          viewMode: 'area',
+          config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+          selectedGrupo: 'Todos',
+          availableGroups: ['Todos'],
+          setGrupo: vi.fn(),
+          subjectWeights: {}
+        };
+        return selector(state);
+      });
+
+      (useAnalysisPipeline as any).mockReturnValue({
+        groupedAndSorted: [{
+          estudiante: 'Juan',
+          rows: [
+            { id: '1', area: 'Matemáticas', estado: { text: 'Ganado', color: 'green' }, tendencia: 'flat', promActual: 3.5, p4Min: 3.0 },
+            { id: '2', area: 'Ciencias', estado: { text: 'Alerta', color: 'yellow' }, tendencia: 'flat', promActual: 3.5, p4Min: 3.0 },
+            { id: '3', area: 'Historia', estado: { text: 'Perdido', color: 'red' }, tendencia: 'flat', promActual: 3.5, p4Min: 3.0 },
+            { id: '4', area: 'Inglés', estado: { text: 'Sobresaliente', color: 'cyan' }, tendencia: 'flat', promActual: 3.5, p4Min: 3.0 },
+            { id: '5', area: 'Arte', estado: { text: 'Recuperable', color: 'blue' }, tendencia: 'flat', promActual: 3.5, p4Min: 3.0 },
+            { id: '6', area: 'EduFisica', estado: { text: 'Otro', color: 'default' }, tendencia: 'flat', promActual: 3.5, p4Min: 3.0 }
+          ],
+          aggregates: { promActual: 3.5 }
+        }],
+        kpis: { promedioGeneral: 0, statusDistribution: {} }
+      });
+
+      render(<AnalysisTab />);
+      fireEvent.click(screen.getByText('Juan'));
+      
+      expect(screen.getByText('Ganado')).toBeDefined();
+      expect(screen.getByText('Alerta')).toBeDefined();
+      expect(screen.getByText('Perdido')).toBeDefined();
+      expect(screen.getByText('Sobresaliente')).toBeDefined();
+      expect(screen.getByText('Recuperable')).toBeDefined();
+      expect(screen.getByText('Otro')).toBeDefined();
+    });
+
+    it('exports hash via clipboard on share button click', () => {
+      (useDashboardStore as any).mockImplementation((selector: any) => {
+        const state = { estudiantes: mockEstudiantes, rowsArea: [], rowsAsignatura: [], viewMode: 'area', config: {}, selectedGrupo: 'Todos', availableGroups: ['Todos'], setGrupo: vi.fn(), subjectWeights: {} };
+        return selector(state);
+      });
+      (useAnalysisPipeline as any).mockReturnValue({ groupedAndSorted: [], kpis: { promedioGeneral: 0, statusDistribution: {} } });
+
+      const mockExportToHash = vi.fn().mockReturnValue('test-hash');
+      act(() => {
+        useSimulationStore.setState({ activeSimulations: { 'juan': { P1: 4.0 } }, exportToHash: mockExportToHash });
+      });
+
+      const writeTextMock = vi.fn();
+      Object.assign(navigator, { clipboard: { writeText: writeTextMock } });
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      render(<AnalysisTab />);
+      fireEvent.click(screen.getByText('🔗 Compartir URL'));
+
+      expect(mockExportToHash).toHaveBeenCalled();
+      expect(writeTextMock).toHaveBeenCalled();
+      expect(alertSpy).toHaveBeenCalled();
+      
+      alertSpy.mockRestore();
+    });
+
+    it('handles sorting columns by clicking headers', () => {
+      const setSortConfigMock = vi.fn();
+      useUIStore.setState({ setAnalysisSortConfig: setSortConfigMock });
+
+      (useDashboardStore as any).mockImplementation((selector: any) => {
+        const state = { estudiantes: mockEstudiantes, rowsArea: [], rowsAsignatura: [], viewMode: 'area', config: {}, selectedGrupo: 'Todos', availableGroups: ['Todos'], setGrupo: vi.fn(), subjectWeights: {} };
+        return selector(state);
+      });
+      (useAnalysisPipeline as any).mockReturnValue({ groupedAndSorted: [{estudiante: 'Juan', rows: [], aggregates: {}}], kpis: { promedioGeneral: 0, statusDistribution: {} } });
+
+      render(<AnalysisTab />);
+      fireEvent.click(screen.getByText(/Estudiante/));
+      expect(setSortConfigMock).toHaveBeenCalled();
+      
+      fireEvent.click(screen.getByText('Juan'));
+      fireEvent.click(screen.getByText(/P1/));
+      expect(setSortConfigMock).toHaveBeenCalledTimes(2);
     });
   });
 });

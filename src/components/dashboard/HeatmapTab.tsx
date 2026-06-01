@@ -90,6 +90,7 @@ export const HeatmapTab: React.FC = () => {
         
         <div className="flex gap-3">
           <select 
+            aria-label="Seleccionar grupo"
             className="border app-control app-focus rounded-lg px-3 py-2 text-sm font-medium shadow-sm transition-premium"
             value={selectedGrupo}
             onChange={e => setGrupo(e.target.value)}
@@ -206,7 +207,8 @@ export const HeatmapTab: React.FC = () => {
         </div>
       </div>
       
-      <style dangerouslySetInnerHTML={{__html: `
+      <style>
+        {`
         .writing-vertical-rl {
           writing-mode: vertical-rl;
         }
@@ -218,13 +220,14 @@ export const HeatmapTab: React.FC = () => {
           background: transparent;
         }
         .heatmap-scroll::-webkit-scrollbar-thumb {
-          background-color: rgba(156, 163, 175, 0.5);
+          background: #cbd5e1;
           border-radius: 4px;
         }
         .dark .heatmap-scroll::-webkit-scrollbar-thumb {
-          background-color: rgba(75, 85, 99, 0.5);
+          background: #475569;
         }
-      `}} />
+        `}
+      </style>
     </div>
   );
 };

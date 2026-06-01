@@ -1,9 +1,12 @@
 import { MainLayout } from './components/layout/MainLayout';
-import './App.css'; // Mantenemos el import de App.css si tiene configuraciones globales
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import './App.css';
 
 function App() {
   return (
-    <MainLayout />
+    <ErrorBoundary>
+      <MainLayout />
+    </ErrorBoundary>
   );
 }
 

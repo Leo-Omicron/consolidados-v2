@@ -28,7 +28,8 @@ ChartJS.register(
 );
 
 // Threshold line custom plugin drawing a horizontal dashed line at 3.0 passing grade
-const thresholdLinePlugin = {
+// eslint-disable-next-line react-refresh/only-export-components
+export const thresholdLinePlugin = {
   id: 'thresholdLine',
   afterDraw: (chart: ChartJS) => {
     const { ctx, chartArea: { left, right }, scales: { y } } = chart;

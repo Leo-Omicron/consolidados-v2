@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { axe } from 'vitest-axe';
+import 'vitest-axe/extend-expect';
 import { FileUploadArea } from './FileUploadArea';
 import { useDashboardStore } from '../../store/useDashboardStore';
 
@@ -32,6 +34,12 @@ describe('FileUploadArea', () => {
     expect(screen.getByRole('region', { name: /Cargar Datos de Estudiantes/i })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Cargar Excel' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Cargar Configuración' })).toBeDefined();
+  });
+
+  it('has no accessibility violations', async () => {
+    const { container } = render(<FileUploadArea />);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 
   it('shows loading state', () => {

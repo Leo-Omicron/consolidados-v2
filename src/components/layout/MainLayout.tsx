@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Header } from './Header';
 import { FileUploadArea } from '../dashboard/FileUploadArea';
-import { AnalysisTab } from '../dashboard/AnalysisTab';
-import { ChartsTab } from '../dashboard/ChartsTab';
-import { ReportsTab } from '../dashboard/ReportsTab';
-import { AlertsTab } from '../dashboard/AlertsTab';
-import { TutorsTab } from '../dashboard/TutorsTab';
-import { HeatmapTab } from '../dashboard/HeatmapTab';
-import { VolatilityTab } from '../dashboard/VolatilityTab';
 import { useThemeStore } from '../../store/useThemeStore';
+
+const AnalysisTab = lazy(() => import('../dashboard/AnalysisTab').then(module => ({ default: module.AnalysisTab })));
+const ChartsTab = lazy(() => import('../dashboard/ChartsTab').then(module => ({ default: module.ChartsTab })));
+const ReportsTab = lazy(() => import('../dashboard/ReportsTab').then(module => ({ default: module.ReportsTab })));
+const AlertsTab = lazy(() => import('../dashboard/AlertsTab').then(module => ({ default: module.AlertsTab })));
+const TutorsTab = lazy(() => import('../dashboard/TutorsTab').then(module => ({ default: module.TutorsTab })));
+const HeatmapTab = lazy(() => import('../dashboard/HeatmapTab').then(module => ({ default: module.HeatmapTab })));
+const VolatilityTab = lazy(() => import('../dashboard/VolatilityTab').then(module => ({ default: module.VolatilityTab })));
 
 export const MainLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('analysis');
@@ -50,7 +51,9 @@ export const MainLayout: React.FC = () => {
           <FileUploadArea />
         </div>
         <div className="app-surface rounded-xl shadow-premium border app-border min-h-[500px] transition-premium print-card-flat">
-          {renderActiveTab()}
+          <Suspense fallback={<div className="p-8 text-center app-text-muted">Cargando módulo...</div>}>
+            {renderActiveTab()}
+          </Suspense>
         </div>
       </main>
     </div>

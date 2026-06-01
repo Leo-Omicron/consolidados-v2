@@ -110,6 +110,7 @@ export const TutorsTab: React.FC = () => {
             className="px-4 py-2 bg-white border border-slate-300 rounded-md font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={selectedGroup}
             onChange={(e) => setGlobalGroup(e.target.value)}
+            aria-label="Seleccionar grupo"
           >
             {groups.map(g => (
               <option key={g} value={g}>Grupo {g}</option>
@@ -121,6 +122,7 @@ export const TutorsTab: React.FC = () => {
               className="px-4 py-2 bg-white border border-slate-300 rounded-md font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={activeArea}
               onChange={(e) => setSelectedArea(e.target.value)}
+              aria-label="Seleccionar área"
             >
               {areas.map(a => (
                 <option key={a} value={a}>{a}</option>
@@ -198,7 +200,7 @@ export const TutorsTab: React.FC = () => {
               <div className="flex flex-wrap gap-2">
                 {matches.unassignedMentees.map((mentee: Estudiante) => (
                   <div key={mentee.id} className="bg-white border border-orange-200 text-orange-800 px-3 py-1.5 rounded-md text-sm font-medium shadow-sm">
-                    {mentee.name} <span className="font-bold text-red-600 ml-1">({mentee.areas[selectedArea].areaStats!.promedioActual.toFixed(2)})</span>
+                    {mentee.name} <span className="font-bold text-red-600 ml-1">({(mentee.areas[activeArea]?.areaStats?.promedioActual || 0).toFixed(2)})</span>
                   </div>
                 ))}
               </div>

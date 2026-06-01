@@ -253,6 +253,7 @@ export interface TeacherFeedbackReport {
   failedAreasCount: number;
   weaknessesDetail: Array<{ 
     areaName: string; 
+    grade: number;
     requiredGrade: number; 
     isImpossible: boolean;
     rescueRoute?: Array<{ asignatura: string; targetGrade: number }>;

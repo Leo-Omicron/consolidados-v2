@@ -51,7 +51,7 @@ describe('FeedbackCard', () => {
       failedAreasCount: 1,
       weaknessesDetail: [
         {
-          areaName: 'Química',
+          areaName: 'Química', grade: 2.0,
           requiredGrade: 4.5,
           isImpossible: false,
         },
@@ -71,7 +71,7 @@ describe('FeedbackCard', () => {
       failedAreasCount: 1,
       weaknessesDetail: [
         {
-          areaName: 'Biología',
+          areaName: 'Biología', grade: 2.0,
           requiredGrade: 5.5,
           isImpossible: true,
         },
@@ -89,7 +89,7 @@ describe('FeedbackCard', () => {
       failedAreasCount: 1,
       weaknessesDetail: [
         {
-          areaName: 'Historia',
+          areaName: 'Historia', grade: 2.0,
           requiredGrade: 3.8,
           isImpossible: false,
           rescueRoute: [

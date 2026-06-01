@@ -455,6 +455,7 @@ export function generateTeacherFeedbackReportForGroup(
     const weaknesses: string[] = [];
     const weaknessesDetail: Array<{ 
       areaName: string; 
+      grade: number;
       requiredGrade: number; 
       isImpossible: boolean;
       rescueRoute?: Array<{ asignatura: string; targetGrade: number }>;
@@ -483,6 +484,7 @@ export function generateTeacherFeedbackReportForGroup(
 
           weaknessesDetail.push({
             areaName,
+            grade: area.areaStats.promedioActual,
             requiredGrade: area.areaStats.p4Min,
             isImpossible,
             rescueRoute

@@ -2,15 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 
-export const AcademicRiskView: React.FC<{ data: any, logic: any }> = ({ data, logic }) => {
-  const {
-    activeGroupToUse,
-    hasP4,
-    directorName,
-    setDirectorName,
-    periodName,
-    setPeriodName
-  } = logic;
+export const AcademicRiskView: React.FC<{ data: any, logic?: any }> = ({ data }) => {
+
   const academicRiskData = data;
   
   if (!academicRiskData) return null;
@@ -33,7 +26,7 @@ export const AcademicRiskView: React.FC<{ data: any, logic: any }> = ({ data, lo
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {academicRiskData.criticalStudents.map(student => (
+                    {academicRiskData.criticalStudents.map((student: any) => (
                       <tr key={student.id} className="hover:bg-slate-50/40">
                         <td className="px-4 py-3 font-semibold text-slate-800">{student.name}</td>
                         <td className="px-4 py-3 text-center font-bold text-slate-700">{student.average.toFixed(2)}</td>

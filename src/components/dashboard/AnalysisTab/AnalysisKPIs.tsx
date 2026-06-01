@@ -1,11 +1,16 @@
 import React from 'react';
-import type { MetricasDesempeño } from '../../../domain/types';
+import type { PeriodoNotas } from '../../../domain/types';
+
+export interface AnalysisKPIsData {
+  promedioGeneral: number;
+  statusDistribution: Record<string, number>;
+}
 
 interface AnalysisKPIsProps {
   selectedGrupo: string;
-  kpis: MetricasDesempeño;
-  originalKpis: MetricasDesempeño;
-  activeSimulations: Record<string, Record<'P1' | 'P2' | 'P3' | 'P4', number | null>>;
+  kpis: AnalysisKPIsData;
+  originalKpis: AnalysisKPIsData;
+  activeSimulations: Record<string, Partial<PeriodoNotas>>;
   viewMode: 'area' | 'subject';
 }
 

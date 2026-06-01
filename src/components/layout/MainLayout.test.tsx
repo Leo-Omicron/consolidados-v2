@@ -42,53 +42,55 @@ describe('MainLayout', () => {
     useThemeStore.getState().setMode('light');
   });
 
-  it('renders default layout structure', () => {
+  it('renders default layout structure', async () => {
     render(<MainLayout />);
     expect(screen.getByText('Dashboard de Consolidados')).toBeDefined();
     expect(screen.getByTestId('file-upload-area')).toBeDefined();
-    expect(screen.getByTestId('analysis-tab')).toBeDefined();
+    expect(await screen.findByTestId('analysis-tab')).toBeDefined();
   });
 
-  it('applies light mode to the document root by default', () => {
+  it('applies light mode to the document root by default', async () => {
     render(<MainLayout />);
 
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     expect(screen.getByRole('main')).toBeDefined();
+    expect(await screen.findByTestId('analysis-tab')).toBeDefined();
   });
 
-  it('applies the selected dark mode to the document root', () => {
+  it('applies the selected dark mode to the document root', async () => {
     useThemeStore.getState().setMode('dark');
 
     render(<MainLayout />);
 
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
     expect(screen.getByText('Dashboard de Consolidados')).toBeDefined();
+    expect(await screen.findByTestId('analysis-tab')).toBeDefined();
   });
 
-  it('changes active tab when header tab is clicked', () => {
+  it('changes active tab when header tab is clicked', async () => {
     render(<MainLayout />);
-    
+
     fireEvent.click(screen.getByText('Estadísticas'));
-    expect(screen.getByTestId('charts-tab')).toBeDefined();
+    expect(await screen.findByTestId('charts-tab')).toBeDefined();
     expect(screen.queryByTestId('analysis-tab')).toBeNull();
 
     fireEvent.click(screen.getByText('Reports'));
-    expect(screen.getByTestId('reports-tab')).toBeDefined();
+    expect(await screen.findByTestId('reports-tab')).toBeDefined();
   });
 
-  it('changes active tab to all available options', () => {
+  it('changes active tab to all available options', async () => {
     render(<MainLayout />);
-    
+
     fireEvent.click(screen.getByText('Alertas'));
-    expect(screen.getByTestId('alerts-tab')).toBeDefined();
+    expect(await screen.findByTestId('alerts-tab')).toBeDefined();
 
     fireEvent.click(screen.getByText('Mentores'));
-    expect(screen.getByTestId('tutors-tab')).toBeDefined();
+    expect(await screen.findByTestId('tutors-tab')).toBeDefined();
 
     fireEvent.click(screen.getByText('Volatilidad'));
-    expect(screen.getByTestId('volatility-tab')).toBeDefined();
+    expect(await screen.findByTestId('volatility-tab')).toBeDefined();
 
     fireEvent.click(screen.getByText('Mapa de Calor'));
-    expect(screen.getByTestId('heatmap-tab')).toBeDefined();
+    expect(await screen.findByTestId('heatmap-tab')).toBeDefined();
   });
 });

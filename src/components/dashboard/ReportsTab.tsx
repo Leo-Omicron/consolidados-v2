@@ -1,14 +1,15 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useReportsLogic } from './ReportsTab/useReportsLogic';
-import { GroupPerformanceView } from './ReportsTab/views/GroupPerformanceView';
-import { OutstandingStudentsView } from './ReportsTab/views/OutstandingStudentsView';
-import { AcademicRiskView } from './ReportsTab/views/AcademicRiskView';
-import { SubjectAnalyticsView } from './ReportsTab/views/SubjectAnalyticsView';
-import { GroupComparisonView } from './ReportsTab/views/GroupComparisonView';
-import { HeatmapView } from './ReportsTab/views/HeatmapView';
-import { TeacherFeedbackView } from './ReportsTab/views/TeacherFeedbackView';
-import { OfficialRecordsView } from './ReportsTab/views/OfficialRecordsView';
 import { useUIStore } from '../../store/useUIStore';
+
+const GroupPerformanceView = lazy(() => import('./ReportsTab/views/GroupPerformanceView').then(m => ({ default: m.GroupPerformanceView })));
+const OutstandingStudentsView = lazy(() => import('./ReportsTab/views/OutstandingStudentsView').then(m => ({ default: m.OutstandingStudentsView })));
+const AcademicRiskView = lazy(() => import('./ReportsTab/views/AcademicRiskView').then(m => ({ default: m.AcademicRiskView })));
+const SubjectAnalyticsView = lazy(() => import('./ReportsTab/views/SubjectAnalyticsView').then(m => ({ default: m.SubjectAnalyticsView })));
+const GroupComparisonView = lazy(() => import('./ReportsTab/views/GroupComparisonView').then(m => ({ default: m.GroupComparisonView })));
+const HeatmapView = lazy(() => import('./ReportsTab/views/HeatmapView').then(m => ({ default: m.HeatmapView })));
+const TeacherFeedbackView = lazy(() => import('./ReportsTab/views/TeacherFeedbackView').then(m => ({ default: m.TeacherFeedbackView })));
+const OfficialRecordsView = lazy(() => import('./ReportsTab/views/OfficialRecordsView').then(m => ({ default: m.OfficialRecordsView })));
 
 const menuItems = [
   { id: 'group-performance', label: 'Rendimiento Grupal', icon: '📈' },
@@ -58,6 +59,11 @@ export const ReportsTab: React.FC = () => {
               </select>
             </div>
           )}
+          {logic.activeTab === 'group-comparison' && (
+            <div className="flex items-center gap-2 text-sm text-slate-500 italic px-2">
+               Este reporte compara todos los grupos; no requiere filtro individual.
+            </div>
+          )}
           <button 
             onClick={logic.handleExportExcel}
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer"
@@ -65,9 +71,19 @@ export const ReportsTab: React.FC = () => {
             📊 Exportar Excel
           </button>
           <button 
-            onClick={logic.handleExportConsolidadoCompleto}
-            disabled={!logic.canExportConsolidadoCompleto}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:hover:bg-blue-600 text-white font-semibold text-sm rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={(e) => {
+              if (!logic.canExportConsolidadoCompleto) {
+                e.preventDefault();
+                return;
+              }
+              logic.handleExportConsolidadoCompleto();
+            }}
+            aria-disabled={!logic.canExportConsolidadoCompleto}
+            className={`flex items-center gap-2 px-4 py-2.5 font-semibold text-sm rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all ${
+              logic.canExportConsolidadoCompleto 
+                ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer' 
+                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+            }`}
             title={logic.activeTab === 'group-comparison' ? "Consolidado Completo no disponible para Comparativa de Grupos" : "Descarga los 7 reportes del grupo en un único archivo de Excel"}
           >
             📦 Consolidado Completo
@@ -132,12 +148,12 @@ export const ReportsTab: React.FC = () => {
           </div>
 
           <Suspense fallback={<div className="p-8 text-center text-slate-500">Cargando reporte...</div>}>
-            {logic.activeTab === 'group-performance' && <GroupPerformanceView data={logic.groupPerformanceData} logic={logic} />}
-            {logic.activeTab === 'outstanding' && <OutstandingStudentsView data={logic.outstandingStudentsData} logic={logic} />}
-            {logic.activeTab === 'academic-risk' && <AcademicRiskView data={logic.academicRiskData} logic={logic} />}
-            {logic.activeTab === 'subject-analytics' && <SubjectAnalyticsView data={logic.subjectAnalyticsData} logic={logic} />}
-            {logic.activeTab === 'group-comparison' && <GroupComparisonView data={logic.groupComparisonData} logic={logic} />}
-            {logic.activeTab === 'heatmap' && <HeatmapView data={logic.heatmapData} logic={logic} />}
+            {logic.activeTab === 'group-performance' && <GroupPerformanceView data={logic.groupPerformanceData} />}
+            {logic.activeTab === 'outstanding' && <OutstandingStudentsView data={logic.outstandingStudentsData} />}
+            {logic.activeTab === 'academic-risk' && <AcademicRiskView data={logic.academicRiskData} />}
+            {logic.activeTab === 'subject-analytics' && <SubjectAnalyticsView data={logic.subjectAnalyticsData} />}
+            {logic.activeTab === 'group-comparison' && <GroupComparisonView data={logic.groupComparisonData} />}
+            {logic.activeTab === 'heatmap' && <HeatmapView data={logic.heatmapData} />}
             {logic.activeTab === 'feedback' && <TeacherFeedbackView data={logic.teacherFeedbackData} logic={logic} />}
             {logic.activeTab === 'official' && <OfficialRecordsView data={logic.officialRecordsData} logic={logic} />}
           </Suspense>

@@ -8,9 +8,6 @@ describe('useUIStore', () => {
       analysisFilters: { search: '', area: '', status: '' },
       analysisSortConfig: null,
       reportsActiveTab: 'group-performance',
-      reportsLocalGroup: '',
-      reportsDirectorName: 'Director de Curso',
-      reportsPeriodName: '',
     });
   });
 
@@ -19,9 +16,6 @@ describe('useUIStore', () => {
     expect(state.analysisFilters).toEqual({ search: '', area: '', status: '' });
     expect(state.analysisSortConfig).toBeNull();
     expect(state.reportsActiveTab).toBe('group-performance');
-    expect(state.reportsLocalGroup).toBe('');
-    expect(state.reportsDirectorName).toBe('Director de Curso');
-    expect(state.reportsPeriodName).toBe('');
   });
 
   it('should update analysisFilters with an object', () => {
@@ -51,20 +45,5 @@ describe('useUIStore', () => {
   it('should update reportsActiveTab', () => {
     useUIStore.getState().setReportsActiveTab('academic-risk');
     expect(useUIStore.getState().reportsActiveTab).toBe('academic-risk');
-  });
-
-  it('should update reportsLocalGroup', () => {
-    useUIStore.getState().setReportsLocalGroup('Grupo A');
-    expect(useUIStore.getState().reportsLocalGroup).toBe('Grupo A');
-  });
-
-  it('should update reportsDirectorName', () => {
-    useUIStore.getState().setReportsDirectorName('Juan Perez');
-    expect(useUIStore.getState().reportsDirectorName).toBe('Juan Perez');
-  });
-
-  it('should update reportsPeriodName', () => {
-    useUIStore.getState().setReportsPeriodName('Periodo 1');
-    expect(useUIStore.getState().reportsPeriodName).toBe('Periodo 1');
   });
 });

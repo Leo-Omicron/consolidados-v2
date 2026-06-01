@@ -20,12 +20,6 @@ interface UIState {
   
   reportsActiveTab: ReportCategory;
   setReportsActiveTab: (tab: ReportCategory) => void;
-  reportsLocalGroup: string;
-  setReportsLocalGroup: (group: string) => void;
-  reportsDirectorName: string;
-  setReportsDirectorName: (name: string) => void;
-  reportsPeriodName: string;
-  setReportsPeriodName: (name: string) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -33,9 +27,6 @@ export const useUIStore = create<UIState>((set) => ({
   analysisSortConfig: null,
   
   reportsActiveTab: 'group-performance',
-  reportsLocalGroup: '',
-  reportsDirectorName: 'Director de Curso',
-  reportsPeriodName: '',
   
   setAnalysisFilters: (filters) => set((state) => ({
     analysisFilters: typeof filters === 'function' ? filters(state.analysisFilters) : filters
@@ -45,7 +36,4 @@ export const useUIStore = create<UIState>((set) => ({
   })),
   
   setReportsActiveTab: (tab) => set({ reportsActiveTab: tab }),
-  setReportsLocalGroup: (group) => set({ reportsLocalGroup: group }),
-  setReportsDirectorName: (name) => set({ reportsDirectorName: name }),
-  setReportsPeriodName: (name) => set({ reportsPeriodName: name }),
 }));

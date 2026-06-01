@@ -1,8 +1,9 @@
  
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
+import type { TeacherFeedbackReport } from '../../../../domain/types';
+import { useReportsLogic } from '../useReportsLogic';
 
-export const TeacherFeedbackView: React.FC<{ data: any, logic: any }> = ({ data, logic }) => {
+export const TeacherFeedbackView: React.FC<{ data: TeacherFeedbackReport[] | null, logic: ReturnType<typeof useReportsLogic> }> = ({ data, logic }) => {
   const {
     activeGroupToUse
   } = logic;
@@ -17,7 +18,7 @@ export const TeacherFeedbackView: React.FC<{ data: any, logic: any }> = ({ data,
       </h3>
       
       <div className="space-y-6 print:space-y-12">
-        {teacherFeedbackData.map((student: any) => (
+        {teacherFeedbackData.map(student => (
           <div key={student.studentId} className="border border-slate-200/80 rounded-2xl p-6 bg-white shadow-sm break-inside-avoid print:border print:border-slate-400 print:p-6 print:rounded-2xl">
             <div className="flex justify-between items-start border-b border-slate-100 print:border-slate-300 pb-3 mb-4">
               <div>
@@ -42,7 +43,7 @@ export const TeacherFeedbackView: React.FC<{ data: any, logic: any }> = ({ data,
               <div className="bg-slate-50 dark:bg-slate-900/10 border border-slate-100 dark:border-slate-800/40 p-2.5 rounded-xl text-center print:bg-white print:border-slate-300">
                 <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Promedio <span className="text-[8px] text-amber-600 dark:text-amber-400 font-bold">(Ofic.)</span></span>
                 <span className="text-lg font-extrabold text-slate-800 dark:text-slate-200 print:text-black">
-                  {student.promedioActual.toFixed(2)}
+                  {(student.promedioActual || 0).toFixed(2)}
                 </span>
               </div>
               
@@ -56,7 +57,7 @@ export const TeacherFeedbackView: React.FC<{ data: any, logic: any }> = ({ data,
               <div className="bg-slate-50 dark:bg-slate-900/10 border border-slate-100 dark:border-slate-800/40 p-2.5 rounded-xl text-center print:bg-white print:border-slate-300">
                 <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Media Grupal</span>
                 <span className="text-lg font-extrabold text-slate-800 dark:text-slate-200 print:text-black">
-                  {student.promedioGrupo.toFixed(2)}
+                  {(student.promedioGrupo || 0).toFixed(2)}
                 </span>
               </div>
 
@@ -73,7 +74,7 @@ export const TeacherFeedbackView: React.FC<{ data: any, logic: any }> = ({ data,
                 <span className="block text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-1.5">💪 Áreas de Fortaleza (Refuerzo Positivo)</span>
                 {student.strengths.length > 0 ? (
                   <ul className="list-disc pl-5 text-sm text-slate-700 dark:text-slate-300 space-y-0.5">
-                    {student.strengths.map((area: any) => <li key={area}>{area}</li>)}
+                    {student.strengths.map(area => <li key={area}>{area}</li>)}
                   </ul>
                 ) : (
                   <span className="text-xs text-slate-400 dark:text-slate-400 italic">No se listan fortalezas con nota superior a 4.0</span>
@@ -83,15 +84,15 @@ export const TeacherFeedbackView: React.FC<{ data: any, logic: any }> = ({ data,
                 <span className="block text-xs font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider mb-1.5">⚠️ Plan de Mejora Prioritario</span>
                 {student.weaknessesDetail.length > 0 ? (
                   <div className="space-y-1.5">
-                    {student.weaknessesDetail.map((w: any) => (
+                    {student.weaknessesDetail.map(w => (
                       <div key={w.areaName} className="flex justify-between items-center text-sm">
-                        <span className="font-semibold text-slate-800 dark:text-slate-300 print:text-black">{w.areaName} <span className="text-rose-600 dark:text-rose-400">({w.grade.toFixed(1)})</span></span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-300 print:text-black">{w.areaName} <span className="text-rose-600 dark:text-rose-400">({(w.grade || 0).toFixed(1)})</span></span>
                         <span className={`text-[10px] px-2 py-0.5 rounded font-bold border ${
                           w.isImpossible
                             ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50 print:bg-white print:text-rose-800'
                             : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50 print:bg-white print:text-amber-800'
                         }`}>
-                          {w.isImpossible ? 'IRRECUPERABLE' : `Nota Req: ${w.requiredGrade.toFixed(2)}`}
+                          {w.isImpossible ? 'IRRECUPERABLE' : `Nota Req: ${(w.requiredGrade || 0).toFixed(2)}`}
                         </span>
                       </div>
                     ))}

@@ -1,8 +1,8 @@
  
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
+import type { SubjectAnalyticsReport } from '../../../../domain/types';
 
-export const SubjectAnalyticsView: React.FC<{ data: any, logic?: any }> = ({ data }) => {
+export const SubjectAnalyticsView: React.FC<{ data: SubjectAnalyticsReport | null }> = ({ data }) => {
 
   const subjectAnalyticsData = data;
   
@@ -25,10 +25,10 @@ export const SubjectAnalyticsView: React.FC<{ data: any, logic?: any }> = ({ dat
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-100">
-            {subjectAnalyticsData.subjects.map((subject: any) => (
+            {subjectAnalyticsData.subjects.map(subject => (
               <tr key={subject.asignatura} className="hover:bg-slate-50 transition-colors">
                 <td className="px-4 py-2.5 text-left text-slate-800 font-medium">{subject.asignatura}</td>
-                <td className="px-4 py-2.5 text-center font-bold text-slate-900">{subject.average.toFixed(2)}</td>
+                <td className="px-4 py-2.5 text-center font-bold text-slate-900">{(subject.average || 0).toFixed(2)}</td>
                 <td className="px-4 py-2.5 text-center font-semibold text-rose-600">{subject.failuresCount}</td>
                 <td className="px-4 py-2.5 text-center font-semibold text-rose-500">{subject.failuresRate}%</td>
               </tr>

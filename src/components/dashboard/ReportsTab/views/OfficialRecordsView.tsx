@@ -1,9 +1,9 @@
  
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
-import type { OfficialRecordRow } from '../../../../domain/types';
+import type { OfficialRecordRow, OfficialRecordsReport } from '../../../../domain/types';
+import { useReportsLogic } from '../useReportsLogic';
 
-export const OfficialRecordsView: React.FC<{ data: any, logic: any }> = ({ data, logic }) => {
+export const OfficialRecordsView: React.FC<{ data: OfficialRecordsReport | null, logic: ReturnType<typeof useReportsLogic> }> = ({ data, logic }) => {
   const {
     hasP4,
     directorName,
@@ -83,7 +83,7 @@ export const OfficialRecordsView: React.FC<{ data: any, logic: any }> = ({ data,
                             </td>
                           );
                         })}
-                        <td className="px-2 py-2 text-center font-extrabold text-slate-900 bg-slate-50/30 print:w-[45px] print:min-w-0 print:text-[8px] print:px-1">{row.promActual.toFixed(2)}</td>
+                        <td className="px-2 py-2 text-center font-extrabold text-slate-900 bg-slate-50/30 print:w-[45px] print:min-w-0 print:text-[8px] print:px-1">{(row.promActual || 0).toFixed(2)}</td>
                         {hasP4 && (
                           <td className="px-2 py-2 text-center text-slate-500">P4</td>
                         )}

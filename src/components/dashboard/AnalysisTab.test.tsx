@@ -37,9 +37,6 @@ describe('AnalysisTab', () => {
       analysisFilters: { search: '', area: '', status: '' },
       analysisSortConfig: null,
       reportsActiveTab: 'group-performance',
-      reportsLocalGroup: '',
-      reportsDirectorName: 'Director de Curso',
-      reportsPeriodName: '',
     });
 
     (useDashboardStore as any).mockImplementation((selector: any) => {

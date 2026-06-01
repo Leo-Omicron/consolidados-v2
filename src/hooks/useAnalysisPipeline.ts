@@ -174,8 +174,9 @@ export function sortGroups(
     return String(valA).localeCompare(String(valB)) * modifier;
   });
 
-  sortedGroups.forEach(group => {
-    group.rows = [...group.rows].sort((a, b) => {
+  return sortedGroups.map(group => ({
+    ...group,
+    rows: [...group.rows].sort((a, b) => {
       let rowKey: string = key === 'aggregates.promActual' ? 'promActual' : key;
       
       if (viewMode === 'subject') {
@@ -194,10 +195,8 @@ export function sortGroups(
         return (valA - valB) * modifier;
       }
       return String(valA).localeCompare(String(valB)) * modifier;
-    });
-  });
-
-  return sortedGroups;
+    })
+  }));
 }
 
 // -- React Hook --

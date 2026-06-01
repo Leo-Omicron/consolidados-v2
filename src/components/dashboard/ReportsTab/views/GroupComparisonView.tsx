@@ -1,8 +1,8 @@
  
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
+import type { GroupComparisonReport } from '../../../../domain/types';
 
-export const GroupComparisonView: React.FC<{ data: any, logic?: any }> = ({ data }) => {
+export const GroupComparisonView: React.FC<{ data: GroupComparisonReport | null }> = ({ data }) => {
 
   const groupComparisonData = data;
   
@@ -52,12 +52,12 @@ export const GroupComparisonView: React.FC<{ data: any, logic?: any }> = ({ data
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-100">
-            {groupComparisonData.groups.map((group: any) => (
+            {groupComparisonData.groups.map(group => (
               <tr key={group.grupo} className="hover:bg-slate-50 transition-colors">
                 <td className="px-4 py-2.5 text-left font-bold text-slate-900">{group.grupo}</td>
                 <td className="px-4 py-2.5 text-center text-slate-700">{group.totalStudents}</td>
-                <td className="px-4 py-2.5 text-center font-bold text-indigo-600">{group.average.toFixed(2)}</td>
-                <td className="px-4 py-2.5 text-center text-slate-600">{group.standardDeviation.toFixed(1)}</td>
+                <td className="px-4 py-2.5 text-center font-bold text-indigo-600">{(group.average || 0).toFixed(2)}</td>
+                <td className="px-4 py-2.5 text-center text-slate-600">{(group.standardDeviation || 0).toFixed(1)}</td>
                 <td className="px-4 py-2.5 text-center font-semibold text-rose-500">{group.failuresCount}</td>
                 <td className="px-4 py-2.5 text-center font-extrabold text-rose-600">{group.reprobadosCount}</td>
               </tr>

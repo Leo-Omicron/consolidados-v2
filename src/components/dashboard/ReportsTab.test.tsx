@@ -59,9 +59,6 @@ describe('ReportsTab', () => {
       analysisFilters: { search: '', area: '', status: '' },
       analysisSortConfig: null,
       reportsActiveTab: 'group-performance',
-      reportsLocalGroup: '',
-      reportsDirectorName: 'Director de Curso',
-      reportsPeriodName: '',
     });
 
     (useDashboardStore as any).mockImplementation((selector: any) => {
@@ -151,7 +148,7 @@ describe('ReportsTab', () => {
     expect(printableHeader.textContent).toContain('Reporte: Rendimiento Grupal');
   });
 
-  it('toggles between different report types on selection', () => {
+  it('toggles between different report types on selection', async () => {
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
         estudiantes: mockStudents,
@@ -166,18 +163,18 @@ describe('ReportsTab', () => {
     render(<ReportsTab />);
 
     // Default should be Rendimiento Grupal
-    expect(screen.getByText('Reporte de Rendimiento Grupal - Grupo 10A')).toBeDefined();
+    expect(await screen.findByText('Reporte de Rendimiento Grupal - Grupo 10A')).toBeDefined();
 
     // Click on "Estudiantes Destacados"
     fireEvent.click(screen.getByText('Estudiantes Destacados'));
-    expect(screen.getByText('Estudiantes Destacados - Grupo 10A')).toBeDefined();
+    expect(await screen.findByText('Estudiantes Destacados - Grupo 10A')).toBeDefined();
 
     // Click on "Riesgo Académico"
     fireEvent.click(screen.getByText('Riesgo Académico'));
-    expect(screen.getByText('Estudiantes en Riesgo Académico - Grupo 10A')).toBeDefined();
+    expect(await screen.findByText('Estudiantes en Riesgo Académico - Grupo 10A')).toBeDefined();
   });
 
-  it('respects P4 visibility cleanly according to config', () => {
+  it('respects P4 visibility cleanly according to config', async () => {
     // Case 1: P4 is not present
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
@@ -196,6 +193,7 @@ describe('ReportsTab', () => {
     fireEvent.click(screen.getByText('Registro Oficial'));
     
     // Check table headers, should NOT show P4
+    await screen.findByText(/Registro de Calificaciones Oficial/i); // Wait for lazy load
     expect(screen.queryByText('P4')).toBeNull();
 
     // Case 2: P4 is present and active
@@ -212,10 +210,11 @@ describe('ReportsTab', () => {
 
     rerender(<ReportsTab />);
     // "P4" should be present as header or cell
-    expect(screen.getAllByText('P4').length).toBeGreaterThan(0);
+    const p4Elements = await screen.findAllByText('P4');
+    expect(p4Elements.length).toBeGreaterThan(0);
   });
 
-  it('renders student feedback cards with enhanced pedagogical metrics', () => {
+  it('renders student feedback cards with enhanced pedagogical metrics', async () => {
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = {
         estudiantes: mockStudents,
@@ -233,7 +232,7 @@ describe('ReportsTab', () => {
     fireEvent.click(screen.getByText('Retroalimentación'));
 
     // Check header
-    expect(screen.getByText('Fichas de Retroalimentación de Alumnos - Grupo 10A')).toBeDefined();
+    expect(await screen.findByText('Fichas de Retroalimentación de Alumnos - Grupo 10A')).toBeDefined();
 
     // Check student name
     expect(screen.getByText('Ana Perez')).toBeDefined();
@@ -252,7 +251,7 @@ describe('ReportsTab', () => {
     expect(screen.getAllByText(/Nota Req:/i).length).toBeGreaterThan(0);
   });
 
-  it('renders "Análisis de Asignaturas" tab', () => {
+  it('renders "Análisis de Asignaturas" tab', async () => {
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: '10A', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
       return selector(state);
@@ -260,10 +259,11 @@ describe('ReportsTab', () => {
     render(<ReportsTab />);
     fireEvent.click(screen.getByRole('button', { name: /Análisis de Asignaturas/i }));
     // Wait for the tab to render its content
-    expect(screen.getAllByText(/Álgebra/i).length).toBeGreaterThan(0);
+    const elements = await screen.findAllByText(/Álgebra/i);
+    expect(elements.length).toBeGreaterThan(0);
   });
 
-  it('renders "Comparativa de Grupos" tab', () => {
+  it('renders "Comparativa de Grupos" tab', async () => {
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: 'Todos', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
       return selector(state);
@@ -271,17 +271,19 @@ describe('ReportsTab', () => {
     render(<ReportsTab />);
     fireEvent.click(screen.getByRole('button', { name: /Comparativa de Grupos/i }));
     // We expect 10A to be in the group comparison table
-    expect(screen.getAllByText('10A').length).toBeGreaterThan(0);
+    const elements = await screen.findAllByText('10A');
+    expect(elements.length).toBeGreaterThan(0);
   });
 
-  it('renders "Mapa de Calor" tab', () => {
+  it('renders "Mapa de Calor" tab', async () => {
     (useDashboardStore as any).mockImplementation((selector: any) => {
       const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: '10A', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
       return selector(state);
     });
     render(<ReportsTab />);
     fireEvent.click(screen.getByRole('button', { name: /Mapa de Calor/i }));
-    expect(screen.getAllByText('Ana Perez').length).toBeGreaterThan(0);
+    const elements = await screen.findAllByText('Ana Perez');
+    expect(elements.length).toBeGreaterThan(0);
   });
 
   it('handles printing using window.print', () => {
@@ -313,5 +315,53 @@ describe('ReportsTab', () => {
     const exportBtn = screen.getByRole('button', { name: /Exportar Excel/i });
     fireEvent.click(exportBtn);
     // As it uses ExcelExportServiceImpl, we just check no crashes.
+  });
+
+  it('updates local director and period variables independently', async () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: '10A', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
+      return selector(state);
+    });
+    render(<ReportsTab />);
+    
+    // Click on Registro Oficial since it uses Director/Period
+    fireEvent.click(screen.getByText('Registro Oficial'));
+    await screen.findByText(/Registro de Calificaciones Oficial/i);
+
+    const inputDirector = screen.getByPlaceholderText('Ej. Prof. María Clara Gómez');
+    const inputPeriodo = screen.getByPlaceholderText('Ej. Periodo 1, Primer Trimestre');
+
+    fireEvent.change(inputDirector, { target: { value: 'Director Modificado' } });
+    fireEvent.change(inputPeriodo, { target: { value: 'Periodo Especial' } });
+
+    expect((inputDirector as HTMLInputElement).value).toBe('Director Modificado');
+    expect((inputPeriodo as HTMLInputElement).value).toBe('Periodo Especial');
+  });
+
+  it('prevents Consolidado Completo export when condition is not met (disabled)', async () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: 'Todos', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
+      return selector(state);
+    });
+    // Set tab to group-comparison to trigger the disabled state
+    useUIStore.setState({ reportsActiveTab: 'group-comparison' });
+    render(<ReportsTab />);
+
+    const btn = screen.getByRole('button', { name: /Consolidado Completo/i });
+    expect(btn.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(btn); // Should not do anything
+  });
+
+  it('allows Consolidado Completo export when in a specific group', async () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      // Specific group allows it
+      const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: '10A', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
+      return selector(state);
+    });
+    render(<ReportsTab />);
+
+    const btn = screen.getByRole('button', { name: /Consolidado Completo/i });
+    expect(btn.getAttribute('aria-disabled')).toBe('false');
+    fireEvent.click(btn); // triggers export logic
   });
 });

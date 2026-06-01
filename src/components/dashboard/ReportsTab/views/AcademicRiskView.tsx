@@ -1,8 +1,8 @@
  
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
+import type { AcademicRiskReport } from '../../../../domain/types';
 
-export const AcademicRiskView: React.FC<{ data: any, logic?: any }> = ({ data }) => {
+export const AcademicRiskView: React.FC<{ data: AcademicRiskReport | null }> = ({ data }) => {
 
   const academicRiskData = data;
   
@@ -26,10 +26,10 @@ export const AcademicRiskView: React.FC<{ data: any, logic?: any }> = ({ data })
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {academicRiskData.criticalStudents.map((student: any) => (
+                    {academicRiskData.criticalStudents.map(student => (
                       <tr key={student.id} className="hover:bg-slate-50/40">
                         <td className="px-4 py-3 font-semibold text-slate-800">{student.name}</td>
-                        <td className="px-4 py-3 text-center font-bold text-slate-700">{student.average.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-center font-bold text-slate-700">{(student.average || 0).toFixed(2)}</td>
                         <td className="px-4 py-3 text-center font-bold text-rose-600">{student.failedAreasCount}</td>
                         <td className="px-4 py-3 text-xs space-y-1">
                           {student.failedAreas.length > 0 && (

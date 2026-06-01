@@ -1,8 +1,8 @@
  
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
+import type { OutstandingStudentsReport } from '../../../../domain/types';
 
-export const OutstandingStudentsView: React.FC<{ data: any, logic?: any }> = ({ data }) => {
+export const OutstandingStudentsView: React.FC<{ data: OutstandingStudentsReport | null }> = ({ data }) => {
 
   const outstandingStudentsData = data;
   
@@ -26,14 +26,14 @@ export const OutstandingStudentsView: React.FC<{ data: any, logic?: any }> = ({ 
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-100">
-            {outstandingStudentsData.students.map((student: any) => (
-              <tr key={student.studentId} className="hover:bg-slate-50 transition-colors">
-                <td className="px-4 py-2.5 text-left font-bold text-slate-900">#{student.rank}</td>
+            {outstandingStudentsData.students.map((student, idx) => (
+              <tr key={student.id} className="hover:bg-slate-50 transition-colors">
+                <td className="px-4 py-2.5 text-left font-bold text-slate-900">#{student.officialRanking ?? (idx + 1)}</td>
                 <td className="px-4 py-2.5 font-bold text-indigo-700 print:text-black">{student.name}</td>
                 <td className="px-4 py-2.5 text-center font-extrabold text-slate-800">
                   {student.officialAverage !== null && student.officialAverage !== undefined 
                     ? student.officialAverage.toFixed(2) 
-                    : student.average.toFixed(2)}
+                    : (student.average || 0).toFixed(2)}
                 </td>
                 <td className="px-4 py-2.5 text-center font-semibold text-emerald-600 print:text-black">{student.percentile}%</td>
               </tr>

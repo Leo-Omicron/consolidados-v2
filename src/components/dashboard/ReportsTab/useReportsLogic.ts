@@ -12,16 +12,7 @@ import {
   generateOfficialRecordsReport,
 } from '../../../services/reportEngine';
 import { ExcelExportServiceImpl } from '../../../services/excelExport';
-
-type ReportCategory =
-  | 'group-performance'
-  | 'outstanding'
-  | 'academic-risk'
-  | 'subject-analytics'
-  | 'group-comparison'
-  | 'heatmap'
-  | 'feedback'
-  | 'official';
+import type { ReportCategory } from '../../../domain/types';
 
 export const useReportsLogic = () => {
   const estudiantes = useDashboardStore(state => state.estudiantes);
@@ -144,6 +135,12 @@ export const useReportsLogic = () => {
     return generateOfficialRecordsReport(estudiantes, activeGroupToUse, config, periodName, directorName);
   }, [activeTab, estudiantes, activeGroupToUse, config, periodName, directorName]);
 
+  const canExportConsolidadoCompleto = Boolean(
+    activeTab !== 'group-comparison' &&
+    estudiantes.length > 0 &&
+    activeGroupToUse
+  );
+
   const printLayoutClass = useMemo(() => {
     if (activeTab === 'heatmap' || activeTab === 'official' || activeTab === 'group-comparison') {
       return 'print-landscape';
@@ -243,5 +240,6 @@ export const useReportsLogic = () => {
     handlePrint,
     handleExportExcel,
     handleExportConsolidadoCompleto,
+    canExportConsolidadoCompleto,
   };
 };

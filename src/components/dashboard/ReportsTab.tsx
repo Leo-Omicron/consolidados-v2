@@ -66,7 +66,7 @@ export const ReportsTab: React.FC = () => {
           </button>
           <button 
             onClick={logic.handleExportConsolidadoCompleto}
-            disabled={logic.activeTab === 'group-comparison' || !logic.activeGroupToUse || !logic.groupPerformanceData}
+            disabled={!logic.canExportConsolidadoCompleto}
             className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:hover:bg-blue-600 text-white font-semibold text-sm rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             title={logic.activeTab === 'group-comparison' ? "Consolidado Completo no disponible para Comparativa de Grupos" : "Descarga los 7 reportes del grupo en un único archivo de Excel"}
           >

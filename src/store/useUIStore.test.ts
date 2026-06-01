@@ -49,8 +49,8 @@ describe('useUIStore', () => {
   });
 
   it('should update reportsActiveTab', () => {
-    useUIStore.getState().setReportsActiveTab('custom-tab');
-    expect(useUIStore.getState().reportsActiveTab).toBe('custom-tab');
+    useUIStore.getState().setReportsActiveTab('academic-risk');
+    expect(useUIStore.getState().reportsActiveTab).toBe('academic-risk');
   });
 
   it('should update reportsLocalGroup', () => {

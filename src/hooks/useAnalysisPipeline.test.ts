@@ -43,7 +43,7 @@ describe('useAnalysisPipeline', () => {
 
   it('calculates trends correctly, handling nulls', () => {
     const { result } = renderHook(() =>
-      useAnalysisPipeline(mockRows, 'Todos', { search: '', area: '', status: '' }, null, 'area')
+      useAnalysisPipeline(mockRows, 'Todos', { search: '', area: '', status: '' }, null, mockRows, 'area')
     );
 
     const rows = result.current.groupedAndSorted.flatMap(g => g.rows);
@@ -71,7 +71,7 @@ describe('useAnalysisPipeline', () => {
 
   it('calculates group averages safely excluding nulls', () => {
     const { result } = renderHook(() =>
-      useAnalysisPipeline(mockRows, 'Todos', { search: '', area: '', status: '' }, null, 'area')
+      useAnalysisPipeline(mockRows, 'Todos', { search: '', area: '', status: '' }, null, mockRows, 'area')
     );
 
     const aliceGroup = result.current.groupedAndSorted.find(g => g.estudiante === 'Alice');
@@ -92,7 +92,7 @@ describe('useAnalysisPipeline', () => {
     const sortConfig: SortConfig = { key: 'aggregates.promActual', direction: 'desc' };
 
     const { result } = renderHook(() =>
-      useAnalysisPipeline(mockRows, 'Todos', { search: '', area: '', status: '' }, sortConfig)
+      useAnalysisPipeline(mockRows, 'Todos', { search: '', area: '', status: '' }, sortConfig, mockRows, 'area')
     );
 
     const groups = result.current.groupedAndSorted;
@@ -109,7 +109,7 @@ describe('useAnalysisPipeline', () => {
 
   it('updates KPIs correctly when filters are applied', () => {
     const { result, rerender } = renderHook(
-      (props) => useAnalysisPipeline(mockRows, 'Todos', props.filters, null),
+      (props) => useAnalysisPipeline(mockRows, 'Todos', props.filters, null, mockRows, 'area'),
       { initialProps: { filters: { search: '', area: '', status: '' } } }
     );
 
@@ -131,7 +131,7 @@ describe('useAnalysisPipeline', () => {
 
   it('filters rows by selectedGrupo', () => {
     const { result } = renderHook(() =>
-      useAnalysisPipeline(mockRows, 'B', { search: '', area: '', status: '' }, null, 'area')
+      useAnalysisPipeline(mockRows, 'B', { search: '', area: '', status: '' }, null, mockRows, 'area')
     );
 
     const rows = result.current.groupedAndSorted.flatMap(g => g.rows);
@@ -171,7 +171,7 @@ describe('useAnalysisPipeline', () => {
     ];
 
     const { result } = renderHook(() =>
-      useAnalysisPipeline(mockAsignaturas, 'Todos', { search: '', area: '', status: '' }, null, 'subject')
+      useAnalysisPipeline(mockAsignaturas, 'Todos', { search: '', area: '', status: '' }, null, mockAsignaturas as RowArea[], 'subject')
     );
 
     const aliceGroup = result.current.groupedAndSorted.find(g => g.estudiante === 'Alice');
@@ -188,7 +188,7 @@ describe('useAnalysisPipeline', () => {
     // Check sorting uses p1 when requested
     const sortConfig: SortConfig = { key: 'p1', direction: 'desc' };
     const { result: sortedResult } = renderHook(() =>
-      useAnalysisPipeline(mockAsignaturas, 'Todos', { search: '', area: '', status: '' }, sortConfig, 'subject')
+      useAnalysisPipeline(mockAsignaturas, 'Todos', { search: '', area: '', status: '' }, sortConfig, mockAsignaturas as RowArea[], 'subject')
     );
     const sortedGroup = sortedResult.current.groupedAndSorted.find(g => g.estudiante === 'Alice');
     expect((sortedGroup?.rows[0] as any).asignatura).toBe('Algebra'); // Algebra (3.0) > Geometry (null)
@@ -211,7 +211,7 @@ describe('useAnalysisPipeline', () => {
       useDashboardStore.setState({ rowsArea: storeRows });
 
       const { result } = renderHook(() =>
-        useAnalysisPipeline(storeRows, 'Todos', { search: '', area: '', status: '' }, null, 'area')
+        useAnalysisPipeline(storeRows, 'Todos', { search: '', area: '', status: '' }, null, storeRows, 'area')
       );
 
       const aliceGroup = result.current.groupedAndSorted.find(g => g.estudiante === 'Alice');
@@ -242,7 +242,7 @@ describe('useAnalysisPipeline', () => {
       const filteredActiveRows = [aliceMath, bobMath];
 
       const { result } = renderHook(() =>
-        useAnalysisPipeline(filteredActiveRows, 'Todos', { search: '', area: 'Math', status: 'Perdido' }, null, 'area')
+        useAnalysisPipeline(filteredActiveRows, 'Todos', { search: '', area: 'Math', status: 'Perdido' }, null, storeRows, 'area')
       );
 
       const aliceGroup = result.current.groupedAndSorted.find(g => g.estudiante === 'Alice');
@@ -268,7 +268,7 @@ describe('useAnalysisPipeline', () => {
       ];
 
       const { result } = renderHook(() =>
-        useAnalysisPipeline(mockAsignaturas as RowAsignatura[], 'Todos', { search: '', area: '', status: '' }, null, 'subject')
+        useAnalysisPipeline(mockAsignaturas as RowAsignatura[], 'Todos', { search: '', area: '', status: '' }, null, storeRows, 'subject')
       );
 
       const aliceGroup = result.current.groupedAndSorted.find(g => g.estudiante === 'Alice');

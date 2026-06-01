@@ -83,6 +83,7 @@ export const SummaryTab: React.FC = () => {
     selectedGrupo,
     emptyFilters,
     null,
+    rowsArea || [],
     viewMode
   );
 

@@ -42,8 +42,8 @@ export const BattleTab: React.FC = () => {
 
   const emptyFilters = useMemo(() => ({ search: '', area: '', status: '' }), []);
 
-  const { kpis: kpisA } = useAnalysisPipeline(rowsArea, groupA, emptyFilters, null, 'area');
-  const { kpis: kpisB } = useAnalysisPipeline(rowsArea, groupB, emptyFilters, null, 'area');
+  const { kpis: kpisA } = useAnalysisPipeline(rowsArea, groupA, emptyFilters, null, rowsArea || [], 'area');
+  const { kpis: kpisB } = useAnalysisPipeline(rowsArea, groupB, emptyFilters, null, rowsArea || [], 'area');
 
   const chartTheme = {
     text: themeMode === 'dark' ? '#cbd5e1' : '#475569',

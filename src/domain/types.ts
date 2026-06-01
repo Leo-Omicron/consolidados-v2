@@ -140,6 +140,16 @@ export interface SubjectWeightConfig {
   };
 }
 
+export type ReportCategory =
+  | 'group-performance'
+  | 'outstanding'
+  | 'academic-risk'
+  | 'subject-analytics'
+  | 'group-comparison'
+  | 'heatmap'
+  | 'feedback'
+  | 'official';
+
 // Sub-types for Institutional Reports
 export interface CriticalAreaInfo {
   area: string;

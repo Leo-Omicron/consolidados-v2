@@ -25,12 +25,13 @@ Plataforma cliente-servidor (100% frontend) diseñada para la **Institución Edu
 | **Estadísticas Generales** | Resumen directivo con promedios generales, tasas de aprobación y comparación competitiva entre diferentes grupos. |
 | **Reportes y Exportación** | Generación de consolidados completos en Excel, vistas imprimibles y análisis de rendimiento detallado. |
 | **Soporte Legacy & Dinámico** | Detecta plantillas antiguas automáticamente (fallback) y adapta todas las proyecciones y gráficos según si el año tiene 3, 4 o N periodos activos. |
+| **Simulador Predictivo** | Pipeline de análisis puramente funcional y desacoplado del estado global. Permite predecir "qué pasaría si..." de forma segura sin alterar la data original. |
 
 ## ⚠️ Limitaciones Conocidas (Lo Malo)
 
 - **Sin Persistencia Centralizada:** Al no haber base de datos, el docente debe arrastrar el archivo Excel cada vez que abre la plataforma. 
 - **Acoplamiento al Formato:** La herramienta depende de la estructura del Excel escolar. Aunque cuenta con un parser secundario para formatos antiguos (legacy fallback), cambios drásticos futuros requerirán actualización de la lógica de extracción.
-- **Cálculo de Pesos Inferidos:** La plataforma debe deducir los pesos porcentuales (ej. 25/25/50 en Sociales) leyendo los promedios. Anomaílas en el reporte original impactan la predicción.
+- **Cálculo de Pesos Inferidos:** La plataforma debe deducir los pesos porcentuales (ej. 25/25/50 en Sociales) leyendo los promedios. Anomalías en el reporte original impactan la predicción.
 
 ## 🛠️ Tech Stack & Ingeniería
 

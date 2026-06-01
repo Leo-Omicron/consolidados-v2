@@ -90,7 +90,7 @@ export const AnalysisTab: React.FC = () => {
   
   const { kpis: originalKpis } = useAnalysisPipeline(
     (viewMode === 'area' ? rowsArea : rowsAsignatura) || [],
-    selectedGrupo, filters, sortConfig, viewMode
+    selectedGrupo, filters, sortConfig, rowsArea || [], viewMode
   );
 
   const { groupedAndSorted: sortedGroups, kpis } = useAnalysisPipeline(
@@ -98,6 +98,7 @@ export const AnalysisTab: React.FC = () => {
     selectedGrupo, 
     filters, 
     sortConfig, 
+    currentRowsArea || [],
     viewMode
   );
 

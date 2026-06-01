@@ -131,6 +131,7 @@ describe('AnalysisTab', () => {
       'Grupo A',
       expect.anything(),
       null,
+      [{ area: 'A', estado: { text: 'Ganado' } }],
       'subject'
     );
   });

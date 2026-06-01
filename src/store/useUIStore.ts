@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { ReportCategory } from '../domain/types';
 
 export interface AnalysisFilters {
   search: string;
@@ -17,8 +18,8 @@ interface UIState {
   setAnalysisFilters: (filters: AnalysisFilters | ((prev: AnalysisFilters) => AnalysisFilters)) => void;
   setAnalysisSortConfig: (sortConfig: SortConfig | ((prev: SortConfig) => SortConfig)) => void;
   
-  reportsActiveTab: string;
-  setReportsActiveTab: (tab: string) => void;
+  reportsActiveTab: ReportCategory;
+  setReportsActiveTab: (tab: ReportCategory) => void;
   reportsLocalGroup: string;
   setReportsLocalGroup: (group: string) => void;
   reportsDirectorName: string;

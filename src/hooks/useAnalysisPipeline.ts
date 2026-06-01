@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import type { StudentGroup, SortConfig, Trend, PipelineRow, RowArea, RowAsignatura } from '../domain/types';
-import { useDashboardStore } from '../store/useDashboardStore';
 
 export interface AnalysisFilters {
   search: string;
@@ -176,7 +175,7 @@ export function sortGroups(
   });
 
   sortedGroups.forEach(group => {
-    group.rows.sort((a, b) => {
+    group.rows = [...group.rows].sort((a, b) => {
       let rowKey: string = key === 'aggregates.promActual' ? 'promActual' : key;
       
       if (viewMode === 'subject') {
@@ -208,9 +207,9 @@ export function useAnalysisPipeline(
   selectedGrupo: string,
   filters: AnalysisFilters,
   sortConfig: SortConfig | null,
+  rowsArea: RowArea[],
   viewMode: 'area' | 'subject' = 'area'
 ) {
-  const rowsArea = useDashboardStore(state => state.rowsArea);
 
   const failedAreasMap = useMemo(() => calculateFailedAreasMap(rowsArea), [rowsArea]);
   const augmentedRows = useMemo(() => augmentRows(rows, viewMode), [rows, viewMode]);

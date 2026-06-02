@@ -67,4 +67,3 @@ AnalysisTab.tsx
 ## Open Questions
 
 - [ ] Confirm 7 report memo recomputation on every render (dropping `activeTab` guard) is acceptable for datasets <1000 students. If profiling shows overhead, split into lazy-export-only memos.
-

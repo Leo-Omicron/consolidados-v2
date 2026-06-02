@@ -149,11 +149,11 @@ export const StudentGroupTable: React.FC<StudentGroupTableProps> = ({
                     </thead>
                     <tbody className="divide-y app-divide">
                       {group.rows.map((row: PipelineRow, idx) => {
-                        const areaKey = `${group.estudiante}_${(row as any).area}`;
+                        const areaKey = `${group.estudiante}_${row.area}`;
                         const isAreaExpanded = expandedAreas[areaKey];
                         const subjects = subjectsByStudentArea.get(areaKey) || [];
 
-                        const rowAny = row as any;
+                        const rowAny = row as import('../../../domain/types').AugmentedRowArea & import('../../../domain/types').AugmentedRowAsignatura;
 
                         return (
                           <React.Fragment key={idx}>
@@ -162,8 +162,8 @@ export const StudentGroupTable: React.FC<StudentGroupTableProps> = ({
                                 {viewMode === 'area' && (
                                   <button
                                     className="mr-2 app-text-muted hover:app-text app-focus cursor-pointer rounded"
-                                    onClick={() => onToggleArea(group.estudiante, rowAny.area)}
-                                    aria-label={`Toggle subjects for ${rowAny.area}`}
+                                    onClick={() => onToggleArea(group.estudiante, row.area)}
+                                    aria-label={`Toggle subjects for ${row.area}`}
                                   >
                                     {isAreaExpanded ? '📂' : '📁'}
                                   </button>
@@ -268,7 +268,7 @@ export const StudentGroupTable: React.FC<StudentGroupTableProps> = ({
                                         </tr>
                                       </thead>
                                       <tbody className="divide-y app-divide">
-                                        {subjects.map((sub: any, sIdx: number) => {
+                                        {subjects.map((sub: RowAsignatura, sIdx: number) => {
                                           let subTendencia: Trend = 'none';
                                           const p1 = sub.p1;
                                           const p2 = sub.p2;

@@ -70,22 +70,22 @@ describe('VolatilityTab', () => {
 
   it('renders all volatility profiles for group 10A correctly', () => {
     render(<VolatilityTab />);
-    
+
     // Check main counts
     expect(screen.getAllByText('Montaña Rusa').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Caída Libre').length).toBeGreaterThan(0);
     expect(screen.getByText('En Ascenso')).toBeInTheDocument();
     expect(screen.getByText('Estables')).toBeInTheDocument();
-    
+
     // Ascenso
     expect(screen.getAllByText('Ascenso').length).toBeGreaterThan(0);
-    
+
     // Caída Libre
     expect(screen.getByText('Caída Libre', { selector: 'h3 + span' })).toBeInTheDocument();
-    
+
     // Montaña Rusa
     expect(screen.getByText('Montaña Rusa', { selector: 'h3 + span' })).toBeInTheDocument();
-    
+
     // Estable
     expect(screen.getAllByText('Estable', { selector: 'h3 + span' }).length).toBe(2); // V4 and V5
 
@@ -97,10 +97,10 @@ describe('VolatilityTab', () => {
 
   it('renders insufficient data state when less than 2 periods exist', async () => {
     render(<VolatilityTab />);
-    
+
     const groupSelect = screen.getByRole('combobox');
     await userEvent.selectOptions(groupSelect, '10B');
-    
+
     expect(screen.getByText('⚠️ No hay suficientes periodos evaluados aún para calcular volatilidad (se requieren al menos 2 periodos).')).toBeInTheDocument();
   });
 
@@ -111,9 +111,9 @@ describe('VolatilityTab', () => {
       selectedGrupo: '10A',
       setGrupo: setGrupoSpy,
     });
-    
+
     render(<VolatilityTab />);
-    
+
     // setGrupo MUST NOT be called inside useEffect during mount
     expect(setGrupoSpy).not.toHaveBeenCalled();
   });
@@ -125,9 +125,9 @@ describe('VolatilityTab', () => {
       selectedGrupo: 'Todos',
       setGrupo: setGrupoSpy,
     });
-    
+
     render(<VolatilityTab />);
-    
+
     // Even with 'Todos', the group selector should show the first available group
     // without calling setGrupo to mutate global state
     const groupSelect = screen.getByRole('combobox') as HTMLSelectElement;

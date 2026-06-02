@@ -1,7 +1,7 @@
 # Apply Progress: feature-academic-insights — PR 1 + PR 2 + PR 3
 
-**Mode**: Strict TDD  
-**Date**: 2026-06-02  
+**Mode**: Strict TDD
+**Date**: 2026-06-02
 **Tests**: 420 tests (36 files — all green)
 
 ## Completed Tasks (Phases 1–5)

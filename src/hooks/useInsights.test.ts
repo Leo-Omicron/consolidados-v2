@@ -46,7 +46,7 @@ describe('useInsights', () => {
   it('returns empty results and zero counts when store has no students', async () => {
     // Dynamic import to avoid static analysis issues during RED phase
     const { useInsights } = await import('./useInsights');
-    
+
     const { result } = renderHook(() => useInsights());
 
     expect(result.current.results).toEqual([]);

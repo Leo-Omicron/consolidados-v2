@@ -150,10 +150,10 @@ No tautologies, ghost loops, empty-collection-only assertions, or type-only asse
 
 **CRITICAL**: None
 
-**WARNING**: 
+**WARNING**:
 - Pre-existing flaky test reported in `apply-progress.md`: `ReportsTab.test.tsx` > "toggles between different report types on selection" had async timing issues. However, in the current test run (283/283), this test passed. The flakiness is not caused by this change but should be addressed in a future cleanup.
 
-**SUGGESTION**: 
+**SUGGESTION**:
 - The comment on `SummaryTab.tsx` L30 still references `"3.0"` ("drawing a horizontal dashed line at 3.0 passing grade") while the code uses `PASSING_GRADE`. Consider updating the comment to match.
 
 ---

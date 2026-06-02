@@ -91,7 +91,7 @@ describe('TutorsTab', () => {
 
   it('renders matching logic correctly for group 10A (tutors, mentees, unassigned)', () => {
     render(<TutorsTab />);
-    
+
     // Group 10A should be selected by default because selectedGrupo was 'Todos' and it falls back to groups[0] -> 10A
     expect(screen.getByText('Mentores Disponibles')).toBeInTheDocument();
     expect(screen.getAllByText('2').length).toBeGreaterThan(0); // 2 tutors
@@ -113,18 +113,18 @@ describe('TutorsTab', () => {
     // Select group 10B which only has Tutor 3 and no mentees
     useDashboardStore.setState({ selectedGrupo: '10B' });
     render(<TutorsTab />);
-    
+
     expect(screen.getByText('No hay emparejamientos necesarios')).toBeInTheDocument();
   });
 
   it('changes group and area successfully', async () => {
     render(<TutorsTab />);
-    
+
     expect(screen.getByText('Mentee 1')).toBeInTheDocument(); // From 10A
 
     const groupSelect = screen.getByDisplayValue('Grupo 10A');
     await userEvent.selectOptions(groupSelect, '10B');
-    
+
     expect(screen.getByText('No hay emparejamientos necesarios')).toBeInTheDocument();
 
     const areaSelect = screen.getByDisplayValue('CIENCIAS');
@@ -138,9 +138,9 @@ describe('TutorsTab', () => {
       selectedGrupo: '10A',
       setGrupo: setGrupoSpy,
     });
-    
+
     render(<TutorsTab />);
-    
+
     // setGrupo MUST NOT be called inside useEffect during mount
     expect(setGrupoSpy).not.toHaveBeenCalled();
   });
@@ -152,9 +152,9 @@ describe('TutorsTab', () => {
       selectedGrupo: 'Todos',
       setGrupo: setGrupoSpy,
     });
-    
+
     render(<TutorsTab />);
-    
+
     // Should show group 10A without calling setGrupo
     const groupSelect = screen.getByDisplayValue('Grupo 10A');
     expect(groupSelect).toBeInTheDocument();

@@ -162,7 +162,7 @@ interface ArchetypeResult {
   narrative: string;  // human-readable in Spanish
   metrics: {
     p1: number | null;
-    p2: number | null; 
+    p2: number | null;
     p3: number | null;
     currentAverage: number;
     trend: 'up' | 'down' | 'flat';

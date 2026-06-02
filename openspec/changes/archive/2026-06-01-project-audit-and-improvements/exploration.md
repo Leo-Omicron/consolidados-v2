@@ -104,7 +104,7 @@
 
 ### Recommendation
 
-**Enfoque híbrido priorizado:** 
+**Enfoque híbrido priorizado:**
 
 1. **Fase A (Alta prioridad — bugs y deuda crítica):** Refactor de `AnalysisTab.tsx`, corrección de `useEffect` en VolatilityTab/TutorsTab, extracción de constante `PASSING_GRADE`, corrección de `lang="es"`, y agregar `aria-label` a iconos emoji.
 2. **Fase B (Testing):** Tests para `evolutionLogic.ts`, reemplazar `types.test.ts` con tests significativos.

@@ -112,14 +112,14 @@ No design deviations detected.
 ---
 
 ### Quality Metrics
-**Linter (ESLint v10.4.0)**: ✅ No errors, no warnings  
+**Linter (ESLint v10.4.0)**: ✅ No errors, no warnings
 **Type Checker (TypeScript)**: ✅ No errors
 
 ---
 
 ### Issues Found
-**CRITICAL**: None  
-**WARNING**: 
+**CRITICAL**: None
+**WARNING**:
 - `useReportsLogic.ts` line coverage at 73% — uncovered alert fallback (L169–170) and partial branch coverage in `handleExportExcel` switch/cases. All spec-required code paths are covered; uncovered branches are defensive alerts and export switch cases not exercised in current test suite.
 - 3 spec edge-case scenarios marked PARTIAL (React concurrent rendering untestable at unit level, empty-memoized-data fallback, null-group edge). These do not represent missing coverage for the core requirements — the core behavior for each requirement is fully tested.
 

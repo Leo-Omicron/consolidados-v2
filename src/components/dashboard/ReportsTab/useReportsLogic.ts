@@ -11,6 +11,7 @@ import {
   generateTeacherFeedbackReportForGroup,
   generateOfficialRecordsReport,
 } from '../../../services/reportEngine';
+import { getEvaluatedPeriods } from '../../../services/academicLogic';
 import { ExcelExportServiceImpl } from '../../../services/excelExport';
 import type { ReportCategory } from '../../../domain/types';
 
@@ -38,25 +39,11 @@ export const useReportsLogic = () => {
 
   const defaultPeriodName = useMemo(() => {
     if (estudiantes.length === 0) return 'Periodo Final';
-    let p1 = false, p2 = false, p3 = false, p4 = false;
-    estudiantes.forEach(student => {
-      Object.values(student.areas).forEach(area => {
-        if (area.DEF.P1 !== null && area.DEF.P1 !== undefined) p1 = true;
-        if (area.DEF.P2 !== null && area.DEF.P2 !== undefined) p2 = true;
-        if (area.DEF.P3 !== null && area.DEF.P3 !== undefined) p3 = true;
-        if (area.DEF.P4 !== null && area.DEF.P4 !== undefined) p4 = true;
-        Object.values(area.asignaturas).forEach(asig => {
-          if (asig.P1 !== null && asig.P1 !== undefined) p1 = true;
-          if (asig.P2 !== null && asig.P2 !== undefined) p2 = true;
-          if (asig.P3 !== null && asig.P3 !== undefined) p3 = true;
-          if (asig.P4 !== null && asig.P4 !== undefined) p4 = true;
-        });
-      });
-    });
-    if (p4) return 'Periodo 4';
-    if (p3) return 'Periodo 3';
-    if (p2) return 'Periodo 2';
-    if (p1) return 'Periodo 1';
+    const evaluated = getEvaluatedPeriods(estudiantes);
+    if (evaluated.P4) return 'Periodo 4';
+    if (evaluated.P3) return 'Periodo 3';
+    if (evaluated.P2) return 'Periodo 2';
+    if (evaluated.P1) return 'Periodo 1';
     return 'Periodo Final';
   }, [estudiantes]);
 

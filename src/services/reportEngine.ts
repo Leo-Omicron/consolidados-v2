@@ -17,7 +17,7 @@ import type {
   SubjectMetric,
   AcademicRiskStudent,
 } from '../domain/types';
-import { getAccumulatedWeightAndProduct } from './academicLogic';
+import { getAccumulatedWeightAndProduct, PASSING_GRADE } from './academicLogic';
 
 export function calculateStandardDeviation(values: number[], mean: number): number {
   if (values.length === 0) return 0;
@@ -102,7 +102,7 @@ function getStudentAverage(student: Estudiante): number {
 function getFailedAreasCount(student: Estudiante): number {
   let count = 0;
   Object.values(student.areas).forEach(area => {
-    if (area.areaStats && area.areaStats.promedioActual < 3.0) {
+    if (area.areaStats && area.areaStats.promedioActual < PASSING_GRADE) {
       count++;
     }
   });
@@ -113,7 +113,7 @@ function getFailedAreasCount(student: Estudiante): number {
 function getFailedAreasNames(student: Estudiante): string[] {
   const failed: string[] = [];
   Object.entries(student.areas).forEach(([areaName, area]) => {
-    if (area.areaStats && area.areaStats.promedioActual < 3.0) {
+    if (area.areaStats && area.areaStats.promedioActual < PASSING_GRADE) {
       failed.push(areaName);
     }
   });
@@ -125,7 +125,7 @@ function determinePromotionDecision(student: Estudiante): 'Aprobado' | 'Compromi
   const failedCount = getFailedAreasCount(student);
   const avg = getStudentAverage(student);
   
-  if (failedCount >= 3 || avg < 3.0) {
+  if (failedCount >= 3 || avg < PASSING_GRADE) {
     return 'Reprobado';
   } else if (failedCount >= 1) {
     return 'Compromisos';
@@ -162,7 +162,7 @@ export function generateGroupPerformanceReport(students: Estudiante[], grupo: st
   const areaFailures: Record<string, number> = {};
   groupStudents.forEach(student => {
     Object.entries(student.areas).forEach(([areaName, area]) => {
-      if (area.areaStats && area.areaStats.promedioActual < 3.0) {
+      if (area.areaStats && area.areaStats.promedioActual < PASSING_GRADE) {
         areaFailures[areaName] = (areaFailures[areaName] || 0) + 1;
       }
     });
@@ -296,7 +296,7 @@ export function generateSubjectAnalyticsReport(students: Estudiante[], grupo: st
             }
             subjectGrades[subName].push(asig.promedioActual);
             
-            if (asig.promedioActual < 3.0) {
+            if (asig.promedioActual < PASSING_GRADE) {
               subjectFailures[subName] = (subjectFailures[subName] || 0) + 1;
             }
           }
@@ -309,7 +309,7 @@ export function generateSubjectAnalyticsReport(students: Estudiante[], grupo: st
         }
         subjectGrades[subName].push(area.areaStats.promedioActual);
         
-        if (area.areaStats.promedioActual < 3.0) {
+        if (area.areaStats.promedioActual < PASSING_GRADE) {
           subjectFailures[subName] = (subjectFailures[subName] || 0) + 1;
         }
       }
@@ -468,7 +468,7 @@ export function generateTeacherFeedbackReportForGroup(
       if (area.areaStats) {
         if (area.areaStats.promedioActual >= 4.0) {
           strengths.push(areaName);
-        } else if (area.areaStats.promedioActual < 3.0) {
+        } else if (area.areaStats.promedioActual < PASSING_GRADE) {
           weaknesses.push(areaName);
           failedAreasCount++;
           

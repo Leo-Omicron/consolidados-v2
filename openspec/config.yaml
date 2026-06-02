@@ -20,6 +20,14 @@ tasks:
   component_testing: "testing-library/react"
   e2e_framework: "none"
 
+specs:
+  # Registered canonical specs (source of truth)
+  domains:
+    - academic-constants
+    - dashboard-state
+    - excel-diagnostics
+    - web-worker-parser
+
 rules:
   apply:
     # Ensure all existing tests pass before and after implementation

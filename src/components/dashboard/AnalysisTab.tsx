@@ -19,7 +19,7 @@ export const AnalysisTab: React.FC = () => {
   const rowsAsignatura = useDashboardStore(state => state.rowsAsignatura);
   const viewMode = useDashboardStore(state => state.viewMode);
   const setViewMode = useDashboardStore(state => state.setViewMode);
-  const config = useDashboardStore(state => state.config);
+  const config = useDashboardStore(state => state.config) as import('../../domain/types').PeriodConfig;
   const selectedGrupo = useDashboardStore(state => state.selectedGrupo);
   const setGrupo = useDashboardStore(state => state.setGrupo);
   const availableGroups = useDashboardStore(state => state.availableGroups);
@@ -60,7 +60,7 @@ export const AnalysisTab: React.FC = () => {
 
   const hasP4 = config.P4 !== undefined && config.P4 > 0;
   
-  const evaluated = useMemo(() => getEvaluatedPeriods(estudiantes || []), [estudiantes]);
+  const evaluated = useMemo(() => getEvaluatedPeriods(estudiantes || []) as Record<'P1' | 'P2' | 'P3' | 'P4', boolean>, [estudiantes]);
   
   const simulatedData = useMemo(() => {
     return getSimulatedRows(estudiantes, activeSimulations, config, subjectWeights);
@@ -78,14 +78,14 @@ export const AnalysisTab: React.FC = () => {
     const isNested = firstVal && typeof firstVal === 'object' && Object.values(firstVal).some(v => v && typeof v === 'object');
 
     if (!isNested) {
-      return { '': subjectWeights };
+      return { '': subjectWeights } as unknown as Record<string, Record<string, Record<string, number>>>;
     }
 
     if (selectedGrupo === 'Todos') {
-      return subjectWeights;
+      return subjectWeights as unknown as Record<string, Record<string, Record<string, number>>>;
     }
     return selectedGrupo && (subjectWeights as SubjectWeightConfig)[selectedGrupo] 
-      ? { [selectedGrupo]: (subjectWeights as SubjectWeightConfig)[selectedGrupo] } 
+      ? { [selectedGrupo]: (subjectWeights as SubjectWeightConfig)[selectedGrupo] } as unknown as Record<string, Record<string, Record<string, number>>>
       : {};
   }, [subjectWeights, selectedGrupo]);
   
@@ -105,7 +105,7 @@ export const AnalysisTab: React.FC = () => {
   );
 
   const subjectsByStudentArea = useMemo(() => {
-    const map = new Map<string, typeof currentRowsAsignatura>();
+    const map = new Map<string, import('../../domain/types').RowAsignatura[]>();
     if (viewMode === 'subject') return map; // optimization
     for (const asig of (currentRowsAsignatura || [])) {
       const key = `${asig.estudiante}_${asig.area}`;
@@ -143,7 +143,9 @@ export const AnalysisTab: React.FC = () => {
   };
 
   const uniqueAreas = useMemo(() => {
-    return Array.from(new Set(activeRows.map((r: { area?: string; asignatura?: string }) => viewMode === 'area' ? r.area : r.asignatura))).sort();
+    return Array.from(new Set(activeRows.map((r: { area?: string; asignatura?: string }) => viewMode === 'area' ? r.area : r.asignatura)))
+      .filter((val): val is string => val !== undefined)
+      .sort();
   }, [activeRows, viewMode]);
   const uniqueStatuses = useMemo(() => Array.from(new Set(activeRows.map(r => r.estado.text))).sort(), [activeRows]);
 

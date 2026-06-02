@@ -65,7 +65,7 @@ describe('StudentGroupTable', () => {
     activeSimulations: {} as Record<string, Record<string, number>>,
     viewMode: 'area' as const,
     hasP4: false,
-    evaluated: ['P1', 'P2'] as string[],
+    evaluated: { P1: true, P2: true, P3: false, P4: false },
     config: { P1: 50, P2: 50, P3: 0 },
     subjectsByStudentArea: new Map(),
     onSort: mockOnSort,

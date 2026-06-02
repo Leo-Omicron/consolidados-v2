@@ -1,6 +1,6 @@
 import React from 'react';
-import type { StudentGroup, PipelineRow, SortConfig, Trend, MetricasDesempeño } from '../../../domain/types';
-import type { PeriodoNotas, SubjectWeightConfig } from '../../../domain/types';
+import type { StudentGroup, PipelineRow, SortConfig, Trend, RowAsignatura } from '../../../domain/types';
+import type { PeriodoNotas, PeriodConfig } from '../../../domain/types';
 import { StatusBadge } from '../../common/StatusBadge';
 import { EditableGradeCell } from './EditableGradeCell';
 import { GoalSeekCell } from './GoalSeekCell';
@@ -14,12 +14,12 @@ export interface StudentGroupTableProps {
   activeSimulations: Record<string, Partial<PeriodoNotas>>;
   viewMode: 'area' | 'subject';
   hasP4: boolean;
-  evaluated: string[];
-  config: Record<string, number>;
-  subjectsByStudentArea: Map<string, PipelineRow[]>;
+  evaluated: Record<'P1' | 'P2' | 'P3' | 'P4', boolean>;
+  config: PeriodConfig;
+  subjectsByStudentArea: Map<string, RowAsignatura[]>;
   onSort: (key: string) => void;
   sortConfig: SortConfig;
-  onSetSimulation: (rowId: string, period: string, grade: number) => void;
+  onSetSimulation: (rowId: string, period: 'P1' | 'P2' | 'P3' | 'P4', value: number | null) => void;
   onClearSimulation: (rowId: string) => void;
 }
 

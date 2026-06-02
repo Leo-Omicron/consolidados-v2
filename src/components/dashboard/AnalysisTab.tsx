@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
-import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
+import { useAnalysisPipeline, augmentRows, calculateKPIs } from '../../hooks/useAnalysisPipeline';
 import type { SubjectWeightConfig } from '../../domain/types';
 import { useUIStore } from '../../store/useUIStore';
 import { useSimulationStore } from '../../store/useSimulationStore';
@@ -89,10 +89,11 @@ export const AnalysisTab: React.FC = () => {
       : {};
   }, [subjectWeights, selectedGrupo]);
   
-  const { kpis: originalKpis } = useAnalysisPipeline(
-    (viewMode === 'area' ? rowsArea : rowsAsignatura) || [],
-    selectedGrupo, filters, sortConfig, rowsArea || [], viewMode
-  );
+  const originalKpis = useMemo(() => {
+    const raw = viewMode === 'area' ? rowsArea : rowsAsignatura;
+    if (!raw || raw.length === 0) return { promedioGeneral: 0, statusDistribution: {} };
+    return calculateKPIs(augmentRows(raw, viewMode));
+  }, [rowsArea, rowsAsignatura, viewMode]);
 
   const { groupedAndSorted: sortedGroups, kpis } = useAnalysisPipeline(
     activeRows, 

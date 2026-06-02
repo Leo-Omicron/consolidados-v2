@@ -12,9 +12,13 @@ vi.mock('../../store/useDashboardStore', () => ({
   useDashboardStore: vi.fn()
 }));
 
-vi.mock('../../hooks/useAnalysisPipeline', () => ({
-  useAnalysisPipeline: vi.fn()
-}));
+vi.mock('../../hooks/useAnalysisPipeline', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../hooks/useAnalysisPipeline')>();
+  return {
+    ...actual,
+    useAnalysisPipeline: vi.fn(),
+  };
+});
 
 const mockEstudiantes: any[] = [
   {
@@ -58,6 +62,7 @@ describe('AnalysisTab', () => {
       groupedAndSorted: [],
       kpis: { promedioGeneral: 0, statusDistribution: {} }
     });
+    (useAnalysisPipeline as any).mockClear();
   });
 
   it('renders no data message when rowsArea is empty', () => {
@@ -123,6 +128,8 @@ describe('AnalysisTab', () => {
     });
 
     render(<AnalysisTab />);
+    // Must be called exactly once (single pipeline invocation)
+    expect(useAnalysisPipeline).toHaveBeenCalledTimes(1);
     expect(useAnalysisPipeline).toHaveBeenLastCalledWith(
       expect.anything(),
       'Grupo A',
@@ -131,6 +138,58 @@ describe('AnalysisTab', () => {
       [{ area: 'A', estado: { text: 'Ganado' } }],
       'subject'
     );
+  });
+
+  it('computes originalKpis from unfiltered rowsArea data via pure functions', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        estudiantes: mockEstudiantes,
+        // Two rows: avg=(4.0+2.0)/2 = 3.0 → differs from pipeline kpis (4.0)
+        rowsArea: [
+          { estudiante: 'Juan', area: 'Matemáticas', promActual: 4.0, estado: { text: 'Ganado', color: 'green' }, grupo: '6A', defP1: 4.0, defP2: 4.0, defP3: null },
+          { estudiante: 'Ana', area: 'Ciencias', promActual: 2.0, estado: { text: 'Perdido', color: 'red' }, grupo: '6A', defP1: 2.0, defP2: 2.0, defP3: null },
+        ],
+        rowsAsignatura: [],
+        viewMode: 'area' as const,
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: '6A',
+        availableGroups: ['Todos', '6A'],
+        setGrupo: vi.fn(),
+        subjectWeights: {},
+      };
+      return selector(state);
+    });
+
+    // Pipeline mock returns promedio 4.0 (filtered view) — originalKpis should be 3.0
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'Juan',
+        rows: [{ area: 'Matemáticas', promActual: 4.0, defP1: 4.0, defP2: 4.0, tendencia: 'flat', estado: { text: 'Ganado', color: 'green' } }],
+        aggregates: { promActual: 4.0 },
+      }],
+      kpis: { promedioGeneral: 4.0, statusDistribution: { 'Ganado': 1 } },
+    });
+
+    render(<AnalysisTab />);
+
+    // Activate simulation to trigger original-vs-simulated comparison
+    act(() => {
+      useSimulationStore.setState({
+        activeSimulations: { 'juan_mat': { P1: 5.0 } },
+      });
+    });
+
+    // originalKpis.promedioGeneral = 3.0 (unfiltered), pipeline kpis = 4.0
+    // Delta = 1.0 → ▲ arrow and diff value should be visible
+    expect(screen.getByText(/Promedio General/)).toBeInTheDocument();
+    // The delta text "▲ 1.00" is rendered when original ≠ simulated
+    expect(screen.getByText(/▲/)).toBeInTheDocument();
+    expect(screen.getByText(/1\.00/)).toBeInTheDocument();
+
+    // Cleanup
+    act(() => {
+      useSimulationStore.setState({ activeSimulations: {} });
+    });
   });
 
   it('renders view toggle buttons and calls setViewMode on click', () => {

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, startTransition } from 'react';
 import { useReportsLogic } from './ReportsTab/useReportsLogic';
 import { useUIStore } from '../../store/useUIStore';
 
@@ -106,7 +106,7 @@ export const ReportsTab: React.FC = () => {
               {menuItems.map(item => (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => startTransition(() => setActiveTab(item.id))}
                   aria-pressed={logic.activeTab === item.id}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm font-semibold rounded-xl transition-all cursor-pointer ${
                     logic.activeTab === item.id

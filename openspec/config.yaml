@@ -1,0 +1,40 @@
+# OpenSpec SDD Configuration — consolidados-v2
+# Bootstrapped 2026-06-01 as part of project-audit-and-improvements
+
+schema: "1.0"
+
+project:
+  name: "consolidados-v2"
+  language: "typescript"
+  framework: "react"
+  description: "Consolidados v2 — dashboard de análisis académico con React + Zustand + Vite"
+
+design:
+  # AnalysisTab sub-components live under AnalysisTab/
+  component_co_location: true
+  store_pattern: "zustand-with-persist"
+
+tasks:
+  # Default implementation workflow
+  test_framework: "vitest"
+  component_testing: "testing-library/react"
+  e2e_framework: "none"
+
+specs:
+  # Registered canonical specs (source of truth)
+  domains:
+    - academic-constants
+    - dashboard-state
+    - excel-diagnostics
+    - web-worker-parser
+
+rules:
+  apply:
+    # Ensure all existing tests pass before and after implementation
+    test_command: "npx vitest run"
+    # Components must be accessible
+    accessibility_check: "vitest-axe"
+    # No hardcoded magic numbers; use defined constants
+    constants_source: "src/services/academicLogic.ts"
+    # Derived data (rowsArea, rowsAsignatura) must NOT be persisted to IndexedDB
+    storage_contract: "partialize excludes estudiantes, rowsArea, rowsAsignatura"

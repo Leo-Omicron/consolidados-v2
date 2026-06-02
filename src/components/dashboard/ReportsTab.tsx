@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, startTransition } from 'react';
 import { useReportsLogic } from './ReportsTab/useReportsLogic';
 import { useUIStore } from '../../store/useUIStore';
 
@@ -10,6 +10,7 @@ const GroupComparisonView = lazy(() => import('./ReportsTab/views/GroupCompariso
 const HeatmapView = lazy(() => import('./ReportsTab/views/HeatmapView').then(m => ({ default: m.HeatmapView })));
 const TeacherFeedbackView = lazy(() => import('./ReportsTab/views/TeacherFeedbackView').then(m => ({ default: m.TeacherFeedbackView })));
 const OfficialRecordsView = lazy(() => import('./ReportsTab/views/OfficialRecordsView').then(m => ({ default: m.OfficialRecordsView })));
+const InsightsTab = lazy(() => import('./InsightsTab').then(m => ({ default: m.InsightsTab })));
 
 const menuItems = [
   { id: 'group-performance', label: 'Rendimiento Grupal', icon: '📈' },
@@ -20,6 +21,7 @@ const menuItems = [
   { id: 'heatmap', label: 'Mapa de Calor', icon: '🌡️' },
   { id: 'feedback', label: 'Retroalimentación', icon: '💬' },
   { id: 'official', label: 'Registro Oficial', icon: '📋' },
+  { id: 'insights', label: 'Oracle Insights', icon: '🔮' },
 ] as const;
 
 export const ReportsTab: React.FC = () => {
@@ -106,7 +108,7 @@ export const ReportsTab: React.FC = () => {
               {menuItems.map(item => (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => startTransition(() => setActiveTab(item.id))}
                   aria-pressed={logic.activeTab === item.id}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm font-semibold rounded-xl transition-all cursor-pointer ${
                     logic.activeTab === item.id
@@ -156,6 +158,7 @@ export const ReportsTab: React.FC = () => {
             {logic.activeTab === 'heatmap' && <HeatmapView data={logic.heatmapData} />}
             {logic.activeTab === 'feedback' && <TeacherFeedbackView data={logic.teacherFeedbackData} logic={logic} />}
             {logic.activeTab === 'official' && <OfficialRecordsView data={logic.officialRecordsData} logic={logic} />}
+            {logic.activeTab === 'insights' && <InsightsTab />}
           </Suspense>
 
         </section>

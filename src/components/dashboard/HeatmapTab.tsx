@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
+import { PASSING_GRADE } from '../../services/academicLogic';
 
 export const HeatmapTab: React.FC = () => {
   const rowsAsignatura = useDashboardStore((state) => state.rowsAsignatura);
@@ -57,7 +58,7 @@ export const HeatmapTab: React.FC = () => {
     } else {
       // Heatmap mode based on numeric value
       if (val < 2.0) return 'bg-red-600 text-white';
-      if (val < 3.0) return 'bg-rose-400 text-rose-950';
+      if (val < PASSING_GRADE) return 'bg-rose-400 text-rose-950';
       if (val < 3.5) return 'bg-amber-300 text-amber-950';
       if (val < 4.0) return 'bg-yellow-200 text-yellow-900';
       if (val < 4.5) return 'bg-emerald-300 text-emerald-950';
@@ -66,7 +67,7 @@ export const HeatmapTab: React.FC = () => {
   };
 
   const getDesempeno = (val: number) => {
-    if (val < 3.0) return 'Bajo';
+    if (val < PASSING_GRADE) return 'Bajo';
     if (val < 4.0) return 'Básico';
     if (val < 4.6) return 'Alto';
     return 'Superior';
@@ -138,7 +139,7 @@ export const HeatmapTab: React.FC = () => {
               {uniqueStudents.map(student => {
                 const studentData = matrix[student];
                 // Check if student is generally "hundido" (failing many subjects)
-                const failingCount = Object.values(studentData).filter(s => s.value !== null && s.value < 3.0).length;
+                const failingCount = Object.values(studentData).filter(s => s.value !== null && s.value < PASSING_GRADE).length;
                 const isHundido = failingCount >= 3;
 
                 return (
@@ -187,7 +188,7 @@ export const HeatmapTab: React.FC = () => {
                     const cell = matrix[st][asig];
                     if (cell && cell.value !== null) {
                       total++;
-                      if (cell.value < 3.0) failed++;
+                      if (cell.value < PASSING_GRADE) failed++;
                     }
                   });
                   const percentage = total > 0 ? (failed / total) * 100 : 0;

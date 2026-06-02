@@ -12,9 +12,13 @@ vi.mock('../../store/useDashboardStore', () => ({
   useDashboardStore: vi.fn()
 }));
 
-vi.mock('../../hooks/useAnalysisPipeline', () => ({
-  useAnalysisPipeline: vi.fn()
-}));
+vi.mock('../../hooks/useAnalysisPipeline', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../hooks/useAnalysisPipeline')>();
+  return {
+    ...actual,
+    useAnalysisPipeline: vi.fn(),
+  };
+});
 
 const mockEstudiantes: any[] = [
   {
@@ -58,6 +62,7 @@ describe('AnalysisTab', () => {
       groupedAndSorted: [],
       kpis: { promedioGeneral: 0, statusDistribution: {} }
     });
+    (useAnalysisPipeline as any).mockClear();
   });
 
   it('renders no data message when rowsArea is empty', () => {
@@ -123,6 +128,8 @@ describe('AnalysisTab', () => {
     });
 
     render(<AnalysisTab />);
+    // Must be called exactly once (single pipeline invocation)
+    expect(useAnalysisPipeline).toHaveBeenCalledTimes(1);
     expect(useAnalysisPipeline).toHaveBeenLastCalledWith(
       expect.anything(),
       'Grupo A',
@@ -131,6 +138,58 @@ describe('AnalysisTab', () => {
       [{ area: 'A', estado: { text: 'Ganado' } }],
       'subject'
     );
+  });
+
+  it('computes originalKpis from unfiltered rowsArea data via pure functions', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        estudiantes: mockEstudiantes,
+        // Two rows: avg=(4.0+2.0)/2 = 3.0 → differs from pipeline kpis (4.0)
+        rowsArea: [
+          { estudiante: 'Juan', area: 'Matemáticas', promActual: 4.0, estado: { text: 'Ganado', color: 'green' }, grupo: '6A', defP1: 4.0, defP2: 4.0, defP3: null },
+          { estudiante: 'Ana', area: 'Ciencias', promActual: 2.0, estado: { text: 'Perdido', color: 'red' }, grupo: '6A', defP1: 2.0, defP2: 2.0, defP3: null },
+        ],
+        rowsAsignatura: [],
+        viewMode: 'area' as const,
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: '6A',
+        availableGroups: ['Todos', '6A'],
+        setGrupo: vi.fn(),
+        subjectWeights: {},
+      };
+      return selector(state);
+    });
+
+    // Pipeline mock returns promedio 4.0 (filtered view) — originalKpis should be 3.0
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'Juan',
+        rows: [{ area: 'Matemáticas', promActual: 4.0, defP1: 4.0, defP2: 4.0, tendencia: 'flat', estado: { text: 'Ganado', color: 'green' } }],
+        aggregates: { promActual: 4.0 },
+      }],
+      kpis: { promedioGeneral: 4.0, statusDistribution: { 'Ganado': 1 } },
+    });
+
+    render(<AnalysisTab />);
+
+    // Activate simulation to trigger original-vs-simulated comparison
+    act(() => {
+      useSimulationStore.setState({
+        activeSimulations: { 'juan_mat': { P1: 5.0 } },
+      });
+    });
+
+    // originalKpis.promedioGeneral = 3.0 (unfiltered), pipeline kpis = 4.0
+    // Delta = 1.0 → ▲ arrow and diff value should be visible
+    expect(screen.getByText(/Promedio General/)).toBeInTheDocument();
+    // The delta text "▲ 1.00" is rendered when original ≠ simulated
+    expect(screen.getByText(/▲/)).toBeInTheDocument();
+    expect(screen.getByText(/1\.00/)).toBeInTheDocument();
+
+    // Cleanup
+    act(() => {
+      useSimulationStore.setState({ activeSimulations: {} });
+    });
   });
 
   it('renders view toggle buttons and calls setViewMode on click', () => {
@@ -1090,5 +1149,140 @@ describe('AnalysisTab', () => {
       fireEvent.click(screen.getByText(/P1/));
       expect(setSortConfigMock).toHaveBeenCalledTimes(2);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6.3 — Sub-component composition tests
+// ---------------------------------------------------------------------------
+describe('AnalysisTab — sub-component composition', () => {
+  function setupStoreMock() {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        estudiantes: [{ id: 'juan', name: 'Juan', CURSO: '6A', grupo: '6A', areas: {} }],
+        rowsArea: [{ id: 'r1', estudiante: 'Juan', area: 'Matemáticas', defP1: 3.5, defP2: 3.0, promActual: 3.2, p4Min: 2.5, estado: { text: 'En riesgo', color: 'yellow' }, CURSO: '6A', grupo: '6A' }],
+        rowsAsignatura: [{ id: 'a1', estudiante: 'Juan', area: 'Matemáticas', asignatura: 'Álgebra', p1: 4.0, p2: 3.5, promActual: 3.7, p4Min: 2.0, estado: { text: 'Ganado', color: 'green' }, tendencia: 'up' }],
+        viewMode: 'area' as const,
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: '6A',
+        availableGroups: ['Todos', '6A'],
+        setGrupo: vi.fn(),
+        setViewMode: vi.fn(),
+        subjectWeights: { '6A': { 'Matemáticas': { 'Álgebra': 1.0 } } },
+      };
+      return selector(state);
+    });
+
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'Juan',
+        rows: [{ id: 'r1', area: 'Matemáticas', defP1: 3.5, defP2: 3.0, promActual: 3.2, p4Min: 2.5, tendencia: 'flat', estado: { text: 'En riesgo', color: 'yellow' } }],
+        aggregates: { promActual: 3.2 },
+      }],
+      kpis: { promedioGeneral: 3.2, statusDistribution: { 'En riesgo': 1 } },
+    });
+  }
+
+  beforeEach(() => {
+    useSimulationStore.setState({ activeSimulations: {} });
+    useUIStore.setState({
+      analysisFilters: { search: '', area: '', status: '' },
+      analysisSortConfig: null,
+    });
+    setupStoreMock();
+  });
+
+  it('renders FiltersBar sub-component with group selector and filter inputs', () => {
+    render(<AnalysisTab />);
+
+    expect(screen.getByLabelText('Grupo')).toBeInTheDocument();
+    expect(screen.getByLabelText('Buscar estudiante')).toBeInTheDocument();
+    expect(screen.getByLabelText('Área')).toBeInTheDocument();
+    expect(screen.getByLabelText('Estado')).toBeInTheDocument();
+  });
+
+  it('renders SubjectWeightsPanel sub-component collapsed by default', () => {
+    render(<AnalysisTab />);
+
+    const toggleButton = screen.getByRole('button', { name: /Ver Pesos de Asignaturas Inferidos/ });
+    expect(toggleButton).toBeInTheDocument();
+    expect(screen.queryByText('Álgebra:')).not.toBeInTheDocument();
+  });
+
+  it('renders StudentGroupTable sub-component with student data', () => {
+    render(<AnalysisTab />);
+
+    expect(screen.getByText('Juan')).toBeInTheDocument();
+    expect(screen.getByRole('table')).toBeInTheDocument();
+  });
+
+  it('renders SimulationBanner sub-component when simulations are active', () => {
+    // Provide students with proper DEF data so getSimulatedRows produces rows
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = {
+        estudiantes: [{
+          id: 'juan', name: 'Juan', CURSO: '6A', grupo: '6A',
+          areas: {
+            'Matemáticas': {
+              asignaturas: {},
+              DEF: { P1: 3.5, P2: 3.0, P3: null }
+            }
+          }
+        }],
+        rowsArea: [{ id: 'r1', estudiante: 'Juan', area: 'Matemáticas', defP1: 3.5, defP2: 3.0, promActual: 3.2, p4Min: 2.5, estado: { text: 'En riesgo', color: 'yellow' }, CURSO: '6A', grupo: '6A' }],
+        rowsAsignatura: [],
+        viewMode: 'area' as const,
+        config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+        selectedGrupo: '6A',
+        availableGroups: ['Todos', '6A'],
+        setGrupo: vi.fn(),
+        setViewMode: vi.fn(),
+        subjectWeights: {},
+      };
+      return selector(state);
+    });
+
+    (useAnalysisPipeline as any).mockReturnValue({
+      groupedAndSorted: [{
+        estudiante: 'Juan',
+        rows: [{ id: 'r1', area: 'Matemáticas', defP1: 3.5, defP2: 3.0, promActual: 3.2, p4Min: 2.5, tendencia: 'flat', estado: { text: 'En riesgo', color: 'yellow' } }],
+        aggregates: { promActual: 3.2 },
+      }],
+      kpis: { promedioGeneral: 3.2, statusDistribution: { 'En riesgo': 1 } },
+    });
+
+    render(<AnalysisTab />);
+
+    act(() => {
+      useSimulationStore.setState({
+        activeSimulations: { 'r1': { P1: 4.5 } },
+      });
+    });
+
+    // SimulationBanner shows when active simulations exist
+    expect(screen.getByText(/Modo de Simulación Activo/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Restaurar datos reales' })).toBeInTheDocument();
+
+    // Cleanup
+    act(() => {
+      useSimulationStore.setState({ activeSimulations: {} });
+    });
+  });
+
+  it('composes all four sub-components together when data is present', () => {
+    // No simulations for this test — just verify orchestrator renders everything
+    render(<AnalysisTab />);
+
+    // 1. SubjectWeightsPanel
+    expect(screen.getByRole('button', { name: /Ver Pesos de Asignaturas Inferidos/ })).toBeInTheDocument();
+    // 2. FiltersBar
+    expect(screen.getByLabelText('Grupo')).toBeInTheDocument();
+    expect(screen.getByLabelText('Buscar estudiante')).toBeInTheDocument();
+    // 3. StudentGroupTable
+    expect(screen.getByText('Juan')).toBeInTheDocument();
+    // 4. SimulationBanner should NOT be visible (no simulations active)
+    expect(screen.queryByText(/Modo de Simulación Activo/)).not.toBeInTheDocument();
+    // But the orchestrator header is visible
+    expect(screen.getByText('Análisis Avanzado')).toBeInTheDocument();
   });
 });

@@ -353,6 +353,23 @@ describe('reportEngine', () => {
     });
   });
 
+  describe('getFailedAreasCount (via generateGroupPerformanceReport)', () => {
+    it('classifies 2.9 as failed and 3.0 as passing', () => {
+      const students = [
+        getStudent('1', '10A', {
+          MATH: { areaStats: { promedioActual: 3.0 } },  // exactly at threshold → NOT failed
+          SCI: { areaStats: { promedioActual: 2.9 } },   // below threshold → failed
+          ART: { areaStats: { promedioActual: 4.0 } },   // above threshold → NOT failed
+        }),
+      ];
+      const report = generateGroupPerformanceReport(students, '10A', baseConfig);
+      // SCI is the only failed area (criticalAreas only lists areas with failures)
+      expect(report.criticalAreas).toEqual([
+        { area: 'SCI', failuresCount: 1 },
+      ]);
+    });
+  });
+
   describe('generateOfficialRecordsReport', () => {
     it('generates official records', () => {
       const students = [

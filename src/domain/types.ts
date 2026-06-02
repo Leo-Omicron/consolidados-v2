@@ -148,7 +148,8 @@ export type ReportCategory =
   | 'group-comparison'
   | 'heatmap'
   | 'feedback'
-  | 'official';
+  | 'official'
+  | 'insights';
 
 // Sub-types for Institutional Reports
 export interface CriticalAreaInfo {
@@ -277,4 +278,30 @@ export interface OfficialRecordsReport {
   rows: OfficialRecordRow[];
 }
 
+// ---------------------------------------------------------------------------
+// Academic Insights — Archetype Detection
+// ---------------------------------------------------------------------------
+
+export type PedagogicalArchetype = 'confiado' | 'resiliente' | 'montana-rusa' | 'radar';
+export type ArchetypeSeverity = 'high' | 'medium' | 'low';
+
+export interface ArchetypeResult {
+  estudianteId: string;
+  estudianteName: string;
+  grupo: string;
+  archetype: PedagogicalArchetype;
+  confidence: number;        // 0..1
+  severity: ArchetypeSeverity;
+  periodGrades: (number | null)[];  // trace for transparency
+  narrative: string;         // Spanish pedagogical text
+  reason?: string;           // set when no archetype matched (e.g. 'insufficient-data')
+}
+
+export interface InsightCounts {
+  confiado: number;
+  resiliente: number;
+  'montana-rusa': number;
+  radar: number;
+  total: number;
+}
 

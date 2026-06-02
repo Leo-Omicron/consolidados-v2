@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import type { Estudiante } from '../../domain/types';
+import { PASSING_GRADE } from '../../services/academicLogic';
 
 interface Match {
   tutor: Estudiante;
@@ -22,13 +23,6 @@ export const TutorsTab: React.FC = () => {
   }, [data]);
 
   const selectedGroup = globalSelectedGroup === 'Todos' && groups.length > 0 ? groups[0] : (globalSelectedGroup === 'Todos' ? '' : globalSelectedGroup);
-
-  // Set default area based on global group
-  React.useEffect(() => {
-    if (globalSelectedGroup === 'Todos' && groups.length > 0) {
-      setGlobalGroup(groups[0]);
-    }
-  }, [groups, globalSelectedGroup, setGlobalGroup]);
 
   // Extract areas for the selected group
   const areas = useMemo(() => {
@@ -54,10 +48,10 @@ export const TutorsTab: React.FC = () => {
       return a && a.areaStats && typeof a.areaStats.promedioActual === 'number' && a.areaStats.promedioActual >= 4.0;
     }).sort((a: Estudiante, b: Estudiante) => (b.areas[activeArea]?.areaStats?.promedioActual || 0) - (a.areas[activeArea]?.areaStats?.promedioActual || 0));
 
-    // Mentees: Grade < 3.0
+    // Mentees: Grade < PASSING_GRADE
     const mentees = students.filter((s: Estudiante) => {
       const a = s.areas[activeArea];
-      return a && a.areaStats && typeof a.areaStats.promedioActual === 'number' && a.areaStats.promedioActual < 3.0;
+      return a && a.areaStats && typeof a.areaStats.promedioActual === 'number' && a.areaStats.promedioActual < PASSING_GRADE;
     }).sort((a: Estudiante, b: Estudiante) => (a.areas[activeArea]?.areaStats?.promedioActual || 0) - (b.areas[activeArea]?.areaStats?.promedioActual || 0));
 
     // Round-robin matching: assigning up to 3 mentees per tutor evenly

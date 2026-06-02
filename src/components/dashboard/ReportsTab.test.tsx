@@ -3,6 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ReportsTab } from './ReportsTab';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useUIStore } from '../../store/useUIStore';
+import * as reportEngine from '../../services/reportEngine';
+import { ExcelExportServiceImpl } from '../../services/excelExport';
 
 vi.mock('../../store/useDashboardStore', () => ({
   useDashboardStore: vi.fn()
@@ -363,5 +365,75 @@ describe('ReportsTab', () => {
     const btn = screen.getByRole('button', { name: /Consolidado Completo/i });
     expect(btn.getAttribute('aria-disabled')).toBe('false');
     fireEvent.click(btn); // triggers export logic
+  });
+
+  it('disables Consolidado Completo export when selected group has no matching students', () => {
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      // selectedGrupo='9B' exists as a group but no student has grupo='9B'
+      const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: '9B', availableGroups: ['Todos', '10A', '9B'], setGrupo: vi.fn() };
+      return selector(state);
+    });
+    // Ensure reportsActiveTab is not group-comparison
+    useUIStore.setState({ reportsActiveTab: 'group-performance' });
+
+    render(<ReportsTab />);
+
+    const btn = screen.getByRole('button', { name: /Consolidado Completo/i });
+    expect(btn.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('export handler uses memoized data instead of re-calling generate*Report generators', () => {
+    // Spy on all report engine generators (real implementations run for memos)
+    const genGroupPerf = vi.spyOn(reportEngine, 'generateGroupPerformanceReport');
+    const genOutstanding = vi.spyOn(reportEngine, 'generateOutstandingStudentsReport');
+    const genAcademicRisk = vi.spyOn(reportEngine, 'generateAcademicRiskReport');
+    const genSubjectAnalytics = vi.spyOn(reportEngine, 'generateSubjectAnalyticsReport');
+    const genHeatmap = vi.spyOn(reportEngine, 'generateHeatmapReport');
+    const genTeacherFeedback = vi.spyOn(reportEngine, 'generateTeacherFeedbackReportForGroup');
+    const genOfficialRecords = vi.spyOn(reportEngine, 'generateOfficialRecordsReport');
+    const exportSpy = vi.spyOn(ExcelExportServiceImpl, 'exportConsolidadoCompleto').mockResolvedValue(undefined);
+
+    (useDashboardStore as any).mockImplementation((selector: any) => {
+      const state = { estudiantes: mockStudents, config: { P1: 33.3, P2: 33.3, P3: 33.4 }, selectedGrupo: '10A', availableGroups: ['Todos', '10A'], setGrupo: vi.fn() };
+      return selector(state);
+    });
+    useUIStore.setState({ reportsActiveTab: 'group-performance' });
+
+    render(<ReportsTab />);
+
+    // The unconditional memos already called each generator once during render.
+    // Clear call history to isolate the export click.
+    genGroupPerf.mockClear();
+    genOutstanding.mockClear();
+    genAcademicRisk.mockClear();
+    genSubjectAnalytics.mockClear();
+    genHeatmap.mockClear();
+    genTeacherFeedback.mockClear();
+    genOfficialRecords.mockClear();
+
+    const btn = screen.getByRole('button', { name: /Consolidado Completo/i });
+    fireEvent.click(btn);
+
+    // Export handler MUST reference memoized data, NOT re-invoke generators
+    expect(genGroupPerf).not.toHaveBeenCalled();
+    expect(genOutstanding).not.toHaveBeenCalled();
+    expect(genAcademicRisk).not.toHaveBeenCalled();
+    expect(genSubjectAnalytics).not.toHaveBeenCalled();
+    expect(genHeatmap).not.toHaveBeenCalled();
+    expect(genTeacherFeedback).not.toHaveBeenCalled();
+    expect(genOfficialRecords).not.toHaveBeenCalled();
+
+    // The export service should still be invoked with memoized data
+    expect(exportSpy).toHaveBeenCalledTimes(1);
+
+    // Cleanup spies
+    genGroupPerf.mockRestore();
+    genOutstanding.mockRestore();
+    genAcademicRisk.mockRestore();
+    genSubjectAnalytics.mockRestore();
+    genHeatmap.mockRestore();
+    genTeacherFeedback.mockRestore();
+    genOfficialRecords.mockRestore();
+    exportSpy.mockRestore();
   });
 });

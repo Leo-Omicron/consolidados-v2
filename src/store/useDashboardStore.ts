@@ -158,7 +158,6 @@ export const useDashboardStore = create<DashboardState>()(
       name: 'dashboard-storage',
       storage: createJSONStorage(() => idbStorage),
       partialize: (state) => ({
-        estudiantes: state.estudiantes,
         config: state.config,
         subjectWeights: state.subjectWeights,
         selectedGrupo: state.selectedGrupo,
@@ -167,13 +166,7 @@ export const useDashboardStore = create<DashboardState>()(
         diagnosticReport: state.diagnosticReport,
       }),
       merge: (persistedState: unknown, currentState) => {
-        const merged = { ...currentState, ...(persistedState as Partial<DashboardState>) };
-        if (merged.estudiantes && merged.estudiantes.length > 0) {
-          const flattened = flattenRows(merged.estudiantes);
-          merged.rowsArea = flattened.rowsArea;
-          merged.rowsAsignatura = flattened.rowsAsignatura;
-        }
-        return merged;
+        return { ...currentState, ...(persistedState as Partial<DashboardState>) };
       },
     }
   )

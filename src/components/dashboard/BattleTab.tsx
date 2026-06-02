@@ -16,7 +16,7 @@ import {
   BarElement,
   Title
 } from 'chart.js';
-import { roundToOneDecimal } from '../../services/academicLogic';
+import { roundToOneDecimal, PASSING_GRADE } from '../../services/academicLogic';
 
 ChartJS.register(
   RadialLinearScale,
@@ -134,7 +134,7 @@ export const BattleTab: React.FC = () => {
     students.forEach(student => {
       let failedAreasCount = 0;
       Object.values(student.areas).forEach(area => {
-        if (area.areaStats && area.areaStats.promedioActual < 3.0) {
+        if (area.areaStats && area.areaStats.promedioActual < PASSING_GRADE) {
           failedAreasCount++;
         }
       });

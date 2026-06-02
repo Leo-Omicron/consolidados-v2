@@ -1,6 +1,7 @@
  
 import React from 'react';
 import type { GroupComparisonReport } from '../../../../domain/types';
+import { PASSING_GRADE } from '../../../../services/academicLogic';
 
 export const GroupComparisonView: React.FC<{ data: GroupComparisonReport | null }> = ({ data }) => {
 
@@ -39,7 +40,7 @@ export const GroupComparisonView: React.FC<{ data: GroupComparisonReport | null 
               </th>
               <th 
                 className="px-4 py-3 text-center font-bold text-slate-600 w-28 cursor-help" 
-                title="Suma acumulada de todas las áreas reprobadas (calificación menor a 3.0) por todos los estudiantes del grupo."
+                title={`Suma acumulada de todas las áreas reprobadas (calificación menor a ${PASSING_GRADE.toFixed(1)}) por todos los estudiantes del grupo.`}
               >
                 Total Pérdidas ℹ️
               </th>

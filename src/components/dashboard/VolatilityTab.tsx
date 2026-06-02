@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import type { Estudiante } from '../../domain/types';
+import { PASSING_GRADE, getEvaluatedPeriods } from '../../services/academicLogic';
 
 interface VolatilityProfile {
   student: Estudiante;
@@ -23,31 +24,15 @@ export const VolatilityTab: React.FC = () => {
 
   const activeGroup = globalSelectedGroup === 'Todos' && groups.length > 0 ? groups[0] : (globalSelectedGroup === 'Todos' ? '' : globalSelectedGroup);
 
-  React.useEffect(() => {
-    if (globalSelectedGroup === 'Todos' && groups.length > 0) {
-      setGlobalGroup(groups[0]);
-    }
-  }, [groups, globalSelectedGroup, setGlobalGroup]);
-
   const activePeriods = useMemo(() => {
-    let hasP1 = false, hasP2 = false, hasP3 = false, hasP4 = false;
     const groupStudents = data.filter((s: Estudiante) => s.grupo === activeGroup);
-    groupStudents.forEach(s => {
-      Object.values(s.areas).forEach(area => {
-        Object.values(area.asignaturas).forEach(asig => {
-          if (asig.P1 !== null && asig.P1 !== undefined) hasP1 = true;
-          if (asig.P2 !== null && asig.P2 !== undefined) hasP2 = true;
-          if (asig.P3 !== null && asig.P3 !== undefined) hasP3 = true;
-          if (asig.P4 !== null && asig.P4 !== undefined) hasP4 = true;
-        });
-      });
-    });
+    const evaluated = getEvaluatedPeriods(groupStudents);
     
     const periods = [];
-    if (hasP1) periods.push('P1');
-    if (hasP2) periods.push('P2');
-    if (hasP3) periods.push('P3');
-    if (hasP4) periods.push('P4');
+    if (evaluated.P1) periods.push('P1');
+    if (evaluated.P2) periods.push('P2');
+    if (evaluated.P3) periods.push('P3');
+    if (evaluated.P4) periods.push('P4');
     return periods;
   }, [data, activeGroup]);
 
@@ -203,7 +188,7 @@ export const VolatilityTab: React.FC = () => {
                         <>
                           <div 
                             className={`w-full max-w-[40px] rounded-t-sm transition-all duration-300 ${
-                              p < 3.0 ? 'bg-red-400' : p < 4.0 ? 'bg-orange-400' : 'bg-emerald-400'
+                              p < PASSING_GRADE ? 'bg-red-400' : p < 4.0 ? 'bg-orange-400' : 'bg-emerald-400'
                             }`}
                             style={{ height: `${(p / 5) * 100}%` }}
                           ></div>

@@ -3,7 +3,7 @@ import type { RowArea, RowAsignatura, PeriodConfig } from '../../domain/types';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useThemeStore, type ThemeMode } from '../../store/useThemeStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
-import { roundToOneDecimal } from '../../services/academicLogic';
+import { roundToOneDecimal, PASSING_GRADE } from '../../services/academicLogic';
 import { generateGroupComparisonReport } from '../../services/reportEngine';
 import {
   Chart as ChartJS,
@@ -33,7 +33,7 @@ export const thresholdLinePlugin = {
   id: 'thresholdLine',
   afterDraw: (chart: ChartJS) => {
     const { ctx, chartArea: { left, right }, scales: { y } } = chart;
-    const yVal = y.getPixelForValue(3.0);
+    const yVal = y.getPixelForValue(PASSING_GRADE);
     
     ctx.save();
     ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)'; // Red-500
@@ -47,7 +47,7 @@ export const thresholdLinePlugin = {
     
     ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
     ctx.font = '12px sans-serif';
-    ctx.fillText('Mínimo: 3.0', left + 8, yVal - 6);
+    ctx.fillText(`Mínimo: ${PASSING_GRADE.toFixed(1)}`, left + 8, yVal - 6);
     ctx.restore();
   }
 };
@@ -100,7 +100,7 @@ export const SummaryTab: React.FC = () => {
     filteredStudents.forEach(student => {
       let failedAreasCount = 0;
       Object.values(student.areas).forEach(area => {
-        if (area.areaStats && area.areaStats.promedioActual < 3.0) {
+        if (area.areaStats && area.areaStats.promedioActual < PASSING_GRADE) {
           failedAreasCount++;
         }
       });
@@ -144,9 +144,9 @@ export const SummaryTab: React.FC = () => {
         }
       }
 
-      if (row.promActual !== null && row.promActual >= 3.0) {
+      if (row.promActual !== null && row.promActual >= PASSING_GRADE) {
         aprobados++;
-      } else if (row.promActual !== null && row.promActual < 3.0) {
+      } else if (row.promActual !== null && row.promActual < PASSING_GRADE) {
         reprobados++;
       }
     });

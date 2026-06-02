@@ -43,11 +43,11 @@ Chain strategy: feature-branch-chain
 
 ## Phase 4: AnalysisTab Decomposition
 
-- [ ] 4.1 Extract lines 161-192 → `AnalysisTab/SimulationBanner.tsx` with `SimulationBannerProps`
-- [ ] 4.2 Extract lines 215-255 → `AnalysisTab/SubjectWeightsPanel.tsx` with `SubjectWeightsPanelProps`
-- [ ] 4.3 Extract lines 258-305 → `AnalysisTab/FiltersBar.tsx` with `FiltersBarProps`
-- [ ] 4.4 Extract lines 317-645 → `AnalysisTab/StudentGroupTable.tsx` with `StudentGroupTableProps`
-- [ ] 4.5 Rewrite `AnalysisTab.tsx` as orchestrator composing the 4 sub-components (~180 lines)
+- [x] 4.1 Extract lines 161-192 → `AnalysisTab/SimulationBanner.tsx` with `SimulationBannerProps`
+- [x] 4.2 Extract lines 215-255 → `AnalysisTab/SubjectWeightsPanel.tsx` with `SubjectWeightsPanelProps`
+- [x] 4.3 Extract lines 258-305 → `AnalysisTab/FiltersBar.tsx` with `FiltersBarProps`
+- [x] 4.4 Extract lines 317-645 → `AnalysisTab/StudentGroupTable.tsx` with `StudentGroupTableProps`
+- [x] 4.5 Rewrite `AnalysisTab.tsx` as orchestrator composing the 4 sub-components (~180 lines)
 
 ## Phase 5: IndexedDB Fix
 

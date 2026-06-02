@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import 'vitest-axe/extend-expect';
@@ -129,5 +129,35 @@ describe('TutorsTab', () => {
 
     const areaSelect = screen.getByDisplayValue('CIENCIAS');
     expect(areaSelect).toBeInTheDocument();
+  });
+
+  it('does NOT call setGrupo during mount when a specific group is already selected', () => {
+    const setGrupoSpy = vi.fn();
+    useDashboardStore.setState({
+      estudiantes: testStudents as any,
+      selectedGrupo: '10A',
+      setGrupo: setGrupoSpy,
+    });
+    
+    render(<TutorsTab />);
+    
+    // setGrupo MUST NOT be called inside useEffect during mount
+    expect(setGrupoSpy).not.toHaveBeenCalled();
+  });
+
+  it('renders correctly even when selectedGrupo is "Todos" without mutating global store', () => {
+    const setGrupoSpy = vi.fn();
+    useDashboardStore.setState({
+      estudiantes: testStudents as any,
+      selectedGrupo: 'Todos',
+      setGrupo: setGrupoSpy,
+    });
+    
+    render(<TutorsTab />);
+    
+    // Should show group 10A without calling setGrupo
+    const groupSelect = screen.getByDisplayValue('Grupo 10A');
+    expect(groupSelect).toBeInTheDocument();
+    expect(setGrupoSpy).not.toHaveBeenCalled();
   });
 });

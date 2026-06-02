@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import 'vitest-axe/extend-expect';
@@ -102,5 +102,37 @@ describe('VolatilityTab', () => {
     await userEvent.selectOptions(groupSelect, '10B');
     
     expect(screen.getByText('⚠️ No hay suficientes periodos evaluados aún para calcular volatilidad (se requieren al menos 2 periodos).')).toBeInTheDocument();
+  });
+
+  it('does NOT call setGrupo during mount when a specific group is already selected', () => {
+    const setGrupoSpy = vi.fn();
+    useDashboardStore.setState({
+      estudiantes: testStudents as any,
+      selectedGrupo: '10A',
+      setGrupo: setGrupoSpy,
+    });
+    
+    render(<VolatilityTab />);
+    
+    // setGrupo MUST NOT be called inside useEffect during mount
+    expect(setGrupoSpy).not.toHaveBeenCalled();
+  });
+
+  it('renders correctly even when selectedGrupo is "Todos" without mutating global store', () => {
+    const setGrupoSpy = vi.fn();
+    useDashboardStore.setState({
+      estudiantes: testStudents as any,
+      selectedGrupo: 'Todos',
+      setGrupo: setGrupoSpy,
+    });
+    
+    render(<VolatilityTab />);
+    
+    // Even with 'Todos', the group selector should show the first available group
+    // without calling setGrupo to mutate global state
+    const groupSelect = screen.getByRole('combobox') as HTMLSelectElement;
+    expect(groupSelect.value).toBe('10A');
+    // setGrupo MUST NOT be called
+    expect(setGrupoSpy).not.toHaveBeenCalled();
   });
 });

@@ -51,17 +51,17 @@ Chain strategy: feature-branch-chain
 
 ## Phase 5: IndexedDB Fix
 
-- [ ] 5.1 Remove `estudiantes` from `partialize` in `useDashboardStore.ts`; simplify `merge`
+- [x] 5.1 Remove `estudiantes` from `partialize` in `useDashboardStore.ts`; simplify `merge`
 
 ## Phase 6: Testing + Verification
 
-- [ ] 6.1 Write RTL test: VolatilityTab renders without `setGrupo` on mount
-- [ ] 6.2 Write RTL test: TutorsTab renders without global mutation
-- [ ] 6.3 Write RTL test: AnalysisTab composes sub-components correctly
-- [ ] 6.4 Integration test: processFiles → reload → verify derived data restored
-- [ ] 6.5 Run `npx vitest run` after each PR — all 270+ tests pass
+- [x] 6.1 Write RTL test: VolatilityTab renders without `setGrupo` on mount
+- [x] 6.2 Write RTL test: TutorsTab renders without global mutation
+- [x] 6.3 Write RTL test: AnalysisTab composes sub-components correctly
+- [x] 6.4 Integration test: processFiles → reload → verify derived data restored
+- [x] 6.5 Run `npx vitest run` after each PR — all 316+ tests pass (331/331)
 
 ## Phase 7: Cleanup
 
-- [ ] 7.1 Grep for remaining `3.0` in production files; verify all intentional
-- [ ] 7.2 Create `openspec/config.yaml` with project metadata and SDD defaults
+- [x] 7.1 Grep for remaining `3.0` in production files; verify all intentional (0 matches)
+- [x] 7.2 Create `openspec/config.yaml` with project metadata and SDD defaults

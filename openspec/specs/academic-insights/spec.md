@@ -8,16 +8,16 @@ Detect 4 pedagogical archetypes from per-student period grade trends with false-
 
 ### Requirement: Archetype Detection — El Confiado
 
-The system MUST classify a student as El Confiado when: (a) avg(first 2 periods) ≥ 4.0, (b) grades are monotonically non-increasing, (c) total max→min drop ≥ 0.8, (d) at least one period-to-period drop ≥ 0.3.
+The system MUST classify a student as El Confiado when: (a) avg(first 2 periods) >= 4.0, (b) grades are monotonically non-increasing, (c) total max-min drop >= 0.8, (d) at least one period-to-period drop >= 0.3.
 
 #### Scenario: Sustained decline from high start triggers Confiado
 
 - GIVEN a student with period grades [4.8, 4.3, 3.9, 3.5]
 - WHEN `detectArchetypes()` runs
 - THEN primary archetype MUST be `confiado`
-- AND confidence MUST be ≥ 0.5
+- AND confidence MUST be >= 0.5
 
-#### Scenario: Minor fluctuation 4.8→4.5 does NOT trigger Confiado
+#### Scenario: Minor fluctuation 4.8-4.5 does NOT trigger Confiado
 
 - GIVEN a student with grades [4.8, 4.7, 4.6, 4.5]
 - WHEN `detectArchetypes()` runs
@@ -31,7 +31,7 @@ The system MUST classify a student as El Confiado when: (a) avg(first 2 periods)
 
 ### Requirement: Archetype Detection — El Resiliente
 
-The system MUST classify as El Resiliente when: (a) avg(first 2 periods) ≤ 3.0, (b) grades are monotonically non-decreasing, (c) total rise ≥ 0.8, (d) at least one period-to-period rise ≥ 0.3.
+The system MUST classify as El Resiliente when: (a) avg(first 2 periods) <= 3.0, (b) grades are monotonically non-decreasing, (c) total rise >= 0.8, (d) at least one period-to-period rise >= 0.3.
 
 #### Scenario: Sustained improvement from low start triggers Resiliente
 
@@ -39,7 +39,7 @@ The system MUST classify as El Resiliente when: (a) avg(first 2 periods) ≤ 3.0
 - WHEN `detectArchetypes()` runs
 - THEN primary archetype MUST be `resiliente`
 
-#### Scenario: Small improvement 2.5→3.0 does NOT trigger Resiliente
+#### Scenario: Small improvement 2.5-3.0 does NOT trigger Resiliente
 
 - GIVEN grades [2.5, 2.6, 2.8, 3.0]
 - WHEN `detectArchetypes()` runs
@@ -47,7 +47,7 @@ The system MUST classify as El Resiliente when: (a) avg(first 2 periods) ≤ 3.0
 
 ### Requirement: Archetype Detection — El Montaña Rusa
 
-The system MUST classify as El Montaña Rusa when: (a) ≥ 2 sign changes in period-to-period deltas, (b) at least one peak→valley swing ≥ 0.8, (c) at least one |delta| ≥ 0.3.
+The system MUST classify as El Montaña Rusa when: (a) >= 2 sign changes in period-to-period deltas, (b) at least one peak-valley swing >= 0.8, (c) at least one |delta| >= 0.3.
 
 #### Scenario: Alternating grades trigger Montaña Rusa
 
@@ -63,7 +63,7 @@ The system MUST classify as El Montaña Rusa when: (a) ≥ 2 sign changes in per
 
 ### Requirement: Archetype Detection — El Radar
 
-The system MUST classify as El Radar when no other archetype matches BUT at least one warning flag exists: final grade < 3.0 or largest single drop ≥ 0.5.
+The system MUST classify as El Radar when no other archetype matches BUT at least one warning flag exists: final grade < 3.0 or largest single drop >= 0.5.
 
 #### Scenario: Final period failing triggers Radar
 
@@ -81,14 +81,14 @@ The system MUST classify as El Radar when no other archetype matches BUT at leas
 
 The system MUST return null with reason `insufficient-data` when fewer than 2 evaluated periods exist.
 
-#### Scenario: Single period → insufficient data
+#### Scenario: Single period — insufficient data
 
 - GIVEN a student with only P1 evaluated [3.5]
 - WHEN `detectArchetypes()` runs
 - THEN result MUST be null
 - AND reason MUST be `insufficient-data`
 
-#### Scenario: Two periods → detection proceeds
+#### Scenario: Two periods — detection proceeds
 
 - GIVEN a student with grades [4.5, 3.7]
 - WHEN `detectArchetypes()` runs
@@ -100,7 +100,7 @@ The InsightsTab MUST render aggregate KPI cards per archetype and archetype-grou
 
 #### Scenario: KPI cards show archetype counts
 
-- GIVEN `useOracle` returns counts `{ confiado: 3, resiliente: 2, montana-rusa: 1, radar: 4 }`
+- GIVEN `useInsights` returns counts `{ confiado: 3, resiliente: 2, montana-rusa: 1, radar: 4 }`
 - WHEN InsightsTab renders
 - THEN it MUST display 4 KPI cards, each with archetype label, student count, and severity color
 
@@ -110,17 +110,18 @@ The InsightsTab MUST render aggregate KPI cards per archetype and archetype-grou
 - WHEN InsightsTab renders
 - THEN the student card MUST show name, period grades, archetype label, severity badge, and pedagogical narrative
 
-#### Scenario: Group filter filters to selected archetype
+#### Scenario: Empty state — insufficient data
 
-- GIVEN the dropdown is set to "El Confiado"
+- GIVEN `evaluatedCount` from `useInsights` is < 2
 - WHEN InsightsTab renders
-- THEN it MUST display ONLY students classified as `confiado`
+- THEN it MUST display an empty state indicating "No hay suficientes períodos evaluados"
 
-#### Scenario: Empty state when no results
+#### Scenario: Empty state — stable group
 
-- GIVEN `useOracle` returns empty `[]`
+- GIVEN `evaluatedCount` is >= 2
+- AND `results` from `useInsights` is empty
 - WHEN InsightsTab renders
-- THEN it MUST display "No hay datos suficientes"
+- THEN it MUST display an empty state indicating "El grupo es estable" and no arquetipos detected
 
 #### Scenario: Store is NOT mutated by rendering
 

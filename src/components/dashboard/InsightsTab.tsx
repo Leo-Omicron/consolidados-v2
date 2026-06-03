@@ -2,6 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { useInsights } from '../../hooks/useInsights';
 import { InsightsFilter, type FilterValue } from './InsightsTab/InsightsFilter';
 import { ArchetypeCard } from './InsightsTab/ArchetypeCard';
+import { StudentProfileModal } from './StudentProfileModal';
+import { buildStudentProfileData } from '../../services/studentProfileService';
+import { useDashboardStore } from '../../store/useDashboardStore';
+import { useSimulationStore } from '../../store/useSimulationStore';
 import type { ArchetypeResult, PedagogicalArchetype } from '../../domain/types';
 
 const KPI_CONFIG: { key: PedagogicalArchetype; label: string; color: string }[] = [
@@ -14,6 +18,25 @@ const KPI_CONFIG: { key: PedagogicalArchetype; label: string; color: string }[] 
 export const InsightsTab: React.FC = () => {
   const { results, counts, evaluatedPeriods } = useInsights();
   const [filter, setFilter] = useState<FilterValue>('todos');
+  const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
+
+  const estudiantes = useDashboardStore(state => state.estudiantes);
+  const config = useDashboardStore(state => state.config) as import('../../domain/types').PeriodConfig;
+  const subjectWeights = useDashboardStore(state => state.subjectWeights);
+  const activeSimulations = useSimulationStore(state => state.activeSimulations);
+
+  // Profile data for modal
+  const profileData = useMemo(() => {
+    if (!profileStudentId) return null;
+    return buildStudentProfileData(
+      profileStudentId,
+      estudiantes,
+      results as ArchetypeResult[],
+      activeSimulations,
+      config,
+      subjectWeights,
+    );
+  }, [profileStudentId, estudiantes, results, activeSimulations, config, subjectWeights]);
 
   const evaluatedCount = Object.values(evaluatedPeriods || {}).filter(Boolean).length;
   const hasSufficientData = evaluatedCount >= 2;
@@ -124,13 +147,24 @@ export const InsightsTab: React.FC = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {cards.map((result) => (
-                  <ArchetypeCard key={result.estudianteId} result={result} />
+                  <ArchetypeCard
+                    key={result.estudianteId}
+                    result={result}
+                    onOpenStudentProfile={setProfileStudentId}
+                  />
                 ))}
               </div>
             </section>
           ))}
         </div>
       )}
+
+      {/* Student Profile Modal */}
+      <StudentProfileModal
+        profileData={profileData}
+        isOpen={profileStudentId !== null}
+        onClose={() => setProfileStudentId(null)}
+      />
     </div>
   );
 };

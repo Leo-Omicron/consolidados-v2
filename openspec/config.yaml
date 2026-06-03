@@ -24,9 +24,12 @@ specs:
   # Registered canonical specs (source of truth)
   domains:
     - academic-constants
+    - academic-insights
     - dashboard-state
     - excel-diagnostics
+    - parent-meeting-student-profile
     - web-worker-parser
+    - what-if-calculator
 
 rules:
   apply:

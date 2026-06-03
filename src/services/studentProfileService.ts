@@ -1,4 +1,5 @@
-import type { Estudiante, ArchetypeResult, PeriodoNotas } from '../domain/types';
+import type { Estudiante, ArchetypeResult, PeriodoNotas, PeriodConfig, SubjectWeightConfig } from '../domain/types';
+import { applyAcademicLogic } from './academicLogic';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -6,13 +7,6 @@ import type { Estudiante, ArchetypeResult, PeriodoNotas } from '../domain/types'
 
 /** Umbral mínimo para que un área sea considerada "fortaleza" */
 const FORTALEZA_THRESHOLD = 3.5;
-
-/**
- * Period weights used when recalculating areaStats.promedioActual from
- * simulated DEF values.  All periods carry equal weight (25%) in the
- * academic consolidation model.
- */
-const PERIOD_WEIGHTS = { P1: 25, P2: 25, P3: 25 } as const;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,7 +45,8 @@ const ARCHETYPE_LABELS: Record<string, string> = {
 
 /**
  * Checks whether any key in activeSimulations starts with the given studentId
- * followed by an underscore (row id convention: `{studentId}_{area}`).
+ * followed by an underscore (row id convention: `{studentId}_{area}` or
+ * `{studentId}_{area}_{subject}`).
  */
 function hasActiveSimulations(
   studentId: string,
@@ -62,74 +57,52 @@ function hasActiveSimulations(
 }
 
 /**
- * Deep-clones the student and applies What-If simulation DEF period overrides
- * from `activeSimulations`.  Then recalculates `areaStats.promedioActual` for
- * every area whose DEF values were touched.
+ * Deep-clones the student, then delegates ALL calculations to the canonical
+ * `applyAcademicLogic` pipeline — including subject→area DEF cascade,
+ * period-weight config, and subject weight config.
  *
- * Pure — does not mutate the original student.
+ * Only areas touched by simulations are recalculated; non-touched areas
+ * retain their original `areaStats` to preserve existing precision.
+ *
+ * Pure — does not mutate the original student array.
  */
-function applySimulationToStudent(
+function buildSimulatedStudent(
   student: Estudiante,
+  config: PeriodConfig,
+  subjectWeights: SubjectWeightConfig,
   activeSimulations: Record<string, Partial<PeriodoNotas>>,
 ): Estudiante {
-  const cloned = structuredClone(student);
+  // Determine which areas are touched by any simulation key for this student
   const prefix = `${student.id}_`;
-
   const touchedAreas = new Set<string>();
-
-  for (const [key, sim] of Object.entries(activeSimulations)) {
+  for (const key of Object.keys(activeSimulations)) {
     if (!key.startsWith(prefix)) continue;
-
-    // Key format: studentId_areaName  or  studentId_areaName_subjectName
     const parts = key.split('_');
-    const areaName = parts[1];
-    const area = cloned.areas[areaName];
-    if (!area) continue;
-
-    if (parts.length === 2) {
-      // Direct area simulation — override DEF periods
-      Object.assign(area.DEF, sim);
-      touchedAreas.add(areaName);
+    // parts[0] = studentId, parts[1] = areaName, parts[2] = subjectName (optional)
+    if (parts.length >= 2) {
+      touchedAreas.add(parts[1]);
     }
-    // For subject-level simulations (parts.length === 3) we also touch the
-    // parent area because the cascade to DEF happens inside applyAcademicLogic;
-    // here we let the direct DEF override cover the area-level recalc.
-    // Subject-level simulations that only touch subjects without a matching
-    // area key will be handled by the full pipeline in the UI.
   }
 
-  // Recalculate promedioActual for touched areas
-  for (const areaName of touchedAreas) {
-    const area = cloned.areas[areaName];
-    if (area?.areaStats) {
-      area.areaStats.promedioActual = recalcPromedioFromDEF(area.DEF);
+  // Preserve original areaStats for non-touched areas
+  const untouchedAreaStats: Record<string, NonNullable<typeof student.areas[string]['areaStats']>> = {};
+  for (const [areaName, area] of Object.entries(student.areas)) {
+    if (!touchedAreas.has(areaName) && area.areaStats) {
+      untouchedAreaStats[areaName] = { ...area.areaStats };
+    }
+  }
+
+  const cloned = structuredClone(student);
+  applyAcademicLogic([cloned], config, subjectWeights, activeSimulations);
+
+  // Restore areaStats for areas that were NOT touched by any simulation
+  for (const [areaName, stats] of Object.entries(untouchedAreaStats)) {
+    if (cloned.areas[areaName]) {
+      cloned.areas[areaName].areaStats = stats;
     }
   }
 
   return cloned;
-}
-
-/**
- * Recalculates `promedioActual` from a PeriodoNotas (DEF) using the
- * weighted average of non-null period values.
- *
- * Periods with null values are excluded from both numerator and denominator.
- */
-function recalcPromedioFromDEF(def: PeriodoNotas): number {
-  let weightedSum = 0;
-  let totalWeight = 0;
-
-  for (const period of ['P1', 'P2', 'P3'] as const) {
-    const value = def[period];
-    if (value != null) {
-      const weight = PERIOD_WEIGHTS[period];
-      weightedSum += value * weight;
-      totalWeight += weight;
-    }
-  }
-
-  if (totalWeight === 0) return 0;
-  return Math.round((weightedSum / totalWeight) * 100) / 100;
 }
 
 // ---------------------------------------------------------------------------
@@ -141,6 +114,8 @@ function recalcPromedioFromDEF(def: PeriodoNotas): number {
  *
  * Pura — no muta los parámetros de entrada ni accede a stores globales.
  *
+ * @param config       Period weights (e.g. { P1: 25, P2: 25, P3: 25, P4: 25 })
+ * @param subjectWeights Per-group per-area per-subject weight overrides
  * @returns StudentProfileData con toda la información necesaria para el modal,
  *          o `null` si el estudiante no existe.
  */
@@ -149,6 +124,8 @@ export function buildStudentProfileData(
   estudiantes: Estudiante[],
   insights: ArchetypeResult[],
   activeSimulations: Record<string, Partial<PeriodoNotas>>,
+  config: PeriodConfig,
+  subjectWeights: SubjectWeightConfig = {},
 ): StudentProfileData | null {
   const student = estudiantes.find((e) => e.id === studentId);
   if (!student) return null;
@@ -156,7 +133,7 @@ export function buildStudentProfileData(
   // 0. Resolve simulation state and get the effective student object
   const isSimulated = hasActiveSimulations(studentId, activeSimulations);
   const effectiveStudent = isSimulated
-    ? applySimulationToStudent(student, activeSimulations)
+    ? buildSimulatedStudent(student, config, subjectWeights, activeSimulations)
     : student;
 
   // 1. Build area grades from areaStats.promedioActual

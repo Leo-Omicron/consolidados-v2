@@ -21,6 +21,8 @@ export const InsightsTab: React.FC = () => {
   const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
 
   const estudiantes = useDashboardStore(state => state.estudiantes);
+  const config = useDashboardStore(state => state.config) as import('../../domain/types').PeriodConfig;
+  const subjectWeights = useDashboardStore(state => state.subjectWeights);
   const activeSimulations = useSimulationStore(state => state.activeSimulations);
 
   // Profile data for modal
@@ -31,8 +33,10 @@ export const InsightsTab: React.FC = () => {
       estudiantes,
       results as ArchetypeResult[],
       activeSimulations,
+      config,
+      subjectWeights,
     );
-  }, [profileStudentId, estudiantes, results, activeSimulations]);
+  }, [profileStudentId, estudiantes, results, activeSimulations, config, subjectWeights]);
 
   const evaluatedCount = Object.values(evaluatedPeriods || {}).filter(Boolean).length;
   const hasSufficientData = evaluatedCount >= 2;

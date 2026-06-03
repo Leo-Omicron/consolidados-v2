@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Estudiante, ArchetypeResult, EstadoAcademico } from '../domain/types';
+import type { Estudiante, ArchetypeResult, EstadoAcademico, PeriodConfig, SubjectWeightConfig } from '../domain/types';
 
 // RED phase: the function and type don't exist yet — this import WILL fail
 // until we create the file in GREEN phase.
@@ -93,6 +93,10 @@ const mockInsight: ArchetypeResult = {
 
 const noSimulations: Record<string, any> = {};
 
+// Default config mimicking the legacy 3-period 25% weights
+const defaultConfig: PeriodConfig = { P1: 25, P2: 25, P3: 25 };
+const emptySubjectWeights: SubjectWeightConfig = {};
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -105,13 +109,15 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       noSimulations,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result).toBeNull();
   });
 
   // ---- RED-2: Empty students array returns null ----
   it('returns null for empty students array', () => {
-    const result = buildStudentProfileData('s1', [], [], noSimulations);
+    const result = buildStudentProfileData('s1', [], [], noSimulations, defaultConfig, emptySubjectWeights);
     expect(result).toBeNull();
   });
 
@@ -122,6 +128,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       noSimulations,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result).not.toBeNull();
     expect(result!.studentId).toBe('s1');
@@ -136,6 +144,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       noSimulations,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result!.areaGrades).toEqual({
       Matemáticas: 4.25,
@@ -152,6 +162,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       noSimulations,
+      defaultConfig,
+      emptySubjectWeights,
     );
 
     // María and Carlos are both in 10A
@@ -174,6 +186,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       noSimulations,
+      defaultConfig,
+      emptySubjectWeights,
     );
     // María: Mat 4.25, Len 3.25, Cie 4.25, Soc 2.75
     // >= 3.5: Matemáticas (4.25), Ciencias (4.25) → top 2
@@ -187,6 +201,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       noSimulations,
+      defaultConfig,
+      emptySubjectWeights,
     );
     // < 3.5: Lenguaje (3.25), Sociales (2.75) → bottom 2
     expect(result!.puntosMejora).toEqual(['Sociales', 'Lenguaje']);
@@ -199,6 +215,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [mockInsight],
       noSimulations,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result!.insight).toBe('Tendencia de declive sostenido.');
     expect(result!.arquetipo).toBe('El Confiado');
@@ -211,6 +229,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       noSimulations,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result!.insight).toBeNull();
     expect(result!.arquetipo).toBeNull();
@@ -223,6 +243,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       noSimulations,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result!.isSimulated).toBe(false);
   });
@@ -237,6 +259,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       sims,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result!.isSimulated).toBe(true);
   });
@@ -251,6 +275,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       sims,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result!.isSimulated).toBe(false);
   });
@@ -262,6 +288,8 @@ describe('buildStudentProfileData', () => {
       [mockPartialStudent],
       [],
       noSimulations,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result).not.toBeNull();
     expect(result!.areaGrades).toEqual({});
@@ -300,6 +328,8 @@ describe('buildStudentProfileData', () => {
       [superStudent],
       [],
       noSimulations,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result!.fortalezas).toHaveLength(2);
     // Top 2 by highest grade: B (4.5), A (4.0)
@@ -309,7 +339,7 @@ describe('buildStudentProfileData', () => {
   // ---- RED-15: Does NOT mutate input estudiantes array ----
   it('does not mutate the input estudiantes array', () => {
     const original = structuredClone([mockMaria, mockCarlos]);
-    buildStudentProfileData('s1', [mockMaria, mockCarlos], [], noSimulations);
+    buildStudentProfileData('s1', [mockMaria, mockCarlos], [], noSimulations, defaultConfig, emptySubjectWeights);
     expect(mockMaria).toEqual(original[0]);
     expect(mockCarlos).toEqual(original[1]);
   });
@@ -334,7 +364,7 @@ describe('buildStudentProfileData', () => {
         },
       },
     };
-    const result = buildStudentProfileData('s6', [lowStudent], [], noSimulations);
+    const result = buildStudentProfileData('s6', [lowStudent], [], noSimulations, defaultConfig, emptySubjectWeights);
     expect(result!.fortalezas).toEqual([]);
     expect(result!.puntosMejora).toHaveLength(2); // both < 3.5
   });
@@ -346,6 +376,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       noSimulations,
+      defaultConfig,
+      emptySubjectWeights,
     );
     const json = JSON.stringify(result);
     // Carlos' name should NOT be in the output
@@ -366,6 +398,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       sims,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result).not.toBeNull();
     // Matemáticas should reflect SIMULATED promedio (1.0), not original (4.25)
@@ -387,6 +421,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       sims,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result).not.toBeNull();
     // Only Ciencias (4.25) is >= 3.5 now; Matemáticas is 1.0, Lenguaje is 3.25, Sociales is 2.75
@@ -407,6 +443,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       sims,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result).not.toBeNull();
     // Carlos' Matemáticas should now be 5.0 (simulated), making it a fortaleza
@@ -426,6 +464,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       sims,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result).not.toBeNull();
     // Group average for Matemáticas: María (simulated 1.0) + Carlos (original 3.25) / 2 = 2.125
@@ -450,6 +490,8 @@ describe('buildStudentProfileData', () => {
       [mockMaria, mockCarlos],
       [],
       sims,
+      defaultConfig,
+      emptySubjectWeights,
     );
     expect(result).not.toBeNull();
     expect(result!.areaGrades['Matemáticas']).toBe(4.5);
@@ -464,11 +506,161 @@ describe('buildStudentProfileData', () => {
     const sims = {
       's1_Matemáticas': { P1: 1.0, P2: 1.0, P3: 1.0 },
     };
-    buildStudentProfileData('s1', [mockMaria, mockCarlos], [], sims);
+    buildStudentProfileData('s1', [mockMaria, mockCarlos], [], sims, defaultConfig, emptySubjectWeights);
     // Original María should still have Matemáticas promedio 4.25
     expect(mockMaria.areas['Matemáticas'].DEF.P1).toBe(4.0);
     expect(mockMaria.areas['Matemáticas'].DEF.P2).toBe(4.5);
     expect(mockMaria).toEqual(original[0]);
     expect(mockCarlos).toEqual(original[1]);
+  });
+
+  // ── RED-24 (DEFECT FIX): Subject-level simulation cascades to area grades ──
+  it('cascades subject-level simulation to area promedioActual, fortalezas, and puntosMejora', () => {
+    const estadoGanado: EstadoAcademico = { text: 'Ganado', color: 'green' };
+    const estadoRiesgo: EstadoAcademico = { text: 'En riesgo', color: 'yellow' };
+
+    const studentWithSubjects: Estudiante = {
+      id: 's7',
+      name: 'Ana Materias',
+      CURSO: '10A',
+      grupo: '10A',
+      areas: {
+        Matemáticas: {
+          asignaturas: {
+            Álgebra: {
+              P1: 4.0, P2: 4.5, P3: null, P4: null,
+              A: 4.25, promedioActual: 4.25, p4Min: 1.0, estado: estadoGanado,
+            },
+            Geometría: {
+              P1: 3.0, P2: 3.5, P3: null, P4: null,
+              A: 3.25, promedioActual: 3.25, p4Min: 2.5, estado: estadoRiesgo,
+            },
+          },
+          DEF: { P1: 3.5, P2: 4.0, P3: null, A: 3.75 },
+          areaStats: { promedioActual: 3.75, p4Min: 2.0, estado: estadoGanado },
+        },
+        Lenguaje: {
+          asignaturas: {},
+          DEF: { P1: 3.0, P2: 2.5, P3: null, A: 2.75 },
+          areaStats: { promedioActual: 2.75, p4Min: 3.5, estado: estadoRiesgo },
+        },
+      },
+    };
+
+    const config: PeriodConfig = { P1: 25, P2: 25, P3: 25, P4: 25 };
+    const subjectWeights: SubjectWeightConfig = {
+      '10A': { 'Matemáticas': { 'Álgebra': 0.5, 'Geometría': 0.5 } },
+    };
+
+    // Simulate changing Álgebra P1 from 4.0 → 1.5
+    // With equal 50/50 weights: new DEF.P1 = (1.5*0.5 + 3.0*0.5) = 2.25
+    const sims = {
+      's7_Matemáticas_Álgebra': { P1: 1.5 },
+    };
+
+    const result = buildStudentProfileData(
+      's7',
+      [studentWithSubjects],
+      [],
+      sims,
+      config,
+      subjectWeights,
+    );
+
+    expect(result).not.toBeNull();
+    // The cascaded area promedioActual should drop because Álgebra P1 dropped
+    expect(result!.areaGrades['Matemáticas']).toBeLessThan(3.75);
+    // Matematicas drops: was >= 3.5, now with P1=2.3 and P2=4.0: avg = (2.3+4.0)/2=3.15 → roundToOneDecimal = 3.2
+    expect(result!.areaGrades['Matemáticas']).toBe(3.2);
+    // Lenguaje stays at 2.75
+    expect(result!.areaGrades['Lenguaje']).toBe(2.75);
+    // Fortalezas should NOT include Matematicas if it's < 3.5
+    expect(result!.fortalezas).not.toContain('Matemáticas');
+    // isSimulated should be true
+    expect(result!.isSimulated).toBe(true);
+  });
+
+  // ── RED-25 (DEFECT FIX): P4 is respected according to config weights ──
+  it('respects P4 weight from config when recalculating areaGrades', () => {
+    const estadoGanado: EstadoAcademico = { text: 'Ganado', color: 'green' };
+
+    const studentWithP4: Estudiante = {
+      id: 's8',
+      name: 'Con P4',
+      CURSO: '10A',
+      grupo: '10A',
+      areas: {
+        Matemáticas: {
+          asignaturas: {},
+          DEF: { P1: 4.0, P2: 4.0, P3: 4.0, P4: 4.0, A: 4.0 },
+          areaStats: { promedioActual: 4.0, p4Min: 1.0, estado: estadoGanado },
+        },
+      },
+    };
+
+    // Config with all 4 periods equally weighted (25% each)
+    const config: PeriodConfig = { P1: 25, P2: 25, P3: 25, P4: 25 };
+
+    // Simulate only overriding P4 to 1.0
+    // Original: (4*25 + 4*25 + 4*25 + 4*25)/100 = 4.0
+    // Simulated: (4*25 + 4*25 + 4*25 + 1*25)/100 = 3.25 → roundToOneDecimal = 3.3
+    const sims = {
+      's8_Matemáticas': { P4: 1.0 },
+    };
+
+    const result = buildStudentProfileData(
+      's8',
+      [studentWithP4],
+      [],
+      sims,
+      config,
+      {},
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.areaGrades['Matemáticas']).toBe(3.3);
+    expect(result!.isSimulated).toBe(true);
+  });
+
+  // ── TRIANGULATE-26 (P4): Config without P4 ignores it even if data has P4 ──
+  it('ignores P4 when config does not include P4 weight', () => {
+    const estadoGanado: EstadoAcademico = { text: 'Ganado', color: 'green' };
+
+    const studentWithP4: Estudiante = {
+      id: 's9',
+      name: 'P4 sin peso',
+      CURSO: '10A',
+      grupo: '10A',
+      areas: {
+        Matemáticas: {
+          asignaturas: {},
+          DEF: { P1: 4.0, P2: 4.0, P3: 4.0, P4: 4.0, A: 4.0 },
+          areaStats: { promedioActual: 4.0, p4Min: 1.0, estado: estadoGanado },
+        },
+      },
+    };
+
+    // Config WITHOUT P4 → only P1, P2, P3 weighted
+    const config: PeriodConfig = { P1: 33.3, P2: 33.3, P3: 33.4 };
+    // Simulate P4 to 1.0 — should be ignored since config has no P4
+    const sims = {
+      's9_Matemáticas': { P4: 1.0 },
+    };
+
+    const result = buildStudentProfileData(
+      's9',
+      [studentWithP4],
+      [],
+      sims,
+      config,
+      {},
+    );
+
+    expect(result).not.toBeNull();
+    // P4 override should NOT affect the average since config has 0 weight for P4
+    // Original: (4*33.3 + 4*33.3 + 4*33.4)/100 = 4.0
+    // Simulated P4=1.0 is ignored → still 4.0
+    expect(result!.areaGrades['Matemáticas']).toBe(4.0);
+    expect(result!.isSimulated).toBe(true);
   });
 });

@@ -78,8 +78,10 @@ export const AnalysisTab: React.FC = () => {
       estudiantes,
       insightsResults as ArchetypeResult[],
       activeSimulations,
+      config,
+      subjectWeights,
     );
-  }, [profileStudentId, estudiantes, insightsResults, activeSimulations]);
+  }, [profileStudentId, estudiantes, insightsResults, activeSimulations, config, subjectWeights]);
   
   const simulatedData = useMemo(() => {
     return getSimulatedRows(estudiantes, activeSimulations, config, subjectWeights);

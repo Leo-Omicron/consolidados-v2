@@ -21,6 +21,8 @@ export interface StudentGroupTableProps {
   sortConfig: SortConfig;
   onSetSimulation: (rowId: string, period: 'P1' | 'P2' | 'P3' | 'P4', value: number | null) => void;
   onClearSimulation: (rowId: string) => void;
+  /** Callback opcional para abrir la ficha de perfil del estudiante */
+  onOpenStudentProfile?: (studentId: string) => void;
 }
 
 export const StudentGroupTable: React.FC<StudentGroupTableProps> = ({
@@ -39,6 +41,7 @@ export const StudentGroupTable: React.FC<StudentGroupTableProps> = ({
   sortConfig,
   onSetSimulation,
   onClearSimulation,
+  onOpenStudentProfile,
 }) => {
   const getSortIcon = (key: string) => {
     if (sortConfig?.key !== key) return '↕️';
@@ -65,6 +68,8 @@ export const StudentGroupTable: React.FC<StudentGroupTableProps> = ({
           const isGroupAtRisk = group.rows.some(r => r.estado.text === 'Perdido' || r.estado.text === 'En riesgo');
           const isExpanded = expandedGroups[group.estudiante] ?? isGroupAtRisk;
           const hasStudentSimulations = group.rows.some(row => activeSimulations[row.id] !== undefined);
+          // Extract studentId from row ID format: {studentId}_{areaName}
+          const studentId = group.rows[0]?.id?.split('_')[0] ?? group.estudiante;
 
           return (
             <div key={group.estudiante} className="flex flex-col">
@@ -100,6 +105,18 @@ export const StudentGroupTable: React.FC<StudentGroupTableProps> = ({
                       title="Restaurar notas reales de este estudiante"
                     >
                       Restaurar
+                    </button>
+                  )}
+                  {onOpenStudentProfile && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenStudentProfile(studentId);
+                      }}
+                      className="ml-2 px-2 py-0.5 text-[10px] font-bold uppercase rounded border border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors cursor-pointer shadow-sm app-focus"
+                      title="Ver ficha del estudiante"
+                    >
+                      Ficha
                     </button>
                   )}
                 </div>

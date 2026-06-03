@@ -29,9 +29,10 @@ const ARCHETYPE_CARD_COLORS: Record<PedagogicalArchetype, string> = {
 
 interface Props {
   result: ArchetypeResult;
+  onOpenStudentProfile?: (studentId: string) => void;
 }
 
-export const ArchetypeCard: React.FC<Props> = ({ result }) => {
+export const ArchetypeCard: React.FC<Props> = ({ result, onOpenStudentProfile }) => {
   const { estudianteName, grupo, archetype, confidence, severity, periodGrades, narrative } = result;
 
   return (
@@ -53,6 +54,18 @@ export const ArchetypeCard: React.FC<Props> = ({ result }) => {
           >
             {SEVERITY_LABELS[severity]}
           </span>
+          {onOpenStudentProfile && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenStudentProfile(result.estudianteId);
+              }}
+              className="px-3 py-1 text-xs font-bold uppercase rounded border border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors cursor-pointer"
+              title="Ver ficha del estudiante"
+            >
+              Ficha
+            </button>
+          )}
         </div>
       </div>
 

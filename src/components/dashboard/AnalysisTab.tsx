@@ -12,6 +12,10 @@ import { SimulationBanner } from './AnalysisTab/SimulationBanner';
 import { SubjectWeightsPanel } from './AnalysisTab/SubjectWeightsPanel';
 import { FiltersBar } from './AnalysisTab/FiltersBar';
 import { StudentGroupTable } from './AnalysisTab/StudentGroupTable';
+import { StudentProfileModal } from './StudentProfileModal';
+import { buildStudentProfileData } from '../../services/studentProfileService';
+import { useInsights } from '../../hooks/useInsights';
+import type { ArchetypeResult } from '../../domain/types';
 
 export const AnalysisTab: React.FC = () => {
   const estudiantes = useDashboardStore(state => state.estudiantes);
@@ -30,6 +34,7 @@ export const AnalysisTab: React.FC = () => {
   const sortConfig = useUIStore(state => state.analysisSortConfig);
   const setSortConfig = useUIStore(state => state.setAnalysisSortConfig);
   const [isWeightsExpanded, setIsWeightsExpanded] = useState(false);
+  const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
 
   const activeSimulations = useSimulationStore(state => state.activeSimulations);
   const setSimulation = useSimulationStore(state => state.setSimulation);
@@ -61,6 +66,20 @@ export const AnalysisTab: React.FC = () => {
   const hasP4 = config.P4 !== undefined && config.P4 > 0;
   
   const evaluated = useMemo(() => getEvaluatedPeriods(estudiantes || []) as Record<'P1' | 'P2' | 'P3' | 'P4', boolean>, [estudiantes]);
+
+  // Insights for Oracle integration
+  const { results: insightsResults } = useInsights();
+
+  // Profile data for modal
+  const profileData = useMemo(() => {
+    if (!profileStudentId) return null;
+    return buildStudentProfileData(
+      profileStudentId,
+      estudiantes,
+      insightsResults as ArchetypeResult[],
+      activeSimulations,
+    );
+  }, [profileStudentId, estudiantes, insightsResults, activeSimulations]);
   
   const simulatedData = useMemo(() => {
     return getSimulatedRows(estudiantes, activeSimulations, config, subjectWeights);
@@ -228,6 +247,14 @@ export const AnalysisTab: React.FC = () => {
         sortConfig={sortConfig}
         onSetSimulation={setSimulation}
         onClearSimulation={clearSimulation}
+        onOpenStudentProfile={setProfileStudentId}
+      />
+
+      {/* Student Profile Modal */}
+      <StudentProfileModal
+        profileData={profileData}
+        isOpen={profileStudentId !== null}
+        onClose={() => setProfileStudentId(null)}
       />
     </div>
   );

@@ -8,6 +8,14 @@ import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
 import { useUIStore } from '../../store/useUIStore';
 import { useSimulationStore } from '../../store/useSimulationStore';
 
+vi.mock('../../hooks/useInsights', () => ({
+  useInsights: vi.fn(() => ({
+    results: [],
+    counts: { confiado: 0, resiliente: 0, 'montana-rusa': 0, radar: 0, total: 0 },
+    evaluatedPeriods: { P1: true, P2: true, P3: false, P4: false },
+  })),
+}));
+
 vi.mock('../../store/useDashboardStore', () => ({
   useDashboardStore: vi.fn()
 }));

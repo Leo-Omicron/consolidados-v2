@@ -27,6 +27,7 @@ specs:
     - academic-insights
     - dashboard-state
     - excel-diagnostics
+    - parent-meeting-student-profile
     - web-worker-parser
     - what-if-calculator
 

@@ -1,12 +1,10 @@
 # Tasks: Modo Reunión de Padres / Ficha Estudiante
 
-- [ ] Crear el esqueleto del componente `StudentProfileModal` con Tailwind (incluyendo el botón de cerrar).
-- [ ] Conectar el estado local para abrir el modal desde `StudentGroupTable` y `ArchetypeCard`.
-- [ ] Desarrollar la sección de "Información Básica" (Nombre, Grupo, Notas actuales).
-- [ ] Desarrollar la sección de "Fortalezas y Debilidades" extrayendo los top/bottom promedios de área.
-- [ ] Desarrollar la integración con "El Oráculo": llamar a `insightsLogic` para un solo estudiante y mostrar un banner suave si tiene arquetipo.
-- [ ] Desarrollar la integración con `What-If`: leer `useSimulationStore` y mostrar proyecciones si aplican.
-- [ ] Implementar el gráfico de Radar (instalación de dependencias de chart si fuera necesario, o reutilización si ya existen).
-- [ ] Implementar el `@media print` CSS: Ocultar todo lo que no sea el modal, ajustar márgenes, forzar impresión de colores de fondo.
-- [ ] Escribir tests unitarios asegurando que el modal no muta el store de Zustand.
-- [ ] Realizar una prueba visual manual simulando la impresión (Ctrl+P).
+- [ ] 1. Crear helper puro de perfil (`buildStudentProfileData`) que extraiga notas, promedios grupales, fortalezas y debilidades, junto a tests unitarios rigurosos.
+- [ ] 2. Crear componente `StudentProfileModal` accesible (Escape, Overlay, Focus) y sus respectivos tests de interfaz (DOM).
+- [ ] 3. Integrar apertura del modal desde `AnalysisTab` (por ejemplo, clic en el nombre del estudiante o botón de acción).
+- [ ] 4. Integrar apertura del modal desde `InsightsTab` (en las `ArchetypeCard`).
+- [ ] 5. Agregar Radar chart con fallback (utilizando `react-chartjs-2`), comprobando su estado vacío ante la falta de datos.
+- [ ] 6. Agregar CSS de impresión (Tailwind `print:*`) y testear espionaje de la llamada a `window.print()`.
+- [ ] 7. Verificar privacidad (que el cálculo grupal no filtre información) y conexión con What-If (banner de simulación activa).
+- [ ] 8. Ejecutar gates finales: Lint, Build, y verificación de los tests automáticos (100% pasando).

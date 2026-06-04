@@ -17,7 +17,7 @@ import type {
   SubjectMetric,
   AcademicRiskStudent,
 } from '../domain/types';
-import { getAccumulatedWeightAndProduct, isStudentReprobado, PASSING_GRADE } from './academicLogic';
+import { getAccumulatedWeightAndProduct, getStudentAverage, isStudentReprobado, PASSING_GRADE } from './academicLogic';
 
 export function calculateStandardDeviation(values: number[], mean: number): number {
   if (values.length === 0) return 0;
@@ -83,19 +83,6 @@ export function calculateCompetitionRanking(averages: number[]): number[] {
     rankings[indexed[i].idx] = currentRank;
   }
   return rankings;
-}
-
-// Private helper to calculate student overall average (mean of their areas' averages)
-function getStudentAverage(student: Estudiante): number {
-  if (student.promedios && typeof student.promedios['DEF'] === 'number') {
-    return student.promedios['DEF'];
-  }
-  const areaStatsList = Object.values(student.areas)
-    .map(area => area.areaStats?.promedioActual)
-    .filter((v): v is number => typeof v === 'number');
-  if (areaStatsList.length === 0) return 0;
-  const sum = areaStatsList.reduce((acc, val) => acc + val, 0);
-  return Math.round((sum / areaStatsList.length) * 100) / 100;
 }
 
 // Private helper to get number of failed areas

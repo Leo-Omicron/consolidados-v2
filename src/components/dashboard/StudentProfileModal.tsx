@@ -35,6 +35,8 @@ const CHART_COLORS = {
   groupFill: 'rgba(239, 68, 68, 0.1)',
 };
 
+const PRINTING_STUDENT_PROFILE_CLASS = 'printing-student-profile';
+
 function buildRadarData(profile: StudentProfileData) {
   const labels = Object.keys(profile.areaGrades);
   if (labels.length === 0) return null;
@@ -154,7 +156,16 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   );
 
   const handlePrint = useCallback(() => {
+    document.body.classList.add(PRINTING_STUDENT_PROFILE_CLASS);
+
+    const cleanupPrintClass = () => {
+      document.body.classList.remove(PRINTING_STUDENT_PROFILE_CLASS);
+      window.removeEventListener('afterprint', cleanupPrintClass);
+    };
+
+    window.addEventListener('afterprint', cleanupPrintClass);
     window.print();
+    window.setTimeout(cleanupPrintClass, 1000);
   }, []);
 
   if (!isOpen || !profileData) return null;
@@ -169,6 +180,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
       role="presentation"
     >
       <div
+        data-student-profile-print-root
         ref={dialogRef}
         role="dialog"
         aria-modal="true"

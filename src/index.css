@@ -375,6 +375,79 @@ body {
     overflow: hidden !important;
     text-overflow: ellipsis !important;
   }
+
+  /* Student profile modal print mode: print only the modal in light colors. */
+  body.printing-student-profile {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  body.printing-student-profile * {
+    visibility: hidden !important;
+  }
+
+  body.printing-student-profile [data-student-profile-print-root],
+  body.printing-student-profile [data-student-profile-print-root] * {
+    visibility: visible !important;
+  }
+
+  body.printing-student-profile [data-student-profile-print-root] {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  body.printing-student-profile [data-student-profile-print-root],
+  body.printing-student-profile [data-student-profile-print-root] .sticky,
+  body.printing-student-profile [data-student-profile-print-root] section,
+  body.printing-student-profile [data-student-profile-print-root] table,
+  body.printing-student-profile [data-student-profile-print-root] tr,
+  body.printing-student-profile [data-student-profile-print-root] th,
+  body.printing-student-profile [data-student-profile-print-root] td {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  body.printing-student-profile [data-student-profile-print-root] h2,
+  body.printing-student-profile [data-student-profile-print-root] h3,
+  body.printing-student-profile [data-student-profile-print-root] h4,
+  body.printing-student-profile [data-student-profile-print-root] p,
+  body.printing-student-profile [data-student-profile-print-root] span,
+  body.printing-student-profile [data-student-profile-print-root] li,
+  body.printing-student-profile [data-student-profile-print-root] th,
+  body.printing-student-profile [data-student-profile-print-root] td {
+    color: #0f172a !important;
+  }
+
+  body.printing-student-profile [data-student-profile-print-root] .border,
+  body.printing-student-profile [data-student-profile-print-root] .border-b,
+  body.printing-student-profile [data-student-profile-print-root] .divide-y > :not(:last-child) {
+    border-color: #e2e8f0 !important;
+  }
+
+  body.printing-student-profile [data-student-profile-print-root] .bg-emerald-50,
+  body.printing-student-profile [data-student-profile-print-root] .dark\:bg-emerald-950\/30 {
+    background-color: #ecfdf5 !important;
+  }
+
+  body.printing-student-profile [data-student-profile-print-root] .bg-amber-50,
+  body.printing-student-profile [data-student-profile-print-root] .dark\:bg-amber-950\/30 {
+    background-color: #fffbeb !important;
+  }
+
+  body.printing-student-profile [data-student-profile-print-root] .bg-indigo-50,
+  body.printing-student-profile [data-student-profile-print-root] .dark\:bg-indigo-950\/30 {
+    background-color: #eef2ff !important;
+  }
 }
 
 /* Rotate chevron icon on open details */

@@ -390,6 +390,27 @@ describe('calculateStudentPeriodAverages', () => {
     expect(avgs[1]).toBeCloseTo(3.5, 1);
   });
 
+  it('prefers official period averages when present', () => {
+    const student = {
+      id: 's1', name: 'Test', CURSO: '10', grupo: '10A',
+      promedios: { P1: 4.7 },
+      areas: {
+        MAT: {
+          asignaturas: {},
+          DEF: { P1: 2.0, P2: 4.0, P3: null, P4: null },
+        },
+        LEN: {
+          asignaturas: {},
+          DEF: { P1: 3.0, P2: 3.0, P3: null, P4: null },
+        },
+      },
+    };
+
+    const avgs = calculateStudentPeriodAverages(student as any);
+    expect(avgs[0]).toBe(4.7);
+    expect(avgs[1]).toBeCloseTo(3.5, 1);
+  });
+
   it('returns null for periods with no grades', () => {
     const student = {
       id: 's1', name: 'Test', CURSO: '10', grupo: '10A',

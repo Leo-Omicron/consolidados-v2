@@ -1,5 +1,6 @@
 import type { PedagogicalArchetype, ArchetypeSeverity, ArchetypeResult } from '../domain/types';
 import type { Estudiante } from '../domain/types';
+import { getStudentAverage } from './academicLogic';
 
 // ---------------------------------------------------------------------------
 // Detection thresholds (tunable constants — not magic numbers)
@@ -316,26 +317,12 @@ export function generateNarrative(
 
 // ---------------------------------------------------------------------------
 // calculateStudentPeriodAverages
-// Computes the area-level DEF average per period for a student.
-// Reuses the pattern from evolutionLogic: average of area.DEF[period] across all areas.
+// Computes the official student average per period when available, with
+// area-level DEF averaging as fallback.
 // ---------------------------------------------------------------------------
 
 export function calculateStudentPeriodAverages(estudiante: Estudiante): (number | null)[] {
   const periods = ['P1', 'P2', 'P3', 'P4'] as const;
 
-  return periods.map(period => {
-    let sum = 0;
-    let count = 0;
-
-    Object.values(estudiante.areas).forEach(area => {
-      const grade = area.DEF[period];
-      if (grade !== null && grade !== undefined) {
-        sum += grade;
-        count++;
-      }
-    });
-
-    if (count === 0) return null;
-    return Math.round((sum / count) * 10) / 10;
-  });
+  return periods.map(period => getStudentAverage(estudiante, period));
 }

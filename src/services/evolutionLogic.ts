@@ -1,4 +1,5 @@
 import type { Estudiante } from '../domain/types';
+import { getStudentAverage } from './academicLogic';
 
 export interface EvolutionDataPoint {
   period: 'P1' | 'P2' | 'P3' | 'P4';
@@ -16,30 +17,13 @@ export interface StudentEvolution {
   areasEvolution: AreaEvolution[];
 }
 
-// Calculate the global average of a student for a specific period
-function calculateStudentPeriodAverage(student: Estudiante, period: 'P1' | 'P2' | 'P3' | 'P4'): number | null {
-  let sum = 0;
-  let count = 0;
-
-  Object.values(student.areas).forEach(area => {
-    const grade = area.DEF[period];
-    if (grade !== null && grade !== undefined) {
-      sum += grade;
-      count++;
-    }
-  });
-
-  if (count === 0) return null;
-  return sum / count; // Assuming areas are equally weighted for period averages, or we can use subjectWeights if provided.
-}
-
 // Calculate the evolution for a single student
 export function getStudentEvolution(student: Estudiante): StudentEvolution {
   const periods: ('P1' | 'P2' | 'P3' | 'P4')[] = ['P1', 'P2', 'P3', 'P4'];
   
   const globalEvolution: EvolutionDataPoint[] = periods.map(p => ({
     period: p,
-    average: calculateStudentPeriodAverage(student, p)
+    average: getStudentAverage(student, p)
   }));
 
   const areasEvolution: AreaEvolution[] = Object.entries(student.areas).map(([areaName, area]) => {
@@ -66,7 +50,7 @@ export function getGroupEvolution(students: Estudiante[]): EvolutionDataPoint[] 
     let count = 0;
     
     students.forEach(student => {
-      const avg = calculateStudentPeriodAverage(student, p);
+      const avg = getStudentAverage(student, p);
       if (avg !== null) {
         sum += avg;
         count++;

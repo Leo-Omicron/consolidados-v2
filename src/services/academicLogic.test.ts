@@ -7,16 +7,39 @@ import {
   calcularNotaRequeridaParaObjetivo,
   calcularAcumuladoBase,
   determinarEstado,
+  determineAcademicTrend,
   getEvaluatedPeriods,
   applyAcademicLogic,
   getPresetWeights,
-  inferSubjectWeights
+  inferSubjectWeights,
+  isAcademicImprovementPoint,
+  isAcademicStrength,
+  isStudentReprobado
 } from './academicLogic';
 import { createSubjectRowId } from './rowIdentity';
 import type { PeriodoNotas, PeriodConfig, Estudiante } from '../domain/types';
 
 describe('academicLogic', () => {
   const config: PeriodConfig = { P1: 25, P2: 25, P3: 25, P4: 25 };
+
+  describe('read-only academic evaluation helpers', () => {
+    it('determines trend from P1 to latest evaluated period', () => {
+      expect(determineAcademicTrend(3.0, 3.5, 4.0)).toBe('up');
+      expect(determineAcademicTrend(4.0, 3.5, null)).toBe('down');
+      expect(determineAcademicTrend(3.5, 3.5, undefined)).toBe('flat');
+      expect(determineAcademicTrend(null, 3.5, 4.0)).toBe('none');
+      expect(determineAcademicTrend(3.5, null, null)).toBe('none');
+    });
+
+    it('centralizes student failure and strength thresholds', () => {
+      expect(isStudentReprobado(2)).toBe(false);
+      expect(isStudentReprobado(3)).toBe(true);
+      expect(isAcademicStrength(3.49)).toBe(false);
+      expect(isAcademicStrength(3.5)).toBe(true);
+      expect(isAcademicImprovementPoint(3.49)).toBe(true);
+      expect(isAcademicImprovementPoint(3.5)).toBe(false);
+    });
+  });
 
   describe('roundToOneDecimal', () => {
     it('rounds numbers correctly', () => {

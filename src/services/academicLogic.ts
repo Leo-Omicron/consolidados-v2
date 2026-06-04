@@ -1,4 +1,4 @@
-import type { PeriodConfig, PeriodoNotas, EstadoAcademico, Estudiante, SubjectWeightConfig } from '../domain/types';
+import type { PeriodConfig, PeriodoNotas, EstadoAcademico, Estudiante, SubjectWeightConfig, Trend } from '../domain/types';
 import {
   createAreaRowId,
   createLegacyAreaRowId,
@@ -8,6 +8,36 @@ import {
 
 export const PASSING_GRADE = 3.0;
 export const MAX_GRADE = 5.0;
+export const ACADEMIC_FAILURE_AREA_THRESHOLD = 3;
+export const ACADEMIC_STRENGTH_THRESHOLD = 3.5;
+
+export function determineAcademicTrend(
+  firstPeriod: number | null | undefined,
+  secondPeriod: number | null | undefined,
+  thirdPeriod: number | null | undefined
+): Trend {
+  const latestPeriod = typeof thirdPeriod === 'number' ? thirdPeriod : secondPeriod;
+
+  if (typeof firstPeriod !== 'number' || typeof latestPeriod !== 'number') {
+    return 'none';
+  }
+
+  if (latestPeriod > firstPeriod) return 'up';
+  if (latestPeriod < firstPeriod) return 'down';
+  return 'flat';
+}
+
+export function isStudentReprobado(failedAreaCount: number): boolean {
+  return failedAreaCount >= ACADEMIC_FAILURE_AREA_THRESHOLD;
+}
+
+export function isAcademicStrength(grade: number): boolean {
+  return grade >= ACADEMIC_STRENGTH_THRESHOLD;
+}
+
+export function isAcademicImprovementPoint(grade: number): boolean {
+  return grade < ACADEMIC_STRENGTH_THRESHOLD;
+}
 
 export function roundToOneDecimal(val: number): number {
   return Math.round(val * 10) / 10;

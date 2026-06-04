@@ -15,9 +15,9 @@ const SEVERITY_LABELS: Record<string, string> = {
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  high: 'bg-red-100 text-red-800 border-red-200',
-  medium: 'bg-amber-100 text-amber-800 border-amber-200',
-  low: 'bg-blue-100 text-blue-800 border-blue-200',
+  high: 'bg-red-100 text-red-800 border-red-200 print:!bg-red-100 print:!text-red-800 print:!border-red-200',
+  medium: 'bg-amber-100 text-amber-800 border-amber-200 print:!bg-amber-100 print:!text-amber-800 print:!border-amber-200',
+  low: 'bg-blue-100 text-blue-800 border-blue-200 print:!bg-blue-100 print:!text-blue-800 print:!border-blue-200',
 };
 
 const ARCHETYPE_CARD_COLORS: Record<PedagogicalArchetype, string> = {
@@ -40,13 +40,13 @@ export const ArchetypeCard: React.FC<Props> = ({ result, onOpenStudentProfile })
       className={`bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-700 border-l-4 ${ARCHETYPE_CARD_COLORS[archetype]} rounded-lg p-5 shadow-sm`}
     >
       {/* Header: Name + Archetype Badge */}
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200">{estudianteName}</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Grupo {grupo}</p>
+      <div className="flex flex-col xl:flex-row xl:items-start justify-between mb-3 gap-3">
+        <div className="min-w-0">
+          <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 leading-tight truncate" title={estudianteName}>{estudianteName}</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Grupo {grupo}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1 text-xs font-bold uppercase rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-neutral-600">
+        <div className="flex flex-wrap items-center gap-2 xl:justify-end shrink-0">
+          <span className="px-3 py-1 text-xs font-bold uppercase rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-neutral-600 print:!bg-slate-100 print:!text-slate-700 print:!border-slate-300">
             {ARCHETYPE_LABELS[archetype]}
           </span>
           <span
@@ -76,8 +76,8 @@ export const ArchetypeCard: React.FC<Props> = ({ result, onOpenStudentProfile })
             key={i}
             className={`px-2 py-1 text-xs font-mono font-semibold rounded-md border ${
               grade !== null
-                ? 'bg-slate-50 dark:bg-neutral-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-neutral-600'
-                : 'bg-transparent text-slate-400 dark:text-slate-500 border-dashed border-slate-300 dark:border-neutral-600'
+                ? 'bg-slate-50 dark:bg-neutral-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-neutral-600 print:!bg-slate-50 print:!text-slate-700 print:!border-slate-300'
+                : 'bg-transparent text-slate-400 dark:text-slate-500 border-dashed border-slate-300 dark:border-neutral-600 print:!text-slate-500 print:!border-slate-400'
             }`}
           >
             P{i + 1}: {grade !== null ? grade.toFixed(1) : '—'}

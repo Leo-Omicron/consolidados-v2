@@ -21,7 +21,7 @@ const menuItems = [
   { id: 'heatmap', label: 'Mapa de Calor', icon: '🌡️' },
   { id: 'feedback', label: 'Retroalimentación', icon: '💬' },
   { id: 'official', label: 'Registro Oficial', icon: '📋' },
-  { id: 'insights', label: 'Oracle Insights', icon: '🔮' },
+  { id: 'insights', label: 'Diagnóstico Pedagógico', icon: '🔮' },
 ] as const;
 
 export const ReportsTab: React.FC = () => {

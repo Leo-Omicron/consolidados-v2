@@ -91,7 +91,7 @@ describe('InsightsTab', () => {
 
     // The KPI card shows "2" for confiado count (and also in student card count)
     // Verify KPI renders: look for the count in the large number display
-    const kpiSection = screen.getByText('Oracle Insights').closest('div')?.parentElement;
+    const kpiSection = screen.getByText('Diagnóstico Pedagógico').closest('div')?.parentElement;
     expect(kpiSection).not.toBeNull();
   });
 

@@ -49,7 +49,7 @@ describe('ReportsTab — Insights Wiring (PR 3)', () => {
   });
 
   describe('Menu item presence', () => {
-    it('shows the "Oracle Insights" menu item when students are present', () => {
+    it('shows the "Diagnóstico Pedagógico" menu item when students are present', () => {
       const students = [
         makeStudent('c1', 'Confiado A', '10A', [4.8, 4.3, 3.9, 3.5]),
       ];
@@ -57,12 +57,12 @@ describe('ReportsTab — Insights Wiring (PR 3)', () => {
 
       render(<ReportsTab />);
 
-      // The Oracle Insights menu item should be visible in the sidebar
-      const insightsButton = screen.getByRole('button', { name: /Oracle Insights/i });
+      // The Diagnóstico Pedagógico menu item should be visible in the sidebar
+      const insightsButton = screen.getByRole('button', { name: /Diagnóstico Pedagógico/i });
       expect(insightsButton).toBeInTheDocument();
     });
 
-    it('hides the "Oracle Insights" menu item when no students are present', () => {
+    it('hides the "Diagnóstico Pedagógico" menu item when no students are present', () => {
       useDashboardStore.setState({ estudiantes: [] });
 
       render(<ReportsTab />);
@@ -70,12 +70,12 @@ describe('ReportsTab — Insights Wiring (PR 3)', () => {
       // When there are no students, ReportsTab shows the empty-data message
       // and the sidebar with menu items is not rendered at all
       expect(screen.getByText('No hay datos para generar reportes. Cargue un archivo Excel.')).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /Oracle Insights/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Diagnóstico Pedagógico/i })).not.toBeInTheDocument();
     });
   });
 
   describe('Tab navigation', () => {
-    it('switches to the insights tab when clicking "Oracle Insights"', async () => {
+    it('switches to the insights tab when clicking "Diagnóstico Pedagógico"', async () => {
       const students = [
         makeStudent('c1', 'Confiado A', '10A', [4.8, 4.3, 3.9, 3.5]),
       ];
@@ -83,14 +83,14 @@ describe('ReportsTab — Insights Wiring (PR 3)', () => {
 
       render(<ReportsTab />);
 
-      // Initially, "Oracle Insights" should NOT be pressed
-      const insightsButton = screen.getByRole('button', { name: /Oracle Insights/i });
+      // Initially, "Diagnóstico Pedagógico" should NOT be pressed
+      const insightsButton = screen.getByRole('button', { name: /Diagnóstico Pedagógico/i });
       expect(insightsButton.getAttribute('aria-pressed')).toBe('false');
 
-      // Click "Oracle Insights"
+      // Click "Diagnóstico Pedagógico"
       await userEvent.click(insightsButton);
 
-      // After clicking, "Oracle Insights" should be the pressed/active tab
+      // After clicking, "Diagnóstico Pedagógico" should be the pressed/active tab
       expect(insightsButton.getAttribute('aria-pressed')).toBe('true');
 
       // The store should now reflect the insights tab
@@ -106,12 +106,12 @@ describe('ReportsTab — Insights Wiring (PR 3)', () => {
 
       render(<ReportsTab />);
 
-      // Click "Oracle Insights"
-      const insightsButton = screen.getByRole('button', { name: /Oracle Insights/i });
+      // Click "Diagnóstico Pedagógico"
+      const insightsButton = screen.getByRole('button', { name: /Diagnóstico Pedagógico/i });
       await userEvent.click(insightsButton);
 
       // The InsightsTab should now be rendered — look for its heading (use async for lazy load)
-      expect(await screen.findByRole('heading', { name: 'Oracle Insights' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { name: 'Diagnóstico Pedagógico' })).toBeInTheDocument();
 
       // KPI cards should appear (these come from InsightsTab)
       const confiadoElements = await screen.findAllByText('El Confiado');
@@ -130,12 +130,12 @@ describe('ReportsTab — Insights Wiring (PR 3)', () => {
 
       render(<ReportsTab />);
 
-      // Click "Oracle Insights"
-      const insightsButton = screen.getByRole('button', { name: /Oracle Insights/i });
+      // Click "Diagnóstico Pedagógico"
+      const insightsButton = screen.getByRole('button', { name: /Diagnóstico Pedagógico/i });
       await userEvent.click(insightsButton);
 
       // The InsightsTab empty state should render
-      expect(await screen.findByRole('heading', { name: 'Oracle Insights' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { name: 'Diagnóstico Pedagógico' })).toBeInTheDocument();
       expect(screen.getByText(/No hay datos suficientes/i)).toBeInTheDocument();
     });
   });
@@ -152,7 +152,7 @@ describe('ReportsTab — Insights Wiring (PR 3)', () => {
       render(<ReportsTab />);
 
       // Navigate to insights tab
-      const insightsButton = screen.getByRole('button', { name: /Oracle Insights/i });
+      const insightsButton = screen.getByRole('button', { name: /Diagnóstico Pedagógico/i });
       await userEvent.click(insightsButton);
 
       // Store should be unchanged

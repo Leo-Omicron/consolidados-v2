@@ -64,7 +64,7 @@ export const InsightsTab: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
-          <h2 className="text-xl font-bold app-text tracking-tight">Oracle Insights</h2>
+          <h2 className="text-xl font-bold app-text tracking-tight">Diagnóstico Pedagógico</h2>
           <p className="text-sm app-text-muted mt-1">
             Detección de arquetipos pedagógicos basada en trayectorias académicas
           </p>

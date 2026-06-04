@@ -71,7 +71,7 @@ function buildRadarData(profile: StudentProfileData) {
 const radarOptions = {
   responsive: true,
   maintainAspectRatio: true,
-  animation: false,
+  animation: false as const,
   scales: {
     r: {
       beginAtZero: true,

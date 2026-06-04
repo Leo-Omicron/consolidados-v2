@@ -1,4 +1,4 @@
-import type { PeriodConfig, PeriodoNotas, EstadoAcademico, Estudiante, SubjectWeightConfig, Trend } from '../domain/types';
+import type { Area, PeriodConfig, PeriodoNotas, EstadoAcademico, Estudiante, SubjectWeightConfig, Trend } from '../domain/types';
 import {
   createAreaRowId,
   createLegacyAreaRowId,
@@ -11,6 +11,7 @@ export const MAX_GRADE = 5.0;
 export const ACADEMIC_FAILURE_AREA_THRESHOLD = 3;
 export const ACADEMIC_STRENGTH_THRESHOLD = 3.5;
 export type StudentAverageKey = 'DEF' | 'P1' | 'P2' | 'P3' | 'P4';
+export type AcademicPeriodKey = Exclude<StudentAverageKey, 'DEF'>;
 
 export function determineAcademicTrend(
   firstPeriod: number | null | undefined,
@@ -41,7 +42,7 @@ export function isAcademicImprovementPoint(grade: number): boolean {
 }
 
 export function getStudentAverage(student: Estudiante): number;
-export function getStudentAverage(student: Estudiante, key: Exclude<StudentAverageKey, 'DEF'>): number | null;
+export function getStudentAverage(student: Estudiante, key: AcademicPeriodKey): number | null;
 export function getStudentAverage(student: Estudiante, key: StudentAverageKey = 'DEF'): number | null {
   const officialAverage = student.promedios?.[key];
   if (typeof officialAverage === 'number') {
@@ -67,6 +68,49 @@ export function getStudentAverage(student: Estudiante, key: StudentAverageKey = 
 
   const sum = periodGrades.reduce((acc, value) => acc + value, 0);
   return roundToOneDecimal(sum / periodGrades.length);
+}
+
+export function createUniformSubjectWeights(subjectNames: string[]): Record<string, number> {
+  if (subjectNames.length === 0) return {};
+
+  const uniformWeight = 1 / subjectNames.length;
+  const weights: Record<string, number> = {};
+  subjectNames.forEach(name => {
+    weights[name] = uniformWeight;
+  });
+  return weights;
+}
+
+export function calculateWeightedAreaPeriodGrade(
+  area: Area,
+  period: AcademicPeriodKey,
+  evaluated: Record<AcademicPeriodKey, boolean>,
+  weights?: Record<string, number>
+): number | null {
+  const subjectNames = Object.keys(area.asignaturas);
+  if (subjectNames.length === 0) return null;
+
+  const effectiveWeights = weights && Object.keys(weights).length > 0
+    ? weights
+    : createUniformSubjectWeights(subjectNames);
+
+  let sum = 0;
+  let hasGrade = false;
+
+  Object.entries(area.asignaturas).forEach(([subjectName, subject]) => {
+    const grade = subject[period];
+    const weight = effectiveWeights[subjectName] || 0;
+
+    if (typeof grade === 'number') {
+      sum += grade * weight;
+      hasGrade = true;
+    } else if (evaluated[period]) {
+      sum += 0 * weight;
+      hasGrade = true;
+    }
+  });
+
+  return hasGrade ? roundToOneDecimal(sum) : null;
 }
 
 export function roundToOneDecimal(val: number): number {
@@ -277,40 +321,13 @@ export function applyAcademicLogic(
       const groupWeights = (subjectWeights as unknown as Record<string, Record<string, Record<string, number>>>)[student.grupo] || {};
       let weights = groupWeights[areaName] || (subjectWeights as unknown as Record<string, Record<string, number>>)[areaName];
       
-      const asigNames = Object.keys(area.asignaturas);
-      if (asigNames.length > 0) {
+      if (Object.keys(area.asignaturas).length > 0) {
         if (!weights || Object.keys(weights).length === 0) {
-          // Fallback to uniform weights (equal weights)
-          const uniformWeight = 1 / asigNames.length;
-          const fallbackWeights: Record<string, number> = {};
-          asigNames.forEach(name => {
-            fallbackWeights[name] = uniformWeight;
-          });
-          weights = fallbackWeights;
+          weights = createUniformSubjectWeights(Object.keys(area.asignaturas));
         }
 
         (['P1', 'P2', 'P3', 'P4'] as const).forEach(period => {
-          let sum = 0;
-          let hasGrade = false;
-          Object.entries(area.asignaturas).forEach(([asigName, asig]) => {
-            const grade = asig[period];
-            if (typeof grade === 'number') {
-              const w = weights[asigName] || 0;
-              sum += grade * w;
-              hasGrade = true;
-            } else if (evaluated[period]) {
-              // Evaluated but missing grade -> treat as 0.0
-              const w = weights[asigName] || 0;
-              sum += 0 * w;
-              hasGrade = true;
-            }
-          });
-          if (hasGrade) {
-            area.DEF[period] = roundToOneDecimal(sum);
-          } else {
-            // Overwrite any fake 0.0 exported by the platform with null since there are no grades
-            area.DEF[period] = null;
-          }
+          area.DEF[period] = calculateWeightedAreaPeriodGrade(area, period, evaluated, weights);
         });
       }
 
@@ -333,7 +350,7 @@ export function applyAcademicLogic(
 
       // If the area has no subjects, the UI renders a fallback subject row for the area.
       // We apply its overrides directly to area.DEF.
-      if (asigNames.length === 0) {
+      if (Object.keys(area.asignaturas).length === 0) {
         const fallbackSubjectRowId = createSubjectRowId(student.id, areaName, areaName);
         const legacyFallbackSubjectRowId = createLegacySubjectRowId(student.id, areaName, areaName);
         const fallbackOverrides = getOverrides(fallbackSubjectRowId, legacyFallbackSubjectRowId);

@@ -6,6 +6,8 @@ import {
   calcularMinimoRequerido,
   calcularNotaRequeridaParaObjetivo,
   calcularAcumuladoBase,
+  calculateWeightedAreaPeriodGrade,
+  createUniformSubjectWeights,
   determinarEstado,
   determineAcademicTrend,
   getEvaluatedPeriods,
@@ -18,7 +20,7 @@ import {
   isStudentReprobado
 } from './academicLogic';
 import { createSubjectRowId } from './rowIdentity';
-import type { PeriodoNotas, PeriodConfig, Estudiante } from '../domain/types';
+import type { Area, PeriodoNotas, PeriodConfig, Estudiante } from '../domain/types';
 
 describe('academicLogic', () => {
   const config: PeriodConfig = { P1: 25, P2: 25, P3: 25, P4: 25 };
@@ -90,6 +92,53 @@ describe('academicLogic', () => {
 
       expect(getStudentAverage(student)).toBe(2.63);
       expect(getStudentAverage({ ...student, areas: {} })).toBe(0);
+    });
+
+    it('calculates weighted area period grades from subjects', () => {
+      const area: Area = {
+        DEF: { P1: null, P2: null, P3: null, P4: null, A: null },
+        asignaturas: {
+          Biology: { P1: 4.0, P2: null, P3: null, P4: null, A: null, promedioActual: 0, p4Min: 0, estado: { text: 'Ganable', color: 'cyan' } },
+          Chemistry: { P1: 2.0, P2: null, P3: null, P4: null, A: null, promedioActual: 0, p4Min: 0, estado: { text: 'Perdido', color: 'red' } },
+        },
+      };
+
+      expect(calculateWeightedAreaPeriodGrade(
+        area,
+        'P1',
+        { P1: true, P2: false, P3: false, P4: false },
+        { Biology: 0.75, Chemistry: 0.25 }
+      )).toBe(3.5);
+    });
+
+    it('falls back to uniform subject weights and respects evaluated missing grades', () => {
+      const area: Area = {
+        DEF: { P1: null, P2: null, P3: null, P4: null, A: null },
+        asignaturas: {
+          Biology: { P1: 5.0, P2: null, P3: null, P4: null, A: null, promedioActual: 0, p4Min: 0, estado: { text: 'Ganable', color: 'cyan' } },
+          Chemistry: { P1: 3.0, P2: null, P3: null, P4: null, A: null, promedioActual: 0, p4Min: 0, estado: { text: 'Ganable', color: 'cyan' } },
+        },
+      };
+
+      expect(createUniformSubjectWeights(['Biology', 'Chemistry'])).toEqual({
+        Biology: 0.5,
+        Chemistry: 0.5,
+      });
+      expect(calculateWeightedAreaPeriodGrade(
+        area,
+        'P1',
+        { P1: true, P2: false, P3: false, P4: false },
+      )).toBe(4.0);
+      expect(calculateWeightedAreaPeriodGrade(
+        area,
+        'P2',
+        { P1: true, P2: false, P3: false, P4: false },
+      )).toBeNull();
+      expect(calculateWeightedAreaPeriodGrade(
+        area,
+        'P2',
+        { P1: true, P2: true, P3: false, P4: false },
+      )).toBe(0);
     });
   });
 

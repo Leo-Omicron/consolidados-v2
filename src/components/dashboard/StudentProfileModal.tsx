@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -70,6 +71,7 @@ function buildRadarData(profile: StudentProfileData) {
 const radarOptions = {
   responsive: true,
   maintainAspectRatio: true,
+  animation: false,
   scales: {
     r: {
       beginAtZero: true,
@@ -173,8 +175,9 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   const radarData = buildRadarData(profileData);
   const hasChartData = radarData !== null;
 
-  return (
+  const modalContent = (
     <div
+      data-student-profile-overlay
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm print:static print:bg-transparent print:backdrop-blur-none"
       onClick={handleOverlayClick}
       role="presentation"
@@ -344,4 +347,6 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

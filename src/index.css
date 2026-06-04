@@ -382,13 +382,8 @@ body {
     color: #0f172a !important;
   }
 
-  body.printing-student-profile * {
-    visibility: hidden !important;
-  }
-
-  body.printing-student-profile [data-student-profile-print-root],
-  body.printing-student-profile [data-student-profile-print-root] * {
-    visibility: visible !important;
+  body.printing-student-profile #root {
+    display: none !important;
   }
 
   body.printing-student-profile [data-student-profile-print-root] {

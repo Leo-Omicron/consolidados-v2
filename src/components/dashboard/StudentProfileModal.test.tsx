@@ -63,6 +63,7 @@ const mockProfileNoInsight: StudentProfileData = {
 describe('StudentProfileModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    document.body.classList.remove('printing-student-profile');
   });
 
   // ---- RED-1: Renders nothing when isOpen is false ----
@@ -210,7 +211,23 @@ describe('StudentProfileModal', () => {
     const printButton = screen.getByRole('button', { name: /imprimir/i });
     await userEvent.click(printButton);
     expect(printSpy).toHaveBeenCalledTimes(1);
+    expect(document.body.classList.contains('printing-student-profile')).toBe(true);
+
+    window.dispatchEvent(new Event('afterprint'));
+    expect(document.body.classList.contains('printing-student-profile')).toBe(false);
     printSpy.mockRestore();
+  });
+
+  it('marks the dialog as the isolated print root', () => {
+    render(
+      <StudentProfileModal
+        profileData={mockProfileData}
+        isOpen={true}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('dialog')).toHaveAttribute('data-student-profile-print-root');
   });
 
   // ---- RED-11: Shows projection banner when isSimulated is true ----

@@ -1,5 +1,6 @@
 import type { Estudiante, ArchetypeResult, PeriodoNotas, PeriodConfig, SubjectWeightConfig } from '../domain/types';
 import { applyAcademicLogic } from './academicLogic';
+import { createLegacyAreaRowId, createLegacySubjectRowId, parseRowId } from './rowIdentity';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -44,16 +45,26 @@ const ARCHETYPE_LABELS: Record<string, string> = {
 };
 
 /**
- * Checks whether any key in activeSimulations starts with the given studentId
- * followed by an underscore (row id convention: `{studentId}_{area}` or
- * `{studentId}_{area}_{subject}`).
+ * Checks whether any simulation key targets the given student.
  */
 function hasActiveSimulations(
-  studentId: string,
+  student: Estudiante,
   activeSimulations: Record<string, Partial<PeriodoNotas>>,
 ): boolean {
-  const prefix = `${studentId}_`;
-  return Object.keys(activeSimulations).some((key) => key.startsWith(prefix));
+  return Object.keys(activeSimulations).some((key) => {
+    const parsed = parseRowId(key);
+    if (parsed) return parsed.studentId === student.id;
+
+    return Object.entries(student.areas).some(([areaName, area]) => {
+      if (key === createLegacyAreaRowId(student.id, areaName)) return true;
+
+      const subjectNames = Object.keys(area.asignaturas);
+      const legacySubjectNames = subjectNames.length > 0 ? subjectNames : [areaName];
+      return legacySubjectNames.some((subjectName) =>
+        key === createLegacySubjectRowId(student.id, areaName, subjectName)
+      );
+    });
+  });
 }
 
 /**
@@ -73,14 +84,29 @@ function buildSimulatedStudent(
   activeSimulations: Record<string, Partial<PeriodoNotas>>,
 ): Estudiante {
   // Determine which areas are touched by any simulation key for this student
-  const prefix = `${student.id}_`;
   const touchedAreas = new Set<string>();
   for (const key of Object.keys(activeSimulations)) {
-    if (!key.startsWith(prefix)) continue;
-    const parts = key.split('_');
-    // parts[0] = studentId, parts[1] = areaName, parts[2] = subjectName (optional)
-    if (parts.length >= 2) {
-      touchedAreas.add(parts[1]);
+    const parsed = parseRowId(key);
+    if (parsed) {
+      if (parsed.studentId === student.id) {
+        touchedAreas.add(parsed.areaName);
+      }
+      continue;
+    }
+
+    for (const [areaName, area] of Object.entries(student.areas)) {
+      if (key === createLegacyAreaRowId(student.id, areaName)) {
+        touchedAreas.add(areaName);
+        continue;
+      }
+
+      const subjectNames = Object.keys(area.asignaturas);
+      const legacySubjectNames = subjectNames.length > 0 ? subjectNames : [areaName];
+      if (legacySubjectNames.some((subjectName) =>
+        key === createLegacySubjectRowId(student.id, areaName, subjectName)
+      )) {
+        touchedAreas.add(areaName);
+      }
     }
   }
 
@@ -131,7 +157,7 @@ export function buildStudentProfileData(
   if (!student) return null;
 
   // 0. Resolve simulation state and get the effective student object
-  const isSimulated = hasActiveSimulations(studentId, activeSimulations);
+  const isSimulated = hasActiveSimulations(student, activeSimulations);
   const effectiveStudent = isSimulated
     ? buildSimulatedStudent(student, config, subjectWeights, activeSimulations)
     : student;

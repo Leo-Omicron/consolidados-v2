@@ -1,4 +1,5 @@
 import type { Estudiante, RowArea, RowAsignatura } from '../domain/types';
+import { createAreaRowId, createSubjectRowId } from './rowIdentity';
 
 export function flattenRows(students: Estudiante[]): { rowsArea: RowArea[], rowsAsignatura: RowAsignatura[] } {
   const rowsArea: RowArea[] = [];
@@ -8,7 +9,7 @@ export function flattenRows(students: Estudiante[]): { rowsArea: RowArea[], rows
     Object.entries(student.areas).forEach(([areaName, areaData]) => {
       if (areaData.areaStats) {
         rowsArea.push({
-          id: `${student.id}_${areaName}`,
+          id: createAreaRowId(student.id, areaName),
           CURSO: student.CURSO,
           estudiante: student.name,
           area: areaName,
@@ -35,7 +36,7 @@ export function flattenRows(students: Estudiante[]): { rowsArea: RowArea[], rows
       if (asigEntries.length > 0) {
         asigEntries.forEach(([asigName, asigData]) => {
           rowsAsignatura.push({
-            id: `${student.id}_${areaName}_${asigName}`,
+            id: createSubjectRowId(student.id, areaName, asigName),
             CURSO: student.CURSO,
             estudiante: student.name,
             area: areaName,
@@ -60,7 +61,7 @@ export function flattenRows(students: Estudiante[]): { rowsArea: RowArea[], rows
         });
       } else if (areaData.areaStats) {
         rowsAsignatura.push({
-          id: `${student.id}_${areaName}_${areaName}`,
+          id: createSubjectRowId(student.id, areaName, areaName),
           CURSO: student.CURSO,
           estudiante: student.name,
           area: areaName,

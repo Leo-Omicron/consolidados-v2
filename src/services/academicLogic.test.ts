@@ -12,6 +12,7 @@ import {
   getPresetWeights,
   inferSubjectWeights
 } from './academicLogic';
+import { createSubjectRowId } from './rowIdentity';
 import type { PeriodoNotas, PeriodConfig, Estudiante } from '../domain/types';
 
 describe('academicLogic', () => {
@@ -319,7 +320,7 @@ describe('academicLogic', () => {
       };
 
       const activeSimulations = {
-        '1_Ciencias_Fisica': { P2: 4.0 } // Simulate that they improved P2
+        [createSubjectRowId('1', 'Ciencias', 'Fisica')]: { P2: 4.0 } // Simulate that they improved P2
       };
 
       applyAcademicLogic([student], config, subjectWeights, activeSimulations);
@@ -335,6 +336,43 @@ describe('academicLogic', () => {
 
       // Area DEF: P1 = (3*0.5 + 3*0.5) = 3.0. P2 = (4*0.5 + 2*0.5) = 3.0.
       expect(area.DEF.P1).toBe(3.0);
+      expect(area.DEF.P2).toBe(3.0);
+      expect(area.areaStats!.promedioActual).toBe(3.0);
+    });
+
+    it('applies simulations when row identity parts contain underscores', () => {
+      const student: Estudiante = {
+        id: 'student_1', name: 'Test', grupo: '10_A', CURSO: '10_A',
+        areas: {
+          'Ciencias_Naturales': {
+            DEF: { P1: null, P2: null, P3: null, P4: null, A: null },
+            areaStats: { promedioActual: 0, p4Min: 0, estado: { text: 'Ganado', color: 'green' } },
+            asignaturas: {
+              'Lab_Biologia': { P1: 3.0, P2: 2.0, P3: null, P4: null, A: null, promedioActual: 0, p4Min: 0, estado: { text: 'Ganado', color: 'green' } },
+              'Quimica_General': { P1: 3.0, P2: 2.0, P3: null, P4: null, A: null, promedioActual: 0, p4Min: 0, estado: { text: 'Ganado', color: 'green' } }
+            }
+          }
+        }
+      };
+
+      const subjectWeights = {
+        '10_A': {
+          'Ciencias_Naturales': {
+            'Lab_Biologia': 0.5,
+            'Quimica_General': 0.5
+          }
+        }
+      };
+
+      const activeSimulations = {
+        [createSubjectRowId('student_1', 'Ciencias_Naturales', 'Lab_Biologia')]: { P2: 4.0 }
+      };
+
+      applyAcademicLogic([student], config, subjectWeights, activeSimulations);
+
+      const area = student.areas['Ciencias_Naturales'];
+      expect(area.asignaturas['Lab_Biologia'].P2).toBe(4.0);
+      expect(area.asignaturas['Quimica_General'].P2).toBe(2.0);
       expect(area.DEF.P2).toBe(3.0);
       expect(area.areaStats!.promedioActual).toBe(3.0);
     });

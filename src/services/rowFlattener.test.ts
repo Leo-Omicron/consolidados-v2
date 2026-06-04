@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { flattenRows } from './rowFlattener';
+import { createAreaRowId, createSubjectRowId, parseRowId } from './rowIdentity';
 import type { Estudiante } from '../domain/types';
 
 describe('flattenRows', () => {
@@ -45,7 +46,7 @@ describe('flattenRows', () => {
     expect(result.rowsAsignatura).toHaveLength(1);
 
     expect(result.rowsArea[0]).toMatchObject({
-      id: '1_MATH',
+      id: createAreaRowId('1', 'MATH'),
       CURSO: '10A',
       estudiante: 'Ana',
       area: 'MATH',
@@ -62,7 +63,7 @@ describe('flattenRows', () => {
     });
 
     expect(result.rowsAsignatura[0]).toMatchObject({
-      id: '1_MATH_Algebra',
+      id: createSubjectRowId('1', 'MATH', 'Algebra'),
       CURSO: '10A',
       estudiante: 'Ana',
       area: 'MATH',
@@ -162,7 +163,7 @@ describe('flattenRows', () => {
     expect(result.rowsAsignatura).toHaveLength(1); // Should fallback to area level
 
     expect(result.rowsAsignatura[0]).toMatchObject({
-      id: '2_SCIENCE_SCIENCE',
+      id: createSubjectRowId('2', 'SCIENCE', 'SCIENCE'),
       asignatura: 'SCIENCE',
       oficialPRO: null,
       oficialRAK: null,
@@ -229,5 +230,48 @@ describe('flattenRows', () => {
     const result = flattenRows(students);
     expect(result.rowsArea).toHaveLength(2);
     expect(result.rowsAsignatura).toHaveLength(2); // Also no asignaturas and no areaStats
+  });
+
+  it('creates parseable row ids when student, area, and subject names contain underscores', () => {
+    const students: Estudiante[] = [
+      {
+        id: 'student_1',
+        name: 'Ana',
+        CURSO: '10A',
+        grupo: '10A',
+        areas: {
+          'Ciencias_Naturales': {
+            asignaturas: {
+              'Lab_Biologia': {
+                P1: 4.0, P2: null, P3: null, P4: null, A: null,
+                promedioActual: 4.0,
+                p4Min: 0,
+                estado: { text: 'Ganado', color: 'green' }
+              }
+            },
+            DEF: { P1: 4.0, P2: null, P3: null, P4: null, A: null },
+            areaStats: {
+              promedioActual: 4.0,
+              p4Min: 0,
+              estado: { text: 'Ganado', color: 'green' }
+            }
+          }
+        }
+      }
+    ];
+
+    const result = flattenRows(students);
+
+    expect(parseRowId(result.rowsArea[0].id)).toEqual({
+      type: 'area',
+      studentId: 'student_1',
+      areaName: 'Ciencias_Naturales',
+    });
+    expect(parseRowId(result.rowsAsignatura[0].id)).toEqual({
+      type: 'subject',
+      studentId: 'student_1',
+      areaName: 'Ciencias_Naturales',
+      subjectName: 'Lab_Biologia',
+    });
   });
 });

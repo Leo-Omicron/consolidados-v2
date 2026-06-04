@@ -4,6 +4,7 @@ import type { Estudiante, ArchetypeResult, EstadoAcademico, PeriodConfig, Subjec
 // RED phase: the function and type don't exist yet — this import WILL fail
 // until we create the file in GREEN phase.
 import { buildStudentProfileData } from './studentProfileService';
+import { createLegacySubjectRowId, createSubjectRowId } from './rowIdentity';
 
 // ---------------------------------------------------------------------------
 // Test Fixtures
@@ -578,6 +579,98 @@ describe('buildStudentProfileData', () => {
     expect(result!.fortalezas).not.toContain('Matemáticas');
     // isSimulated should be true
     expect(result!.isSimulated).toBe(true);
+  });
+
+  it('matches active simulations for row identities with underscores without mixing area names', () => {
+    const estadoGanado: EstadoAcademico = { text: 'Ganado', color: 'green' };
+
+    const studentWithUnderscores: Estudiante = {
+      id: 'student_10',
+      name: 'Ana Identidad',
+      CURSO: '10_A',
+      grupo: '10_A',
+      areas: {
+        Ciencias_Naturales: {
+          asignaturas: {
+            Lab_Biologia: {
+              P1: 4.0, P2: 4.0, P3: null, P4: null,
+              A: 4.0, promedioActual: 4.0, p4Min: 1.0, estado: estadoGanado,
+            },
+          },
+          DEF: { P1: 4.0, P2: 4.0, P3: null, A: 4.0 },
+          areaStats: { promedioActual: 4.0, p4Min: 1.0, estado: estadoGanado },
+        },
+        Ciencias: {
+          asignaturas: {},
+          DEF: { P1: 3.5, P2: 3.5, P3: null, A: 3.5 },
+          areaStats: { promedioActual: 3.5, p4Min: 2.0, estado: estadoGanado },
+        },
+      },
+    };
+
+    const sims = {
+      [createSubjectRowId('student_10', 'Ciencias_Naturales', 'Lab_Biologia')]: { P1: 1.0, P2: 1.0 },
+    };
+
+    const result = buildStudentProfileData(
+      'student_10',
+      [studentWithUnderscores],
+      [],
+      sims,
+      { P1: 50, P2: 50, P3: 0 },
+      { '10_A': { Ciencias_Naturales: { Lab_Biologia: 1 } } },
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.isSimulated).toBe(true);
+    expect(result!.areaGrades.Ciencias_Naturales).toBe(1.0);
+    expect(result!.areaGrades.Ciencias).toBe(3.5);
+  });
+
+  it('maps legacy simulation keys with underscores to the exact existing area', () => {
+    const estadoGanado: EstadoAcademico = { text: 'Ganado', color: 'green' };
+
+    const studentWithUnderscores: Estudiante = {
+      id: 'student_10',
+      name: 'Ana Legacy',
+      CURSO: '10_A',
+      grupo: '10_A',
+      areas: {
+        Ciencias_Naturales: {
+          asignaturas: {
+            Lab_Biologia: {
+              P1: 4.0, P2: 4.0, P3: null, P4: null,
+              A: 4.0, promedioActual: 4.0, p4Min: 1.0, estado: estadoGanado,
+            },
+          },
+          DEF: { P1: 4.0, P2: 4.0, P3: null, A: 4.0 },
+          areaStats: { promedioActual: 4.0, p4Min: 1.0, estado: estadoGanado },
+        },
+        Ciencias: {
+          asignaturas: {},
+          DEF: { P1: 3.5, P2: 3.5, P3: null, A: 3.5 },
+          areaStats: { promedioActual: 3.5, p4Min: 2.0, estado: estadoGanado },
+        },
+      },
+    };
+
+    const sims = {
+      [createLegacySubjectRowId('student_10', 'Ciencias_Naturales', 'Lab_Biologia')]: { P1: 1.0, P2: 1.0 },
+    };
+
+    const result = buildStudentProfileData(
+      'student_10',
+      [studentWithUnderscores],
+      [],
+      sims,
+      { P1: 50, P2: 50, P3: 0 },
+      { '10_A': { Ciencias_Naturales: { Lab_Biologia: 1 } } },
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.isSimulated).toBe(true);
+    expect(result!.areaGrades.Ciencias_Naturales).toBe(1.0);
+    expect(result!.areaGrades.Ciencias).toBe(3.5);
   });
 
   // ── RED-25 (DEFECT FIX): P4 is respected according to config weights ──

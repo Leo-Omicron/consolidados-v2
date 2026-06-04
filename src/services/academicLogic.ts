@@ -1,4 +1,10 @@
 import type { PeriodConfig, PeriodoNotas, EstadoAcademico, Estudiante, SubjectWeightConfig } from '../domain/types';
+import {
+  createAreaRowId,
+  createLegacyAreaRowId,
+  createLegacySubjectRowId,
+  createSubjectRowId,
+} from './rowIdentity';
 
 export const PASSING_GRADE = 3.0;
 export const MAX_GRADE = 5.0;
@@ -178,12 +184,16 @@ export function applyAcademicLogic(
   activeSimulations: Record<string, Partial<PeriodoNotas>> = {}
 ): void {
   const evaluated = getEvaluatedPeriods(students);
+  const getOverrides = (rowId: string, legacyRowId: string): Partial<PeriodoNotas> | undefined =>
+    activeSimulations[rowId] ?? activeSimulations[legacyRowId];
+
   students.forEach(student => {
     Object.entries(student.areas).forEach(([areaName, area]) => {
       // Calculate each asignatura
       Object.entries(area.asignaturas).forEach(([asigName, asig]) => {
-        const asigRowId = `${student.id}_${areaName}_${asigName}`;
-        const overrides = activeSimulations[asigRowId];
+        const asigRowId = createSubjectRowId(student.id, areaName, asigName);
+        const legacyAsigRowId = createLegacySubjectRowId(student.id, areaName, asigName);
+        const overrides = getOverrides(asigRowId, legacyAsigRowId);
         if (overrides) {
           (Object.keys(overrides) as Array<keyof PeriodoNotas>).forEach((period) => {
             const val = overrides[period];
@@ -245,8 +255,9 @@ export function applyAcademicLogic(
       }
 
       // Apply direct area simulations overrides to area.DEF before calculating areaStats
-      const areaRowId = `${student.id}_${areaName}`;
-      const areaOverrides = activeSimulations[areaRowId];
+      const areaRowId = createAreaRowId(student.id, areaName);
+      const legacyAreaRowId = createLegacyAreaRowId(student.id, areaName);
+      const areaOverrides = getOverrides(areaRowId, legacyAreaRowId);
       if (areaOverrides) {
         (Object.keys(areaOverrides) as Array<keyof PeriodoNotas>).forEach((period) => {
           const val = areaOverrides[period];
@@ -260,11 +271,12 @@ export function applyAcademicLogic(
         });
       }
 
-      // If the area has no subjects, the UI renders a fallback subject with id `${student.id}_${areaName}_${areaName}`.
+      // If the area has no subjects, the UI renders a fallback subject row for the area.
       // We apply its overrides directly to area.DEF.
       if (asigNames.length === 0) {
-        const fallbackSubjectRowId = `${student.id}_${areaName}_${areaName}`;
-        const fallbackOverrides = activeSimulations[fallbackSubjectRowId];
+        const fallbackSubjectRowId = createSubjectRowId(student.id, areaName, areaName);
+        const legacyFallbackSubjectRowId = createLegacySubjectRowId(student.id, areaName, areaName);
+        const fallbackOverrides = getOverrides(fallbackSubjectRowId, legacyFallbackSubjectRowId);
         if (fallbackOverrides) {
           (Object.keys(fallbackOverrides) as Array<keyof PeriodoNotas>).forEach((period) => {
             const val = fallbackOverrides[period];

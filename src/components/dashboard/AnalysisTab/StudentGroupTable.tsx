@@ -4,6 +4,7 @@ import type { PeriodoNotas, PeriodConfig } from '../../../domain/types';
 import { StatusBadge } from '../../common/StatusBadge';
 import { EditableGradeCell } from './EditableGradeCell';
 import { GoalSeekCell } from './GoalSeekCell';
+import { parseRowId } from '../../../services/rowIdentity';
 
 export interface StudentGroupTableProps {
   sortedGroups: StudentGroup<PipelineRow>[];
@@ -68,8 +69,7 @@ export const StudentGroupTable: React.FC<StudentGroupTableProps> = ({
           const isGroupAtRisk = group.rows.some(r => r.estado.text === 'Perdido' || r.estado.text === 'En riesgo');
           const isExpanded = expandedGroups[group.estudiante] ?? isGroupAtRisk;
           const hasStudentSimulations = group.rows.some(row => activeSimulations[row.id] !== undefined);
-          // Extract studentId from row ID format: {studentId}_{areaName}
-          const studentId = group.rows[0]?.id?.split('_')[0] ?? group.estudiante;
+          const studentId = parseRowId(group.rows[0]?.id ?? '')?.studentId ?? group.estudiante;
 
           return (
             <div key={group.estudiante} className="flex flex-col">

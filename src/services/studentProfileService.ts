@@ -1,13 +1,6 @@
 import type { Estudiante, ArchetypeResult, PeriodoNotas, PeriodConfig, SubjectWeightConfig } from '../domain/types';
-import { applyAcademicLogic } from './academicLogic';
+import { applyAcademicLogic, isAcademicImprovementPoint, isAcademicStrength } from './academicLogic';
 import { createLegacyAreaRowId, createLegacySubjectRowId, parseRowId } from './rowIdentity';
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-/** Umbral mínimo para que un área sea considerada "fortaleza" */
-const FORTALEZA_THRESHOLD = 3.5;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -195,20 +188,20 @@ export function buildStudentProfileData(
     }
   }
 
-  // 3. Rank areas → fortalezas (>= FORTALEZA_THRESHOLD, top 2 by desc grade)
+  // 3. Rank areas into strengths (academic strength threshold, top 2 by desc grade)
   const ranking = [...studentAreas]
     .map((name) => ({ name, grade: areaGrades[name] }))
     .sort((a, b) => b.grade - a.grade);
 
   const fortalezas = ranking
-    .filter((r) => r.grade >= FORTALEZA_THRESHOLD)
+    .filter((r) => isAcademicStrength(r.grade))
     .slice(0, 2)
     .map((r) => r.name);
 
-  // 4. puntosMejora (< FORTALEZA_THRESHOLD, bottom 2 by asc grade)
+  // 4. puntosMejora (below academic strength threshold, bottom 2 by asc grade)
   const puntosMejora = [...ranking]
     .reverse()
-    .filter((r) => r.grade < FORTALEZA_THRESHOLD)
+    .filter((r) => isAcademicImprovementPoint(r.grade))
     .slice(0, 2)
     .map((r) => r.name);
 

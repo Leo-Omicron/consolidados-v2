@@ -17,7 +17,7 @@ import type {
   SubjectMetric,
   AcademicRiskStudent,
 } from '../domain/types';
-import { getAccumulatedWeightAndProduct, PASSING_GRADE } from './academicLogic';
+import { getAccumulatedWeightAndProduct, isStudentReprobado, PASSING_GRADE } from './academicLogic';
 
 export function calculateStandardDeviation(values: number[], mean: number): number {
   if (values.length === 0) return 0;
@@ -125,7 +125,7 @@ function determinePromotionDecision(student: Estudiante): 'Aprobado' | 'Compromi
   const failedCount = getFailedAreasCount(student);
   const avg = getStudentAverage(student);
   
-  if (failedCount >= 3 || avg < PASSING_GRADE) {
+  if (isStudentReprobado(failedCount) || avg < PASSING_GRADE) {
     return 'Reprobado';
   } else if (failedCount >= 1) {
     return 'Compromisos';

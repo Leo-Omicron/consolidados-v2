@@ -1,9 +1,10 @@
 import React from 'react';
-import type { StudentGroup, PipelineRow, SortConfig, Trend, RowAsignatura } from '../../../domain/types';
+import type { StudentGroup, PipelineRow, SortConfig, RowAsignatura } from '../../../domain/types';
 import type { PeriodoNotas, PeriodConfig } from '../../../domain/types';
 import { StatusBadge } from '../../common/StatusBadge';
 import { EditableGradeCell } from './EditableGradeCell';
 import { GoalSeekCell } from './GoalSeekCell';
+import { determineAcademicTrend } from '../../../services/academicLogic';
 import { parseRowId } from '../../../services/rowIdentity';
 
 export interface StudentGroupTableProps {
@@ -286,19 +287,10 @@ export const StudentGroupTable: React.FC<StudentGroupTableProps> = ({
                                       </thead>
                                       <tbody className="divide-y app-divide">
                                         {subjects.map((sub: RowAsignatura, sIdx: number) => {
-                                          let subTendencia: Trend = 'none';
                                           const p1 = sub.p1;
                                           const p2 = sub.p2;
                                           const p3 = sub.p3;
-                                          if (typeof p3 === 'number') {
-                                            if (typeof p1 === 'number') {
-                                              subTendencia = p3 > p1 ? 'up' : p3 < p1 ? 'down' : 'flat';
-                                            }
-                                          } else if (typeof p2 === 'number') {
-                                            if (typeof p1 === 'number') {
-                                              subTendencia = p2 > p1 ? 'up' : p2 < p1 ? 'down' : 'flat';
-                                            }
-                                          }
+                                          const subTendencia = determineAcademicTrend(p1, p2, p3);
 
                                           return (
                                             <tr key={sIdx} className="app-surface-hover">

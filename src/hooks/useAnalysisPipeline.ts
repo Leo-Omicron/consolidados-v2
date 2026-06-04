@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import type { StudentGroup, SortConfig, Trend, PipelineRow, RowArea, RowAsignatura } from '../domain/types';
+import type { StudentGroup, SortConfig, PipelineRow, RowArea, RowAsignatura } from '../domain/types';
+import { determineAcademicTrend, isStudentReprobado } from '../services/academicLogic';
 
 export interface AnalysisFilters {
   search: string;
@@ -22,25 +23,13 @@ export function calculateFailedAreasMap(rowsArea: RowArea[]): Record<string, num
 
 export function augmentRows(rows: (RowArea | RowAsignatura)[], viewMode: 'area' | 'subject') {
   return rows.map((row) => {
-    let tendencia: Trend = 'none';
-    
     const p1 = viewMode === 'area' ? (row as RowArea).defP1 : (row as RowAsignatura).p1;
     const p2 = viewMode === 'area' ? (row as RowArea).defP2 : (row as RowAsignatura).p2;
     const p3 = viewMode === 'area' ? (row as RowArea).defP3 : (row as RowAsignatura).p3;
-    
-    if (typeof p3 === 'number') {
-      if (typeof p1 === 'number') {
-        tendencia = p3 > p1 ? 'up' : p3 < p1 ? 'down' : 'flat';
-      }
-    } else if (typeof p2 === 'number') {
-      if (typeof p1 === 'number') {
-        tendencia = p2 > p1 ? 'up' : p2 < p1 ? 'down' : 'flat';
-      }
-    }
 
     return {
       ...row,
-      tendencia
+      tendencia: determineAcademicTrend(p1, p2, p3)
     };
   });
 }
@@ -134,7 +123,7 @@ export function groupRows(
     
     const failedCount = failedAreasMap[group.estudiante] || 0;
     group.failedAreasCount = failedCount;
-    group.isReprobado = failedCount >= 3;
+    group.isReprobado = isStudentReprobado(failedCount);
 
     return group;
   });

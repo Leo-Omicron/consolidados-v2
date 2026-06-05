@@ -218,6 +218,54 @@ describe('StudentProfileModal', () => {
     printSpy.mockRestore();
   });
 
+  it('cleans up print isolation state if window.print fails', () => {
+    const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {
+      throw new Error('print unavailable');
+    });
+    render(
+      <StudentProfileModal
+        profileData={mockProfileData}
+        isOpen={true}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const printButton = screen.getByRole('button', { name: /imprimir/i });
+    fireEvent.click(printButton);
+
+    expect(printSpy).toHaveBeenCalledTimes(1);
+    expect(document.body.classList.contains('printing-student-profile')).toBe(false);
+    printSpy.mockRestore();
+  });
+
+  it('keeps print isolation until the fallback timeout when afterprint does not fire', () => {
+    vi.useFakeTimers();
+    const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
+    try {
+      render(
+        <StudentProfileModal
+          profileData={mockProfileData}
+          isOpen={true}
+          onClose={vi.fn()}
+        />,
+      );
+
+      const printButton = screen.getByRole('button', { name: /imprimir/i });
+      fireEvent.click(printButton);
+
+      expect(document.body.classList.contains('printing-student-profile')).toBe(true);
+
+      vi.advanceTimersByTime(29_999);
+      expect(document.body.classList.contains('printing-student-profile')).toBe(true);
+
+      vi.advanceTimersByTime(1);
+      expect(document.body.classList.contains('printing-student-profile')).toBe(false);
+    } finally {
+      printSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
   it('marks the dialog as the isolated print root', () => {
     render(
       <StudentProfileModal

@@ -310,13 +310,13 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
             </div>
           </section>
 
-          {/* Oracle Insight */}
+          {/* Pedagogical insight */}
           {profileData.insight && (
             <section className="rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-lg">🔮</span>
                 <h4 className="font-semibold text-indigo-800 dark:text-indigo-300">
-                  Oráculo — {profileData.arquetipo}
+                  Diagnóstico Pedagógico — {profileData.arquetipo}
                 </h4>
               </div>
               <p className="text-sm text-indigo-700 dark:text-indigo-400 leading-relaxed">

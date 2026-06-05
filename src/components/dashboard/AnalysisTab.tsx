@@ -67,7 +67,7 @@ export const AnalysisTab: React.FC = () => {
   
   const evaluated = useMemo(() => getEvaluatedPeriods(estudiantes || []) as Record<'P1' | 'P2' | 'P3' | 'P4', boolean>, [estudiantes]);
 
-  // Insights for Oracle integration
+  // Insights for pedagogical diagnosis integration
   const { results: insightsResults } = useInsights();
 
   // Profile data for modal

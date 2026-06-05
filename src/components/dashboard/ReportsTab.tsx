@@ -126,7 +126,7 @@ export const ReportsTab: React.FC = () => {
 
         {/* Main Content Area */}
         <section
-          className="flex-1 app-surface border app-border rounded-2xl p-6 shadow-sm print:border-none print:shadow-none print:p-0 print:bg-white"
+          className="flex-1 min-w-0 app-surface border app-border rounded-2xl p-6 shadow-sm print:border-none print:shadow-none print:p-0 print:bg-white"
           role="region"
           aria-label="Vista previa del reporte"
           data-report-preview

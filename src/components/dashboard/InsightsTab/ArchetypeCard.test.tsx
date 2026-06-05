@@ -59,6 +59,17 @@ describe('ArchetypeCard', () => {
     expect(screen.getByText('María García')).toBeInTheDocument();
   });
 
+
+  it('keeps the student name in its own non-truncated heading row', async () => {
+    const { ArchetypeCard } = await import('./ArchetypeCard');
+    render(<ArchetypeCard result={mockConfiado} />);
+
+    const heading = screen.getByRole('heading', { name: mockConfiado.estudianteName });
+    expect(heading).toBeInTheDocument();
+    expect(heading.className).toContain('break-words');
+    expect(heading.className).not.toContain('truncate');
+  });
+
   it('renders period grades as pills with correct values', async () => {
     const { ArchetypeCard } = await import('./ArchetypeCard');
     render(<ArchetypeCard result={mockConfiado} />);

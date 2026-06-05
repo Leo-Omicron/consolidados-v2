@@ -9,12 +9,12 @@ export const HeatmapView: React.FC<{ data: HeatmapReport | null }> = ({ data }) 
   if (!heatmapData) return null;
 
   return (
-    <div>
+    <div className="min-w-0 max-w-full">
       <h3 className="text-lg font-bold text-slate-900 mb-4 print:text-black">
         Mapa de Calor - Grupo {heatmapData.grupo}
       </h3>
       
-      <div className="overflow-x-auto">
+      <div className="max-w-full overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden text-xs print:table-layout-fixed">
           <thead className="bg-slate-50 print:bg-slate-100">
             <tr>

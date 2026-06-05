@@ -37,6 +37,7 @@ const CHART_COLORS = {
 };
 
 const PRINTING_STUDENT_PROFILE_CLASS = 'printing-student-profile';
+const PRINT_CLEANUP_FALLBACK_MS = 30_000;
 
 function buildRadarData(profile: StudentProfileData) {
   const labels = Object.keys(profile.areaGrades);
@@ -159,15 +160,23 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
 
   const handlePrint = useCallback(() => {
     document.body.classList.add(PRINTING_STUDENT_PROFILE_CLASS);
+    let fallbackTimeoutId: number | undefined;
 
     const cleanupPrintClass = () => {
       document.body.classList.remove(PRINTING_STUDENT_PROFILE_CLASS);
       window.removeEventListener('afterprint', cleanupPrintClass);
+      if (fallbackTimeoutId !== undefined) {
+        window.clearTimeout(fallbackTimeoutId);
+      }
     };
 
     window.addEventListener('afterprint', cleanupPrintClass);
-    window.print();
-    window.setTimeout(cleanupPrintClass, 1000);
+    try {
+      window.print();
+      fallbackTimeoutId = window.setTimeout(cleanupPrintClass, PRINT_CLEANUP_FALLBACK_MS);
+    } catch {
+      cleanupPrintClass();
+    }
   }, []);
 
   if (!isOpen || !profileData) return null;

@@ -122,7 +122,7 @@ describe('StudentProfileModal', () => {
   });
 
   // ---- RED-5: Renders insight when available ----
-  it('renders Oracle insight text and archetype badge when available', () => {
+  it('renders pedagogical insight text and archetype badge when available', () => {
     render(
       <StudentProfileModal
         profileData={mockProfileData}

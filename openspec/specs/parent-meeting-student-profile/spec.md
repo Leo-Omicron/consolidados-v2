@@ -6,7 +6,7 @@
 - El sistema DEBE exponer una función pura para construir el contexto de la ficha del estudiante: `buildStudentProfileData()`.
 - La función NO DEBE mutar el estado global (Zustand) ni generar efectos secundarios.
 - La función DEBE calcular las "Fortalezas" (top 2 Áreas por definitiva) y "Puntos a Mejorar" (bottom 2 Áreas por definitiva, que estén por debajo de 3.5).
-- La función DEBE inyectar el insight de "El Oráculo" si el estudiante tiene uno asignado en la evaluación general.
+- La función DEBE inyectar el insight de Diagnóstico Pedagógico si el estudiante tiene uno asignado en la evaluación general.
 - La función DEBE devolver el promedio consolidado del grupo para las áreas en las que el estudiante tiene calificaciones, protegiendo la privacidad de los demás estudiantes mediante la agregación anónima.
 
 ### Requirement: Modal Lifecycle & Accessibility

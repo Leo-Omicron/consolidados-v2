@@ -43,7 +43,7 @@ La plataforma ayuda a docentes, directores de grupo y directivas a responder pre
 | **Mentores pares** | Sugiere estudiantes destacados que pueden acompañar a compañeros en dificultad dentro de la misma área. |
 | **Volatilidad académica** | Clasifica trayectorias como estable, ascenso, caída libre o montaña rusa según la evolución del desempeño. |
 | **Mapa de calor** | Visualiza rápidamente el estado académico por estudiante y área/asignatura mediante colores. |
-| **Oracle Insights** | Agrupa patrones pedagógicos como resiliente, confiado, montaña rusa o radar para orientar intervenciones. |
+| **Diagnóstico Pedagógico** | Agrupa patrones pedagógicos como resiliente, confiado, montaña rusa o radar para orientar intervenciones. |
 | **Reportes institucionales** | Genera vistas de rendimiento grupal, destacados, riesgo académico, asignaturas, comparativa de grupos, mapa de calor, retroalimentación docente y registro oficial. |
 | **Exportación e impresión** | Exporta reportes individuales a Excel, genera un consolidado completo multihoja y prepara vistas imprimibles optimizadas. |
 | **Tema claro/oscuro** | Interfaz moderna con soporte de tema y diseño responsive. |

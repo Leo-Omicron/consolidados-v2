@@ -39,13 +39,18 @@ export const ArchetypeCard: React.FC<Props> = ({ result, onOpenStudentProfile })
     <div
       className={`bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-700 border-l-4 ${ARCHETYPE_CARD_COLORS[archetype]} rounded-lg p-5 shadow-sm`}
     >
-      {/* Header: Name + Archetype Badge */}
-      <div className="flex flex-col xl:flex-row xl:items-start justify-between mb-3 gap-3">
-        <div className="min-w-0">
-          <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 leading-tight truncate" title={estudianteName}>{estudianteName}</h3>
+      {/* Header: Name, group, badges, and action */}
+      <div className="mb-3 space-y-3">
+        <div>
+          <h3
+            className="font-bold text-lg text-slate-800 dark:text-slate-200 leading-tight break-words"
+            title={estudianteName}
+          >
+            {estudianteName}
+          </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Grupo {grupo}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 xl:justify-end shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="px-3 py-1 text-xs font-bold uppercase rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-neutral-600 print:!bg-slate-100 print:!text-slate-700 print:!border-slate-300">
             {ARCHETYPE_LABELS[archetype]}
           </span>

@@ -17,7 +17,7 @@ export const OfficialRecordsView: React.FC<{ data: OfficialRecordsReport | null,
   if (!officialRecordsData) return null;
 
   return (
-            <div>
+    <div className="min-w-0 max-w-full">
               <div className="flex justify-between items-center mb-4 no-print print:hidden">
                 <h3 className="text-lg font-bold text-slate-900">
                   Registro de Calificaciones Oficial - Grupo {officialRecordsData.grupo}
@@ -52,7 +52,7 @@ export const OfficialRecordsView: React.FC<{ data: OfficialRecordsReport | null,
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="max-w-full overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden text-xs print:table-layout-fixed">
                   <thead className="bg-slate-50 print:bg-slate-100">
                     <tr>

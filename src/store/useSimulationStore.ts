@@ -2,6 +2,41 @@ import { create } from 'zustand';
 import LZString from 'lz-string';
 import type { PeriodoNotas } from '../domain/types';
 
+// ── Private hash helpers ────────────────────────────────────────────
+
+const HASH_PREFIX = '#sim=';
+
+/** Strips the expected URL hash prefix. Returns `null` when a different
+ *  `#`-prefix is detected or when the hash is empty after stripping. */
+function stripHashPrefix(raw: string): string | null {
+  if (!raw) return null;
+  if (raw.startsWith(HASH_PREFIX)) {
+    const clean = raw.slice(HASH_PREFIX.length);
+    return clean || null;
+  }
+  if (raw.startsWith('#')) return null;
+  return raw;
+}
+
+/** Attempts LZString decompression. Returns `null` on failure. */
+function tryDecompress(clean: string): string | null {
+  try {
+    const result = LZString.decompressFromEncodedURIComponent(clean);
+    return result || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Attempts JSON parsing with a typed return. Returns `null` on failure. */
+function tryParseJson<T>(decompressed: string): T | null {
+  try {
+    return JSON.parse(decompressed) as T;
+  } catch {
+    return null;
+  }
+}
+
 export interface SimulationState {
   activeSimulations: Record<string, Partial<PeriodoNotas>>;
   setSimulation: (rowId: string, period: keyof PeriodoNotas, value: number | null) => void;
@@ -71,18 +106,27 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   },
 
   importFromHash: (hash: string) => {
-    try {
-      if (!hash) return false;
-      const cleanHash = hash.replace(/^#sim=/, '');
-      if (!cleanHash) return false;
-      const decompressed = LZString.decompressFromEncodedURIComponent(cleanHash);
-      if (!decompressed) return false;
-      const data = JSON.parse(decompressed);
-      set({ activeSimulations: data });
-      return true;
-    } catch (e) {
-      console.error('Failed to import simulations from hash', e);
+    if (!hash) return false;
+
+    const clean = stripHashPrefix(hash);
+    if (clean === null) {
+      console.error('importFromHash: missing #sim= prefix in hash');
       return false;
     }
+
+    const decompressed = tryDecompress(clean);
+    if (decompressed === null) {
+      console.error('importFromHash: invalid base64 encoding');
+      return false;
+    }
+
+    const data = tryParseJson<Record<string, Partial<PeriodoNotas>>>(decompressed);
+    if (data === null) {
+      console.error('importFromHash: decompressed data is not valid JSON');
+      return false;
+    }
+
+    set({ activeSimulations: data });
+    return true;
   }
 }));

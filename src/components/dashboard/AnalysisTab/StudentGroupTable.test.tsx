@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StudentGroupTable } from './StudentGroupTable';
-import type { StudentGroup, PipelineRow, SortConfig } from '../../../domain/types';
+import { StudentGroupHeader } from './StudentGroupTable/StudentGroupHeader';
+import { StudentGroupRow } from './StudentGroupTable/StudentGroupRow';
+import type { StudentGroup, PipelineRow, SortConfig, RowAsignatura, PeriodConfig } from '../../../domain/types';
 
 describe('StudentGroupTable', () => {
   const mockOnToggleGroup = vi.fn();
@@ -162,5 +164,317 @@ describe('StudentGroupTable', () => {
     render(<StudentGroupTable {...defaultProps} expandedGroups={{}} />);
 
     expect(screen.getByText(/2 áreas/)).toBeInTheDocument();
+  });
+});
+
+// ── StudentGroupHeader interaction tests ──
+
+describe('StudentGroupHeader', () => {
+  it('renders "Estudiante" header and calls onSort on click', () => {
+    const onSort = vi.fn();
+    render(
+      <StudentGroupHeader
+        viewMode="area"
+        hasP4={false}
+        onSort={onSort}
+        sortConfig={null}
+      />
+    );
+
+    fireEvent.click(screen.getByText(/Estudiante/));
+    expect(onSort).toHaveBeenCalledWith('estudiante');
+  });
+
+  it('renders "Prom." header and calls onSort on click', () => {
+    const onSort = vi.fn();
+    render(
+      <StudentGroupHeader
+        viewMode="area"
+        hasP4={false}
+        onSort={onSort}
+        sortConfig={null}
+      />
+    );
+
+    fireEvent.click(screen.getByText(/Prom/));
+    expect(onSort).toHaveBeenCalledWith('aggregates.promActual');
+  });
+
+  it('shows ⬆️ when sort direction is asc for the active column', () => {
+    render(
+      <StudentGroupHeader
+        viewMode="area"
+        hasP4={false}
+        onSort={vi.fn()}
+        sortConfig={{ key: 'estudiante', direction: 'asc' }}
+      />
+    );
+
+    expect(screen.getByText(/⬆️/)).toBeInTheDocument();
+  });
+
+  it('shows ⬇️ when sort direction is desc for the active column', () => {
+    render(
+      <StudentGroupHeader
+        viewMode="area"
+        hasP4={false}
+        onSort={vi.fn()}
+        sortConfig={{ key: 'estudiante', direction: 'desc' }}
+      />
+    );
+
+    expect(screen.getByText(/⬇️/)).toBeInTheDocument();
+  });
+
+  it('shows ↕️ for columns that are not the active sort', () => {
+    render(
+      <StudentGroupHeader
+        viewMode="area"
+        hasP4={false}
+        onSort={vi.fn()}
+        sortConfig={{ key: 'aggregates.promActual', direction: 'asc' }}
+      />
+    );
+
+    // Estudiante column is not active → should show ↕️
+    const estudianteCell = screen.getByText(/Estudiante/);
+    expect(estudianteCell.textContent).toContain('↕️');
+  });
+
+  it('shows "Áreas" when viewMode is area', () => {
+    render(
+      <StudentGroupHeader
+        viewMode="area"
+        hasP4={false}
+        onSort={vi.fn()}
+        sortConfig={null}
+      />
+    );
+
+    expect(screen.getByText(/Áreas/)).toBeInTheDocument();
+  });
+
+  it('shows "Asignaturas" when viewMode is subject', () => {
+    render(
+      <StudentGroupHeader
+        viewMode="subject"
+        hasP4={false}
+        onSort={vi.fn()}
+        sortConfig={null}
+      />
+    );
+
+    expect(screen.getByText(/Asignaturas/)).toBeInTheDocument();
+  });
+});
+
+// ── StudentGroupRow interaction tests ──
+
+describe('StudentGroupRow', () => {
+  const mockOnToggleGroup = vi.fn();
+  const mockOnToggleArea = vi.fn();
+  const mockOnSort = vi.fn();
+  const mockOnSetSimulation = vi.fn();
+  const mockOnClearSimulation = vi.fn();
+  const mockOnOpenStudentProfile = vi.fn();
+
+  const sampleGroup: StudentGroup<PipelineRow> = {
+    estudiante: 'Juan',
+    grupo: '9A',
+    rows: [
+      {
+        id: 'juan_Matemáticas',
+        CURSO: '9A',
+        estudiante: 'Juan',
+        area: 'Matemáticas',
+        grupo: '9A',
+        defP1: 3.5,
+        defP2: 3.0,
+        defP3: null,
+        defP4: null,
+        promActual: 3.25,
+        p4Min: 2.5,
+        estado: { text: 'En riesgo', color: 'yellow' },
+        CURSO_NORM: '9A',
+        AREA_NORM: 'Matemáticas',
+        EST_NORM: 'Juan',
+        tendencia: 'flat' as const,
+      } as PipelineRow,
+      {
+        id: 'juan_Ciencias',
+        CURSO: '9A',
+        estudiante: 'Juan',
+        area: 'Ciencias',
+        grupo: '9A',
+        defP1: 4.0,
+        defP2: 4.5,
+        defP3: null,
+        defP4: null,
+        promActual: 4.25,
+        p4Min: 1.5,
+        estado: { text: 'Ganado', color: 'green' },
+        CURSO_NORM: '9A',
+        AREA_NORM: 'Ciencias',
+        EST_NORM: 'Juan',
+        tendencia: 'up' as const,
+      } as PipelineRow,
+    ],
+    aggregates: { defP1: 3.75, defP2: 3.75, defP3: null, promActual: 3.75 },
+  };
+
+  const mockConfig: PeriodConfig = { P1: 50, P2: 50, P3: 0 };
+
+  const defaultRowProps = {
+    group: sampleGroup,
+    expandedGroups: {} as Record<string, boolean>,
+    onToggleGroup: mockOnToggleGroup,
+    expandedAreas: {} as Record<string, boolean>,
+    onToggleArea: mockOnToggleArea,
+    activeSimulations: {} as Record<string, Record<string, number>>,
+    viewMode: 'area' as const,
+    hasP4: false,
+    evaluated: { P1: true, P2: true, P3: false, P4: false } as Record<'P1' | 'P2' | 'P3' | 'P4', boolean>,
+    config: mockConfig,
+    subjectsByStudentArea: new Map<string, RowAsignatura[]>(),
+    onSort: mockOnSort,
+    sortConfig: null as SortConfig,
+    onSetSimulation: mockOnSetSimulation,
+    onClearSimulation: mockOnClearSimulation,
+    onOpenStudentProfile: mockOnOpenStudentProfile,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders student name and calls onToggleGroup on header click', () => {
+    render(<StudentGroupRow {...defaultRowProps} />);
+
+    const studentName = screen.getByText('Juan');
+    expect(studentName).toBeInTheDocument();
+    fireEvent.click(studentName);
+    expect(mockOnToggleGroup).toHaveBeenCalledWith('Juan');
+  });
+
+  it('expands area rows when expandedGroups has the student set to true', () => {
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        expandedGroups={{ 'Juan': true }}
+      />
+    );
+
+    expect(screen.getByText('Matemáticas')).toBeInTheDocument();
+    expect(screen.getByText('Ciencias')).toBeInTheDocument();
+  });
+
+  it('calls onToggleArea when area folder button is clicked', () => {
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        expandedGroups={{ 'Juan': true }}
+      />
+    );
+
+    // The first area row has a folder toggle button
+    const toggleButton = screen.getByLabelText('Toggle subjects for Matemáticas');
+    fireEvent.click(toggleButton);
+    expect(mockOnToggleArea).toHaveBeenCalledWith('Juan', 'Matemáticas');
+  });
+
+  it('shows sub-table sortable P1 header and calls onSort on click', () => {
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        expandedGroups={{ 'Juan': true }}
+      />
+    );
+
+    // P1 header inside the expanded sub-table
+    const p1Headers = screen.getAllByText(/^P1/);
+    expect(p1Headers.length).toBeGreaterThanOrEqual(1);
+    fireEvent.click(p1Headers[0]);
+    expect(mockOnSort).toHaveBeenCalledWith('defP1');
+  });
+
+  it('calls onSetSimulation when min-grade value is clicked', () => {
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        expandedGroups={{ 'Juan': true }}
+      />
+    );
+
+    // The min-grade cell for Matemáticas has p4Min=2.5 (≤5.0 → clickable)
+    const minGrade = screen.getByText('2.50');
+    fireEvent.click(minGrade);
+    expect(mockOnSetSimulation).toHaveBeenCalledWith('juan_Matemáticas', 'P3', 2.5);
+  });
+
+  it('shows "Mín. P4" header when hasP4 is true', () => {
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        expandedGroups={{ 'Juan': true }}
+        hasP4={true}
+        config={{ P1: 25, P2: 25, P3: 25, P4: 25 }}
+      />
+    );
+
+    expect(screen.getByText(/Mín. P4/)).toBeInTheDocument();
+  });
+
+  it('shows "Mín. P3" header when hasP4 is false', () => {
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        expandedGroups={{ 'Juan': true }}
+        hasP4={false}
+      />
+    );
+
+    expect(screen.getByText(/Mín. P3/)).toBeInTheDocument();
+  });
+
+  it('renders area name in expanded view with folder icon', () => {
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        expandedGroups={{ 'Juan': true }}
+      />
+    );
+
+    // In expanded view, the area name column shows "Matemáticas"
+    expect(screen.getByText('Matemáticas')).toBeInTheDocument();
+  });
+
+  it('calls onClearSimulation when Restaurar button is shown and clicked', () => {
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        activeSimulations={{ 'juan_Matemáticas': { P1: 3.0 } }}
+      />
+    );
+
+    const restaurarBtn = screen.getByText('Restaurar');
+    expect(restaurarBtn).toBeInTheDocument();
+    fireEvent.click(restaurarBtn);
+    // Should call onClearSimulation for each row in the group
+    expect(mockOnClearSimulation).toHaveBeenCalledWith('juan_Matemáticas');
+    expect(mockOnClearSimulation).toHaveBeenCalledWith('juan_Ciencias');
+  });
+
+  it('calls onOpenStudentProfile when Ficha button is clicked', () => {
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        onOpenStudentProfile={mockOnOpenStudentProfile}
+      />
+    );
+
+    const fichaBtn = screen.getByText('Ficha');
+    expect(fichaBtn).toBeInTheDocument();
+    fireEvent.click(fichaBtn);
+    expect(mockOnOpenStudentProfile).toHaveBeenCalledWith('Juan');
   });
 });

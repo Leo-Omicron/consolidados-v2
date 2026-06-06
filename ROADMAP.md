@@ -41,16 +41,17 @@ Phase 10 (Charts) ──> Phase 11 (UI Overhaul) ──> Phase 12 (Reports Engin
 * **Goal**: Integrated client-side Excel downloads (SheetJS) and professional CSS print styles.
 * **Features**:
   * One-click Export to Excel for the active report.
-  * Consolidado Completo: downloading all 7 reports combined into a single multi-sheet Excel file.
-  * Tailored print-media CSS layouts (hidden controls, landscape optimization, clean headers).
+  * Consolidado Completo: downloading all 9 reports combined into a single multi-sheet Excel file, including the new Diagnóstico Pedagógico.
+  * Tailored print-media CSS layouts (hidden controls, landscape optimization, robust Ficha student profiles).
 
 ---
 
 ## 🛠️ Next Steps
 
 * **Phase 14: System Verification & Release**
-  * Final audit of build artifacts.
-  * Production packaging and client deployment.
+  * **Task 1: Build & CI Audit**: Run full clean build, verify zero TS/Linter warnings in strict mode.
+  * **Task 2: Browser Engine Check**: Verify print layout and flexbox containment across WebKit (Safari) and Gecko (Firefox) engines.
+  * **Task 3: Semantic Release**: Draft final Release Notes capturing Phase 10-13, bump version to `1.2.0`, and tag the release.
 
 ---
 

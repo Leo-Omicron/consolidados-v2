@@ -10,7 +10,7 @@
 
 | Área | Estado |
 |------|--------|
-| Versión | `1.2.0` |
+| Versión | `1.2.1` |
 | Frontend | React 19 + TypeScript + Vite |
 | Datos | Procesamiento local de Excel con Web Worker |
 | Calidad | 545 pruebas automatizadas con Vitest |
@@ -135,7 +135,7 @@ npm run test
 
 ## Estándares de trabajo
 
-- Mantener commits convencionales.
+- **Versionado Semántico (MANDATORIO)**: Usamos Conventional Commits (`feat:`, `fix:`, `refactor:`). Las versiones, los tags y el `CHANGELOG.md` se autogeneran con **Release Please** en GitHub Actions.
 - Arquitectura de flujo (MANDATORIO): Usar el modelo de **Doble Worktree** (Santuario para `master` / Laboratorio en detached HEAD para el código) para proteger la rama principal.
 - Planificación limpia: Usar **SDD + Engram** para la planificación. No ensuciar el repositorio con archivos markdown en `.openspec/` u otros temporales; todo va a la memoria persistente del agente.
 - Actualizar este README cuando una mejora cambie la experiencia del usuario, el flujo de trabajo o las capacidades principales.

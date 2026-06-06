@@ -1,11 +1,9 @@
 import React from 'react';
 import type { StudentGroup, PipelineRow, SortConfig, RowAsignatura, PeriodoNotas, PeriodConfig } from '../../../../domain/types';
-import { StatusBadge } from '../../../common/StatusBadge';
-import { EditableGradeCell } from '../EditableGradeCell';
-import { GoalSeekCell } from '../GoalSeekCell';
-import { parseRowId } from '../../../../services/rowIdentity';
+import { StudentRowHeader } from './StudentRowHeader';
+import { StudentRowTableHead } from './StudentRowTableHead';
+import { StudentRowData } from './StudentRowData';
 import { StudentAreaSubtable } from './StudentAreaSubtable';
-import { getSortIcon } from './sortIcon';
 
 export interface StudentGroupRowProps {
   group: StudentGroup<PipelineRow>;
@@ -56,326 +54,49 @@ export const StudentGroupRow: React.FC<StudentGroupRowProps> = ({
       return subjects.some((sub) => activeSimulations[sub.id] !== undefined);
     }
   );
-  const studentId =
-    parseRowId(group.rows[0]?.id ?? '')?.studentId ?? group.estudiante;
 
   return (
     <div className="flex flex-col">
-      <div
-        className="px-4 py-3 flex items-center justify-between app-surface app-surface-hover cursor-pointer transition-premium"
-        onClick={() => onToggleGroup(group.estudiante)}
-      >
-        <div className="w-1/3 font-semibold app-text flex items-center">
-          <span
-            className={`mr-2.5 app-text-muted transform transition-transform duration-300 inline-block ${
-              isExpanded ? 'rotate-90' : ''
-            }`}
-          >
-            ▶
-          </span>
-          {group.estudiante}
-          {group.isReprobado && (
-            <span className="ml-2 app-status-red border text-xs px-2 py-0.5 rounded-full font-bold">
-              Año Reprobado ({group.failedAreasCount}{' '}
-              {group.failedAreasCount === 1 ? 'Área' : 'Áreas'})
-            </span>
-          )}
-          {group.rows[0]?.desempeños && (
-            <span className="ml-2 flex gap-1">
-              {group.rows[0].desempeños.BAJ > 0 && (
-                <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                  BAJ: {group.rows[0].desempeños.BAJ}
-                </span>
-              )}
-              {group.rows[0].desempeños.BAS > 0 && (
-                <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                  BAS: {group.rows[0].desempeños.BAS}
-                </span>
-              )}
-              {group.rows[0].desempeños.ALT > 0 && (
-                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                  ALT: {group.rows[0].desempeños.ALT}
-                </span>
-              )}
-              {group.rows[0].desempeños.SUP > 0 && (
-                <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                  SUP: {group.rows[0].desempeños.SUP}
-                </span>
-              )}
-            </span>
-          )}
-          {hasStudentSimulations && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                group.rows.forEach((row) => {
-                  onClearSimulation(row.id);
-                  const areaKey = `${group.estudiante}_${row.area}`;
-                  const subjects = subjectsByStudentArea.get(areaKey) || [];
-                  subjects.forEach((sub) => onClearSimulation(sub.id));
-                });
-              }}
-              className="ml-3 px-2 py-0.5 text-[10px] font-bold uppercase rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors cursor-pointer shadow-sm app-focus"
-              title="Restaurar notas reales de este estudiante"
-            >
-              Restaurar
-            </button>
-          )}
-          {onOpenStudentProfile && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenStudentProfile(studentId);
-              }}
-              className="ml-2 px-2 py-0.5 text-[10px] font-bold uppercase rounded border border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors cursor-pointer shadow-sm app-focus"
-              title="Ver ficha del estudiante"
-            >
-              Ficha
-            </button>
-          )}
-        </div>
-        <div className="flex-1 text-center text-sm app-text-muted">
-          {group.rows.length}{' '}
-          {group.rows.length === 1
-            ? viewMode === 'area'
-              ? 'área'
-              : 'asignatura'
-            : viewMode === 'area'
-              ? 'áreas'
-              : 'asignaturas'}
-        </div>
-        <div className="w-32 text-right font-bold app-text flex flex-col">
-          <span>
-            Calc: {group.aggregates.promActual?.toFixed(2) ?? '-'}
-          </span>
-          {group.rows[0]?.oficialPRO !== undefined &&
-            group.rows[0]?.oficialPRO !== null && (
-              <span className="text-[10px] text-amber-600 dark:text-amber-400">
-                PRO Ofic: {group.rows[0].oficialPRO.toFixed(2)}
-              </span>
-            )}
-        </div>
-      </div>
+      <StudentRowHeader
+        group={group}
+        isExpanded={isExpanded}
+        onToggleGroup={onToggleGroup}
+        viewMode={viewMode}
+        hasStudentSimulations={hasStudentSimulations}
+        subjectsByStudentArea={subjectsByStudentArea}
+        onClearSimulation={onClearSimulation}
+        onOpenStudentProfile={onOpenStudentProfile}
+      />
 
       {isExpanded && (
         <div className="app-surface-muted px-4 py-3 border-t border-b app-border">
           <table className="min-w-full divide-y app-divide text-sm">
-            <thead className="sticky top-0 z-10 app-surface-muted backdrop-blur-md border-b app-border">
-              <tr className="app-text-muted text-left">
-                <th className="font-semibold pb-2 w-1/4">
-                  {viewMode === 'area' ? 'Área' : 'Asignatura'}
-                </th>
-                <th
-                  className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none"
-                  onClick={() =>
-                    onSort(viewMode === 'area' ? 'defP1' : 'p1')
-                  }
-                >
-                  P1{' '}
-                  {getSortIcon(viewMode === 'area' ? 'defP1' : 'p1', sortConfig)}
-                </th>
-                <th
-                  className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none"
-                  onClick={() =>
-                    onSort(viewMode === 'area' ? 'defP2' : 'p2')
-                  }
-                >
-                  P2{' '}
-                  {getSortIcon(viewMode === 'area' ? 'defP2' : 'p2', sortConfig)}
-                </th>
-                <th
-                  className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none"
-                  onClick={() =>
-                    onSort(viewMode === 'area' ? 'defP3' : 'p3')
-                  }
-                >
-                  P3{' '}
-                  {getSortIcon(viewMode === 'area' ? 'defP3' : 'p3', sortConfig)}
-                </th>
-                {hasP4 && (
-                  <th className="font-semibold pb-2 w-1/12 text-center">
-                    P4
-                  </th>
-                )}
-                <th className="font-semibold pb-2 w-1/12 text-center">
-                  Acum.
-                </th>
-                <th
-                  className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none"
-                  onClick={() => onSort('tendencia')}
-                >
-                  Tendencia {getSortIcon('tendencia', sortConfig)}
-                </th>
-                <th
-                  className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none"
-                  onClick={() => onSort('promActual')}
-                >
-                  Prom.Calc {getSortIcon('promActual', sortConfig)}
-                </th>
-                <th
-                  className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none"
-                  onClick={() => onSort('p4Min')}
-                >
-                  {hasP4 ? 'Mín. P4' : 'Mín. P3'}{' '}
-                  {getSortIcon('p4Min', sortConfig)}
-                </th>
-                <th className="font-semibold pb-2 w-1/4 text-center">
-                  Estado
-                </th>
-              </tr>
-            </thead>
+            <StudentRowTableHead
+              viewMode={viewMode}
+              hasP4={hasP4}
+              onSort={onSort}
+              sortConfig={sortConfig}
+            />
             <tbody className="divide-y app-divide">
               {group.rows.map((row: PipelineRow, idx) => {
                 const areaKey = `${group.estudiante}_${row.area}`;
                 const isAreaExpanded = expandedAreas[areaKey];
                 const subjects = subjectsByStudentArea.get(areaKey) || [];
 
-                const rowAny = row as import('../../../../domain/types').AugmentedRowArea &
-                  import('../../../../domain/types').AugmentedRowAsignatura;
-
                 return (
                   <React.Fragment key={idx}>
-                    <tr className="app-surface-hover">
-                      <td className="py-2 app-text">
-                        {viewMode === 'area' && (
-                          <button
-                            className="mr-2 app-text-muted hover:app-text app-focus cursor-pointer rounded"
-                            onClick={() =>
-                              onToggleArea(group.estudiante, row.area)
-                            }
-                            aria-label={`Toggle subjects for ${row.area}`}
-                          >
-                            {isAreaExpanded ? '📂' : '📁'}
-                          </button>
-                        )}
-                        {viewMode === 'area' ? rowAny.area : rowAny.asignatura}
-                      </td>
-                      <td className="py-2 text-center">
-                        <EditableGradeCell
-                          rowId={row.id}
-                          period="P1"
-                          originalGrade={
-                            viewMode === 'area' ? rowAny.defP1 : rowAny.p1
-                          }
-                          simulatedGrade={activeSimulations[row.id]?.P1}
-                          onSave={onSetSimulation}
-                        />
-                      </td>
-                      <td className="py-2 text-center">
-                        <EditableGradeCell
-                          rowId={row.id}
-                          period="P2"
-                          originalGrade={
-                            viewMode === 'area' ? rowAny.defP2 : rowAny.p2
-                          }
-                          simulatedGrade={activeSimulations[row.id]?.P2}
-                          onSave={onSetSimulation}
-                        />
-                      </td>
-                      <td className="py-2 text-center">
-                        <EditableGradeCell
-                          rowId={row.id}
-                          period="P3"
-                          originalGrade={
-                            viewMode === 'area' ? rowAny.defP3 : rowAny.p3
-                          }
-                          simulatedGrade={activeSimulations[row.id]?.P3}
-                          onSave={onSetSimulation}
-                        />
-                      </td>
-                      {hasP4 && (
-                        <td className="py-2 text-center">
-                          <EditableGradeCell
-                            rowId={row.id}
-                            period="P4"
-                            originalGrade={
-                              viewMode === 'area' ? rowAny.defP4 : rowAny.p4
-                            }
-                            simulatedGrade={activeSimulations[row.id]?.P4}
-                            onSave={onSetSimulation}
-                          />
-                        </td>
-                      )}
-                      <td className="py-2 text-center font-bold app-text">
-                        {viewMode === 'area'
-                          ? rowAny.defA?.toFixed(2) ?? '-'
-                          : rowAny.a?.toFixed(2) ?? '-'}
-                      </td>
-                      <td
-                        className="py-2 text-center text-xl"
-                        title={`Tendencia: ${rowAny.tendencia}`}
-                      >
-                        {rowAny.tendencia === 'up'
-                          ? '↗️'
-                          : rowAny.tendencia === 'down'
-                            ? '↘️'
-                            : rowAny.tendencia === 'flat'
-                              ? '➡️'
-                              : '-'}
-                      </td>
-                      <td className="py-2 text-center font-semibold app-text">
-                        <GoalSeekCell
-                          rowId={row.id}
-                          currentValue={rowAny.promActual}
-                          notas={
-                            viewMode === 'area'
-                              ? {
-                                  P1: rowAny.defP1 ?? null,
-                                  P2: rowAny.defP2 ?? null,
-                                  P3: rowAny.defP3 ?? null,
-                                  P4: rowAny.defP4 ?? null,
-                                }
-                              : {
-                                  P1: rowAny.p1 ?? null,
-                                  P2: rowAny.p2 ?? null,
-                                  P3: rowAny.p3 ?? null,
-                                  P4: rowAny.p4 ?? null,
-                                }
-                          }
-                          config={config}
-                          evaluated={evaluated}
-                          hasP4={hasP4}
-                          onGoalSet={onSetSimulation}
-                        />
-                      </td>
-                      <td className="py-2 text-center app-text-muted">
-                        {rowAny.p4Min !== null &&
-                        rowAny.p4Min !== undefined &&
-                        rowAny.p4Min <= 5.0 ? (
-                          <span
-                            className="cursor-pointer hover:text-amber-500 transition-colors border-b border-dashed border-amber-300 dark:border-amber-700"
-                            title="Click para auto-completar nota mínima aprobatoria"
-                            onClick={() =>
-                              onSetSimulation(
-                                row.id,
-                                hasP4 ? 'P4' : 'P3',
-                                rowAny.p4Min!,
-                              )
-                            }
-                          >
-                            {rowAny.p4Min.toFixed(2)}
-                          </span>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                      <td className="py-2 text-center">
-                        <StatusBadge
-                          text={rowAny.estado.text}
-                          color={rowAny.estado.color}
-                        />
-                        {rowAny.p4Min !== null &&
-                          rowAny.p4Min !== undefined &&
-                          rowAny.p4Min > 5.0 && (
-                            <span
-                              className="ml-2 cursor-help"
-                              title={`Requiere ${rowAny.p4Min} en el periodo restante para aprobar`}
-                            >
-                              ⚠️
-                            </span>
-                          )}
-                      </td>
-                    </tr>
+                    <StudentRowData
+                      row={row}
+                      groupEstudiante={group.estudiante}
+                      viewMode={viewMode}
+                      hasP4={hasP4}
+                      activeSimulations={activeSimulations}
+                      onSetSimulation={onSetSimulation}
+                      expandedAreas={expandedAreas}
+                      onToggleArea={onToggleArea}
+                      config={config}
+                      evaluated={evaluated}
+                    />
                     {viewMode === 'area' && isAreaExpanded && (
                       <tr className="app-surface-muted">
                         <td colSpan={hasP4 ? 10 : 9} className="p-3 pl-8">

@@ -13,7 +13,7 @@
 | Versión | `1.2.0` |
 | Frontend | React 19 + TypeScript + Vite |
 | Datos | Procesamiento local de Excel con Web Worker |
-| Calidad | 482 pruebas automatizadas con Vitest |
+| Calidad | 545 pruebas automatizadas con Vitest |
 | Despliegue | Vercel |
 | Privacidad | Los archivos se procesan en el equipo del usuario |
 
@@ -136,8 +136,10 @@ npm run test
 ## Estándares de trabajo
 
 - Mantener commits convencionales.
+- Arquitectura de flujo (MANDATORIO): Usar el modelo de **Doble Worktree** (Santuario para `master` / Laboratorio en detached HEAD para el código) para proteger la rama principal.
+- Planificación limpia: Usar **SDD + Engram** para la planificación. No ensuciar el repositorio con archivos markdown en `.openspec/` u otros temporales; todo va a la memoria persistente del agente.
 - Actualizar este README cuando una mejora cambie la experiencia del usuario, el flujo de trabajo o las capacidades principales.
-- Mantener las pruebas junto a la lógica que verifican.
+- Mantener las pruebas junto a la lógica que verifican. La baseline actual exige mantener todo en verde (`npm test -- --run`).
 - Evitar cálculos duplicados: la lógica académica canónica vive en los servicios del dominio.
 - No agregar atribución de IA ni `Co-Authored-By` en commits.
 

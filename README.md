@@ -13,9 +13,18 @@
 | Versión | `1.2.0` |
 | Frontend | React 19 + TypeScript + Vite |
 | Datos | Procesamiento local de Excel con Web Worker |
-| Calidad | 464 pruebas automatizadas con Vitest |
+| Calidad | 482 pruebas automatizadas con Vitest |
 | Despliegue | Vercel |
 | Privacidad | Los archivos se procesan en el equipo del usuario |
+
+
+## Novedades recientes
+
+- **Terminología institucional limpia**: la experiencia activa usa **Diagnóstico Pedagógico** de forma consistente para reemplazar nombres experimentales anteriores.
+- **Ficha de estudiante más robusta para impresión**: la vista imprimible limpia su estado aunque el navegador interrumpa o falle el diálogo de impresión.
+- **Reportes anchos contenidos**: Registro Oficial y Mapa de Calor mantienen el ancho de la página y desplazan la tabla dentro del reporte cuando hace falta.
+- **Tarjetas de Diagnóstico Pedagógico más legibles**: el nombre del estudiante queda visible como título de cada tarjeta y el botón **Ficha** abre el perfil correspondiente.
+- **Validación con datos institucionales reales**: el flujo fue verificado con 13 archivos Excel de 1P, 342 estudiantes, 3866 filas de áreas y 5814 filas de asignaturas sin incidencias de diagnóstico.
 
 ## Para qué sirve
 
@@ -43,9 +52,9 @@ La plataforma ayuda a docentes, directores de grupo y directivas a responder pre
 | **Mentores pares** | Sugiere estudiantes destacados que pueden acompañar a compañeros en dificultad dentro de la misma área. |
 | **Volatilidad académica** | Clasifica trayectorias como estable, ascenso, caída libre o montaña rusa según la evolución del desempeño. |
 | **Mapa de calor** | Visualiza rápidamente el estado académico por estudiante y área/asignatura mediante colores. |
-| **Diagnóstico Pedagógico** | Agrupa patrones pedagógicos como resiliente, confiado, montaña rusa o radar para orientar intervenciones. |
-| **Reportes institucionales** | Genera vistas de rendimiento grupal, destacados, riesgo académico, asignaturas, comparativa de grupos, mapa de calor, retroalimentación docente y registro oficial. |
-| **Exportación e impresión** | Exporta reportes individuales a Excel, genera un consolidado completo multihoja y prepara vistas imprimibles optimizadas. |
+| **Diagnóstico Pedagógico** | Agrupa patrones pedagógicos como resiliente, confiado, montaña rusa o radar; cada tarjeta muestra el estudiante y permite abrir su ficha. |
+| **Reportes institucionales** | Genera vistas de rendimiento grupal, destacados, riesgo académico, asignaturas, comparativa de grupos, mapa de calor, retroalimentación docente, registro oficial y diagnóstico pedagógico. |
+| **Exportación e impresión** | Exporta reportes individuales a Excel, genera un consolidado completo multihoja y prepara vistas imprimibles optimizadas, incluyendo ficha de estudiante. |
 | **Tema claro/oscuro** | Interfaz moderna con soporte de tema y diseño responsive. |
 
 ## Reportes disponibles
@@ -60,8 +69,9 @@ Desde el módulo **Reportes y PDF** se pueden consultar y exportar:
 6. **Mapa de calor**: matriz visual de desempeño por estudiante.
 7. **Retroalimentación docente**: fortalezas, debilidades y recomendaciones por estudiante.
 8. **Registro oficial**: vista consolidada para cierre académico, con periodo y director configurables.
+9. **Diagnóstico Pedagógico**: tarjetas de intervención con patrón, severidad, explicación, confianza y acceso directo a la ficha del estudiante.
 
-Además, el botón **Consolidado Completo** descarga un Excel multihoja con los reportes principales del grupo seleccionado.
+Además, el botón **Consolidado Completo** descarga un Excel multihoja con los reportes principales del grupo seleccionado. Las tablas anchas usan desplazamiento interno para no ensanchar toda la página.
 
 ## Flujo recomendado de uso
 
@@ -72,6 +82,7 @@ Además, el botón **Consolidado Completo** descarga un Excel multihoja con los 
 5. Simular escenarios What-If cuando se necesite proyectar recuperaciones.
 6. Abrir la ficha de estudiante para preparar reuniones con familias.
 7. Exportar o imprimir reportes institucionales según la necesidad.
+8. Usar **Consolidado Completo** cuando se requiera una entrega multihoja para revisión institucional.
 
 ## Privacidad y arquitectura
 
@@ -132,7 +143,7 @@ npm run test
 
 ## Roadmap cercano
 
-- Mantener el README y el roadmap sincronizados con cada release.
+- Mantener el README y el roadmap sincronizados con cada release o cambio visible de producto.
 - Seguir fortaleciendo pruebas sobre lógica académica, reportes, exportaciones e impresión.
 - Revisar periódicamente compatibilidad de formatos Excel institucionales.
 - Continuar puliendo experiencia de usuario para docentes y directivas.

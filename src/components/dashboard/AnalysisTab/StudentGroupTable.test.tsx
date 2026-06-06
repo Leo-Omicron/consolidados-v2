@@ -175,7 +175,6 @@ describe('StudentGroupHeader', () => {
     render(
       <StudentGroupHeader
         viewMode="area"
-        hasP4={false}
         onSort={onSort}
         sortConfig={null}
       />
@@ -190,7 +189,6 @@ describe('StudentGroupHeader', () => {
     render(
       <StudentGroupHeader
         viewMode="area"
-        hasP4={false}
         onSort={onSort}
         sortConfig={null}
       />
@@ -204,7 +202,6 @@ describe('StudentGroupHeader', () => {
     render(
       <StudentGroupHeader
         viewMode="area"
-        hasP4={false}
         onSort={vi.fn()}
         sortConfig={{ key: 'estudiante', direction: 'asc' }}
       />
@@ -217,7 +214,6 @@ describe('StudentGroupHeader', () => {
     render(
       <StudentGroupHeader
         viewMode="area"
-        hasP4={false}
         onSort={vi.fn()}
         sortConfig={{ key: 'estudiante', direction: 'desc' }}
       />
@@ -230,7 +226,6 @@ describe('StudentGroupHeader', () => {
     render(
       <StudentGroupHeader
         viewMode="area"
-        hasP4={false}
         onSort={vi.fn()}
         sortConfig={{ key: 'aggregates.promActual', direction: 'asc' }}
       />
@@ -245,7 +240,6 @@ describe('StudentGroupHeader', () => {
     render(
       <StudentGroupHeader
         viewMode="area"
-        hasP4={false}
         onSort={vi.fn()}
         sortConfig={null}
       />
@@ -258,7 +252,6 @@ describe('StudentGroupHeader', () => {
     render(
       <StudentGroupHeader
         viewMode="subject"
-        hasP4={false}
         onSort={vi.fn()}
         sortConfig={null}
       />
@@ -476,5 +469,207 @@ describe('StudentGroupRow', () => {
     expect(fichaBtn).toBeInTheDocument();
     fireEvent.click(fichaBtn);
     expect(mockOnOpenStudentProfile).toHaveBeenCalledWith('Juan');
+  });
+
+  // ── Restaurar with child subjects ──
+
+  it('shows Restaurar button when only a child subject has simulations', () => {
+    const subjectsMap = new Map<string, RowAsignatura[]>();
+    subjectsMap.set('Juan_Matemáticas', [
+      {
+        id: 'juan_Matematicas_ALGEBRA',
+        estudiante: 'Juan',
+        area: 'Matemáticas',
+        asignatura: 'Álgebra',
+        p1: 3.5,
+        p2: 3.0,
+        p3: null,
+        p4: null,
+        a: 0,
+        promActual: 3.25,
+        p4Min: null,
+        estado: { text: 'Ganado', color: 'green' },
+        CURSO: '9A',
+        CURSO_NORM: '9A',
+        AREA_NORM: 'Matemáticas',
+        EST_NORM: 'Juan',
+        grupo: '9A',
+      } as RowAsignatura,
+    ]);
+
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        subjectsByStudentArea={subjectsMap}
+        activeSimulations={{ 'juan_Matematicas_ALGEBRA': { P1: 3.0 } }}
+      />
+    );
+
+    // Restaurar should appear because child subject has simulation
+    expect(screen.getByText('Restaurar')).toBeInTheDocument();
+  });
+
+  it('calls onClearSimulation for area rows AND child subjects when Restaurar is clicked', () => {
+    const subjectsMap = new Map<string, RowAsignatura[]>();
+    const childRow: RowAsignatura = {
+      id: 'juan_Matematicas_ALGEBRA',
+      estudiante: 'Juan',
+      area: 'Matemáticas',
+      asignatura: 'Álgebra',
+      p1: 3.5,
+      p2: 3.0,
+      p3: null,
+      p4: null,
+      a: 0,
+      promActual: 3.25,
+      p4Min: null,
+      estado: { text: 'Ganado', color: 'green' },
+      CURSO: '9A',
+      CURSO_NORM: '9A',
+      AREA_NORM: 'Matemáticas',
+      EST_NORM: 'Juan',
+      grupo: '9A',
+    } as RowAsignatura;
+    subjectsMap.set('Juan_Matemáticas', [childRow]);
+
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        expandedGroups={{ 'Juan': true }}
+        expandedAreas={{ 'Juan_Matemáticas': true }}
+        subjectsByStudentArea={subjectsMap}
+        activeSimulations={{ 'juan_Matemáticas': { P1: 3.0 } }}
+      />
+    );
+
+    const restaurarBtn = screen.getByText('Restaurar');
+    fireEvent.click(restaurarBtn);
+
+    // Must clear area rows
+    expect(mockOnClearSimulation).toHaveBeenCalledWith('juan_Matemáticas');
+    expect(mockOnClearSimulation).toHaveBeenCalledWith('juan_Ciencias');
+    // Must also clear child subjects
+    expect(mockOnClearSimulation).toHaveBeenCalledWith('juan_Matematicas_ALGEBRA');
+  });
+
+  // ── colSpan tests ──
+
+  it('uses colSpan=9 for expanded area wrapper without P4', () => {
+    const subjectsMap = new Map<string, RowAsignatura[]>();
+    subjectsMap.set('Juan_Matemáticas', [
+      {
+        id: 'juan_Matematicas_ALGEBRA',
+        estudiante: 'Juan',
+        area: 'Matemáticas',
+        asignatura: 'Álgebra',
+        p1: 3.5,
+        p2: 3.0,
+        p3: null,
+        p4: null,
+        a: 0,
+        promActual: 3.25,
+        p4Min: null,
+        estado: { text: 'Ganado', color: 'green' },
+        CURSO: '9A',
+        CURSO_NORM: '9A',
+        AREA_NORM: 'Matemáticas',
+        EST_NORM: 'Juan',
+        grupo: '9A',
+      } as RowAsignatura,
+    ]);
+
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        expandedGroups={{ 'Juan': true }}
+        expandedAreas={{ 'Juan_Matemáticas': true }}
+        subjectsByStudentArea={subjectsMap}
+        hasP4={false}
+      />
+    );
+
+    // Find the td that wraps the nested subject table (it has the p-3 pl-8 classes)
+    const wrapperCells = document.querySelectorAll('td.p-3.pl-8');
+    expect(wrapperCells.length).toBeGreaterThanOrEqual(1);
+    expect(wrapperCells[0]).toHaveAttribute('colspan', '9');
+  });
+
+  it('uses colSpan=10 for expanded area wrapper with P4', () => {
+    const subjectsMap = new Map<string, RowAsignatura[]>();
+    subjectsMap.set('Juan_Matemáticas', [
+      {
+        id: 'juan_Matematicas_ALGEBRA',
+        estudiante: 'Juan',
+        area: 'Matemáticas',
+        asignatura: 'Álgebra',
+        p1: 3.5,
+        p2: 3.0,
+        p3: null,
+        p4: 2.0,
+        a: 0,
+        promActual: 3.25,
+        p4Min: null,
+        estado: { text: 'Ganado', color: 'green' },
+        CURSO: '9A',
+        CURSO_NORM: '9A',
+        AREA_NORM: 'Matemáticas',
+        EST_NORM: 'Juan',
+        grupo: '9A',
+      } as RowAsignatura,
+    ]);
+
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        expandedGroups={{ 'Juan': true }}
+        expandedAreas={{ 'Juan_Matemáticas': true }}
+        subjectsByStudentArea={subjectsMap}
+        hasP4={true}
+        config={{ P1: 25, P2: 25, P3: 25, P4: 25 }}
+      />
+    );
+
+    const wrapperCells = document.querySelectorAll('td.p-3.pl-8');
+    expect(wrapperCells.length).toBeGreaterThanOrEqual(1);
+    expect(wrapperCells[0]).toHaveAttribute('colspan', '10');
+  });
+
+  it('uses colSpan=9 for empty subjects row without P4', () => {
+    // No subjects in the map → empty state
+    const emptyMap = new Map<string, RowAsignatura[]>();
+
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        expandedGroups={{ 'Juan': true }}
+        expandedAreas={{ 'Juan_Matemáticas': true }}
+        subjectsByStudentArea={emptyMap}
+        hasP4={false}
+      />
+    );
+
+    // The empty-state message td has p-4 text-center classes
+    const emptyCells = screen.getAllByText('No hay asignaturas para esta área.');
+    expect(emptyCells.length).toBeGreaterThanOrEqual(1);
+    expect(emptyCells[0]).toHaveAttribute('colspan', '9');
+  });
+
+  it('uses colSpan=10 for empty subjects row with P4', () => {
+    const emptyMap = new Map<string, RowAsignatura[]>();
+
+    render(
+      <StudentGroupRow
+        {...defaultRowProps}
+        expandedGroups={{ 'Juan': true }}
+        expandedAreas={{ 'Juan_Matemáticas': true }}
+        subjectsByStudentArea={emptyMap}
+        hasP4={true}
+        config={{ P1: 25, P2: 25, P3: 25, P4: 25 }}
+      />
+    );
+
+    const emptyCells = screen.getAllByText('No hay asignaturas para esta área.');
+    expect(emptyCells.length).toBeGreaterThanOrEqual(1);
+    expect(emptyCells[0]).toHaveAttribute('colspan', '10');
   });
 });

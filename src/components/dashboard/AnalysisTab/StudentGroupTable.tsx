@@ -46,7 +46,6 @@ export const StudentGroupTable: React.FC<StudentGroupTableProps> = ({
     <div className="app-surface max-h-[600px] overflow-auto shadow-sm rounded-lg border app-border transition-premium">
       <StudentGroupHeader
         viewMode={viewMode}
-        hasP4={hasP4}
         onSort={onSort}
         sortConfig={sortConfig}
       />

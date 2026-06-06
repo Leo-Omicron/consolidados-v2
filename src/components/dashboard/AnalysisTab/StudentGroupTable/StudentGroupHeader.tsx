@@ -4,7 +4,6 @@ import { getSortIcon } from './sortIcon';
 
 export interface StudentGroupHeaderProps {
   viewMode: 'area' | 'subject';
-  hasP4: boolean;
   onSort: (key: string) => void;
   sortConfig: SortConfig | null;
 }

@@ -49,7 +49,12 @@ export const StudentGroupRow: React.FC<StudentGroupRowProps> = ({
   );
   const isExpanded = expandedGroups[group.estudiante] ?? isGroupAtRisk;
   const hasStudentSimulations = group.rows.some(
-    (row) => activeSimulations[row.id] !== undefined
+    (row) => {
+      if (activeSimulations[row.id] !== undefined) return true;
+      const areaKey = `${group.estudiante}_${row.area}`;
+      const subjects = subjectsByStudentArea.get(areaKey) || [];
+      return subjects.some((sub) => activeSimulations[sub.id] !== undefined);
+    }
   );
   const studentId =
     parseRowId(group.rows[0]?.id ?? '')?.studentId ?? group.estudiante;
@@ -103,7 +108,12 @@ export const StudentGroupRow: React.FC<StudentGroupRowProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                group.rows.forEach((row) => onClearSimulation(row.id));
+                group.rows.forEach((row) => {
+                  onClearSimulation(row.id);
+                  const areaKey = `${group.estudiante}_${row.area}`;
+                  const subjects = subjectsByStudentArea.get(areaKey) || [];
+                  subjects.forEach((sub) => onClearSimulation(sub.id));
+                });
               }}
               className="ml-3 px-2 py-0.5 text-[10px] font-bold uppercase rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors cursor-pointer shadow-sm app-focus"
               title="Restaurar notas reales de este estudiante"
@@ -369,7 +379,7 @@ export const StudentGroupRow: React.FC<StudentGroupRowProps> = ({
                     {viewMode === 'area' && isAreaExpanded && (
                       <tr className="app-surface-muted">
                         <td
-                          colSpan={hasP4 ? 9 : 8}
+                          colSpan={hasP4 ? 10 : 9}
                           className="p-3 pl-8"
                         >
                           <div className="border app-border rounded-xl overflow-hidden app-surface shadow-sm transition-premium">
@@ -542,7 +552,7 @@ export const StudentGroupRow: React.FC<StudentGroupRowProps> = ({
                                 {subjects.length === 0 && (
                                   <tr>
                                     <td
-                                      colSpan={hasP4 ? 9 : 8}
+                                      colSpan={hasP4 ? 10 : 9}
                                       className="p-4 text-center app-text-muted"
                                     >
                                       No hay asignaturas para esta área.

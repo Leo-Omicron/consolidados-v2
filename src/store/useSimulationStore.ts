@@ -37,6 +37,71 @@ function tryParseJson<T>(decompressed: string): T | null {
   }
 }
 
+const VALID_PERIODS = new Set(['P1', 'P2', 'P3', 'P4']);
+
+/** Runtime schema validation for imported simulation data.
+ *  Accepts only: `{ [rowId]: { P1?: number, P2?: number, P3?: number, P4?: number } }`
+ *  Returns the validated data or `null` if invalid. */
+function validateSimulationData(raw: unknown): Record<string, Partial<PeriodoNotas>> | null {
+  // Must be a plain non-array object
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    console.error('importFromHash: schema validation failed — payload must be a plain object, got', typeof raw);
+    return null;
+  }
+
+  const data = raw as Record<string, unknown>;
+  const validated: Record<string, Partial<PeriodoNotas>> = {};
+
+  for (const [rowId, periods] of Object.entries(data)) {
+    // Each value must be a plain object
+    if (periods === null || typeof periods !== 'object' || Array.isArray(periods)) {
+      console.error('importFromHash: schema validation failed — row "%s" value must be a plain object', rowId);
+      return null;
+    }
+
+    const entry = periods as Record<string, unknown>;
+    const validatedEntry: Partial<PeriodoNotas> = {};
+    let hasValidPeriod = false;
+
+    for (const [period, grade] of Object.entries(entry)) {
+      // Only P1-P4 are valid period keys
+      if (!VALID_PERIODS.has(period)) {
+        console.error('importFromHash: schema validation failed — invalid period key "%s" in row "%s"', period, rowId);
+        return null;
+      }
+
+      // Grade must be a finite number in [0, 5]
+      if (grade === null || grade === undefined || typeof grade !== 'number') {
+        console.error('importFromHash: schema validation failed — period "%s" in row "%s" must be a number, got %s', period, rowId, typeof grade);
+        return null;
+      }
+
+      if (!Number.isFinite(grade)) {
+        console.error('importFromHash: schema validation failed — period "%s" in row "%s" is not a finite number: %d', period, rowId, grade);
+        return null;
+      }
+
+      if (grade < 0 || grade > 5) {
+        console.error('importFromHash: schema validation failed — period "%s" in row "%s" is out of range [0,5]: %d', period, rowId, grade);
+        return null;
+      }
+
+      (validatedEntry as Record<string, number>)[period] = grade;
+      hasValidPeriod = true;
+    }
+
+    // Row must have at least one valid period
+    if (!hasValidPeriod) {
+      console.error('importFromHash: schema validation failed — row "%s" has no valid period entries', rowId);
+      return null;
+    }
+
+    validated[rowId] = validatedEntry;
+  }
+
+  return validated;
+}
+
 export interface SimulationState {
   activeSimulations: Record<string, Partial<PeriodoNotas>>;
   setSimulation: (rowId: string, period: keyof PeriodoNotas, value: number | null) => void;
@@ -120,13 +185,18 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       return false;
     }
 
-    const data = tryParseJson<Record<string, Partial<PeriodoNotas>>>(decompressed);
+    const data = tryParseJson<unknown>(decompressed);
     if (data === null) {
       console.error('importFromHash: decompressed data is not valid JSON');
       return false;
     }
 
-    set({ activeSimulations: data });
+    const validated = validateSimulationData(data);
+    if (validated === null) {
+      return false;
+    }
+
+    set({ activeSimulations: validated });
     return true;
   }
 }));

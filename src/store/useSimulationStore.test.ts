@@ -265,4 +265,196 @@ describe('importFromHash / exportToHash', () => {
 
     expect(hash).toBe('');
   });
+
+  // ── Schema Validation Tests ──────────────────────────────────────
+
+  // SCHEMA-1: Valid JSON but array instead of object → false, no mutation
+  it('SCHEMA-1: rejects array payload without mutating state', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+
+    const hash = '#sim=' + LZString.compressToEncodedURIComponent(JSON.stringify([{ P1: 3.0 }]));
+
+    const result = s.importFromHash(hash);
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    const errorMsg = consoleErrorSpy.mock.calls[0]?.join(' ') ?? '';
+    expect(errorMsg).toContain('schema');
+  });
+
+  // SCHEMA-2: Invalid period key 'A' → false, no mutation
+  it('SCHEMA-2: rejects invalid period key "A" without mutating state', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+
+    const hash = '#sim=' + LZString.compressToEncodedURIComponent(
+      JSON.stringify({ row1: { A: 3.0 } })
+    );
+
+    const result = s.importFromHash(hash);
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    const errorMsg2 = consoleErrorSpy.mock.calls[0]?.join(' ') ?? '';
+    expect(errorMsg2).toContain('schema');
+  });
+
+  // SCHEMA-3: Invalid period key 'P5' → false, no mutation
+  it('SCHEMA-3: rejects invalid period key "P5" without mutating state', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+
+    const hash = '#sim=' + LZString.compressToEncodedURIComponent(
+      JSON.stringify({ row1: { P5: 3.0 } })
+    );
+
+    const result = s.importFromHash(hash);
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    const errorMsg3 = consoleErrorSpy.mock.calls[0]?.join(' ') ?? '';
+    expect(errorMsg3).toContain('schema');
+  });
+
+  // SCHEMA-4: Negative value → false, no mutation
+  it('SCHEMA-4: rejects negative grade value without mutating state', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+
+    const hash = '#sim=' + LZString.compressToEncodedURIComponent(
+      JSON.stringify({ row1: { P1: -1.0 } })
+    );
+
+    const result = s.importFromHash(hash);
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    const errorMsg4 = consoleErrorSpy.mock.calls[0]?.join(' ') ?? '';
+    expect(errorMsg4).toContain('schema');
+  });
+
+  // SCHEMA-5: Value > 5 → false, no mutation
+  it('SCHEMA-5: rejects grade value above 5 without mutating state', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+
+    const hash = '#sim=' + LZString.compressToEncodedURIComponent(
+      JSON.stringify({ row1: { P1: 6.0 } })
+    );
+
+    const result = s.importFromHash(hash);
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    const errorMsg5 = consoleErrorSpy.mock.calls[0]?.join(' ') ?? '';
+    expect(errorMsg5).toContain('schema');
+  });
+
+  // SCHEMA-6: NaN value → false, no mutation
+  it('SCHEMA-6: rejects NaN grade value without mutating state', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+
+    // NaN cannot be JSON-serialized directly, so we simulate post-parse NaN
+    const hash = '#sim=' + LZString.compressToEncodedURIComponent(
+      JSON.stringify({ row1: { P1: 'not-a-number' } })
+    );
+
+    const result = s.importFromHash(hash);
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    const errorMsg6 = consoleErrorSpy.mock.calls[0]?.join(' ') ?? '';
+    expect(errorMsg6).toContain('schema');
+  });
+
+  // SCHEMA-7: null value for a period → false, no mutation
+  it('SCHEMA-7: rejects null grade value without mutating state', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+
+    const hash = '#sim=' + LZString.compressToEncodedURIComponent(
+      JSON.stringify({ row1: { P1: null } })
+    );
+
+    const result = s.importFromHash(hash);
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    const errorMsg7 = consoleErrorSpy.mock.calls[0]?.join(' ') ?? '';
+    expect(errorMsg7).toContain('schema');
+  });
+
+  // SCHEMA-8: Valid payload still imports correctly
+  it('SCHEMA-8: valid payload imports successfully', () => {
+    const s = useSimulationStore.getState();
+
+    s.setSimulation('studentA', 'P1', 4.0);
+    s.setSimulation('studentA', 'P3', 3.5);
+    s.setSimulation('studentB', 'P2', 2.0);
+    s.setSimulation('studentB', 'P4', 5.0);
+
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+    const hash = s.exportToHash();
+
+    s.clearAllSimulations();
+    const result = s.importFromHash(hash);
+
+    expect(result).toBe(true);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+  });
+
+  // SCHEMA-9: rejects empty object payload with no period keys
+  it('SCHEMA-9: rejects row entry with empty periods object', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+
+    const hash = '#sim=' + LZString.compressToEncodedURIComponent(
+      JSON.stringify({ row1: {} })
+    );
+
+    const result = s.importFromHash(hash);
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    const errorMsg9 = consoleErrorSpy.mock.calls[0]?.join(' ') ?? '';
+    expect(errorMsg9).toContain('schema');
+  });
+
+  // SCHEMA-10: rejects Infinity value
+  it('SCHEMA-10: rejects Infinity grade value without mutating state', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+
+    // JSON cannot represent Infinity, but the string "Infinity" could come from a crafted payload
+    const hash = '#sim=' + LZString.compressToEncodedURIComponent(
+      JSON.stringify({ row1: { P1: 'Infinity' } })
+    );
+
+    const result = s.importFromHash(hash);
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    const errorMsg10 = consoleErrorSpy.mock.calls[0]?.join(' ') ?? '';
+    expect(errorMsg10).toContain('schema');
+  });
 });

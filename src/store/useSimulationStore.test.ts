@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import LZString from 'lz-string';
 import { useSimulationStore } from './useSimulationStore';
 
 describe('useSimulationStore', () => {
@@ -94,5 +95,174 @@ describe('useSimulationStore', () => {
     useSimulationStore.getState().clearAllSimulations();
 
     expect(useSimulationStore.getState().activeSimulations).toEqual({});
+  });
+});
+
+describe('importFromHash / exportToHash', () => {
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    useSimulationStore.getState().clearAllSimulations();
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
+  // HASH-1: Empty string → false, state unchanged
+  it('HASH-1: returns false for empty string without mutating state', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+    const result = s.importFromHash('');
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+  });
+
+  // HASH-2: Missing #sim= prefix → false, state unchanged, console.error
+  it('HASH-2: returns false for hash without #sim= prefix and logs error', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+    const result = s.importFromHash('#otherKey=val');
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('sim')
+    );
+  });
+
+  // HASH-2 triangulation: #sim= with nothing after prefix
+  it('HASH-2: returns false when #sim= prefix is present but content is empty', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+    const result = s.importFromHash('#sim=');
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    // stripHashPrefix returns null → same error path as missing prefix
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('sim')
+    );
+  });
+
+  // HASH-3: Invalid base64 → false, console.error, state unchanged
+  it('HASH-3: returns false for invalid base64 and logs base64 error', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+    // Single character after #sim= is not valid LZString compressed data
+    const result = s.importFromHash('#sim=x');
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('base64')
+    );
+  });
+
+  // HASH-3 triangulation: different invalid base64 payload
+  it('HASH-3: returns false for another invalid base64 variant', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row2', 'P2', 4.0);
+
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+    const result = s.importFromHash('#sim=y');
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('base64')
+    );
+  });
+
+  // HASH-3b: Valid base64 but non-JSON → false, console.error, state unchanged
+  it('HASH-3b: returns false for valid base64 with non-JSON content and logs JSON error', () => {
+    const s = useSimulationStore.getState();
+    s.setSimulation('row1', 'P1', 3.5);
+
+    const nonJsonHash = '#sim=' + LZString.compressToEncodedURIComponent('not-json');
+
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+    const result = s.importFromHash(nonJsonHash);
+
+    expect(result).toBe(false);
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('JSON')
+    );
+  });
+
+  // HASH-4: Valid import → true, state replaced
+  it('HASH-4: returns true and replaces state for valid hash', () => {
+    const s = useSimulationStore.getState();
+
+    s.setSimulation('studentA_MATH', 'P1', 4.0);
+    s.setSimulation('studentB_SCIENCE', 'P2', 3.5);
+
+    const hash = s.exportToHash();
+
+    s.clearAllSimulations();
+    expect(useSimulationStore.getState().activeSimulations).toEqual({});
+
+    const result = s.importFromHash(hash);
+
+    expect(result).toBe(true);
+    expect(useSimulationStore.getState().activeSimulations).toEqual({
+      'studentA_MATH': { P1: 4.0 },
+      'studentB_SCIENCE': { P2: 3.5 },
+    });
+  });
+
+  // HASH-4 triangulation: import from export of different simulations
+  it('HASH-4: roundtrip with single-period simulations', () => {
+    const s = useSimulationStore.getState();
+
+    s.setSimulation('studentX', 'P3', 2.75);
+
+    const hash = s.exportToHash();
+    s.clearAllSimulations();
+
+    const result = s.importFromHash(hash);
+    expect(result).toBe(true);
+    expect(useSimulationStore.getState().activeSimulations).toEqual({
+      studentX: { P3: 2.75 },
+    });
+  });
+
+  // HASH-5: Roundtrip + empty export
+  it('HASH-5: roundtrip preserves full state shape', () => {
+    const s = useSimulationStore.getState();
+
+    s.setSimulation('studentA_MATH', 'P1', 4.5);
+    s.setSimulation('studentA_MATH', 'P2', 3.8);
+    s.setSimulation('studentB_SCIENCE', 'P1', 2.5);
+    s.setSimulation('studentB_SCIENCE', 'P3', 4.0);
+    s.setSimulation('studentC_ART', 'P4', 5.0);
+
+    const stateBefore = useSimulationStore.getState().activeSimulations;
+    const hash = s.exportToHash();
+
+    s.clearAllSimulations();
+    s.importFromHash(hash);
+
+    expect(useSimulationStore.getState().activeSimulations).toEqual(stateBefore);
+  });
+
+  it('HASH-5: empty simulation state exports as empty string', () => {
+    const s = useSimulationStore.getState();
+    s.clearAllSimulations();
+
+    const hash = s.exportToHash();
+
+    expect(hash).toBe('');
   });
 });

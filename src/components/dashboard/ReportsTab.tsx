@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, startTransition } from 'react';
 import { useReportsLogic } from './ReportsTab/useReportsLogic';
+import { useReportExport } from './ReportsTab/useReportExport';
 import { useUIStore } from '../../store/useUIStore';
 
 const GroupPerformanceView = lazy(() => import('./ReportsTab/views/GroupPerformanceView').then(m => ({ default: m.GroupPerformanceView })));
@@ -26,6 +27,19 @@ const menuItems = [
 
 export const ReportsTab: React.FC = () => {
   const logic = useReportsLogic();
+  const exportHook = useReportExport({
+    activeTab: logic.activeTab,
+    groupPerformanceData: logic.groupPerformanceData,
+    outstandingStudentsData: logic.outstandingStudentsData,
+    academicRiskData: logic.academicRiskData,
+    subjectAnalyticsData: logic.subjectAnalyticsData,
+    groupComparisonData: logic.groupComparisonData,
+    heatmapData: logic.heatmapData,
+    teacherFeedbackData: logic.teacherFeedbackData,
+    officialRecordsData: logic.officialRecordsData,
+    activeGroupToUse: logic.activeGroupToUse,
+    hasStudentsInGroup: logic.estudiantes.length > 0 && logic.estudiantes.some(s => s.grupo === logic.activeGroupToUse),
+  });
   const setActiveTab = useUIStore(state => state.setReportsActiveTab);
 
   if (logic.estudiantes.length === 0) {
@@ -67,22 +81,22 @@ export const ReportsTab: React.FC = () => {
             </div>
           )}
           <button 
-            onClick={logic.handleExportExcel}
+             onClick={exportHook.handleExportExcel}
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer"
           >
             📊 Exportar Excel
           </button>
           <button 
             onClick={(e) => {
-              if (!logic.canExportConsolidadoCompleto) {
+              if (!exportHook.canExportConsolidadoCompleto) {
                 e.preventDefault();
                 return;
               }
-              logic.handleExportConsolidadoCompleto();
+              exportHook.handleExportConsolidadoCompleto();
             }}
-            aria-disabled={!logic.canExportConsolidadoCompleto}
+            aria-disabled={!exportHook.canExportConsolidadoCompleto}
             className={`flex items-center gap-2 px-4 py-2.5 font-semibold text-sm rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all ${
-              logic.canExportConsolidadoCompleto 
+              exportHook.canExportConsolidadoCompleto 
                 ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer' 
                 : 'bg-slate-300 text-slate-500 cursor-not-allowed'
             }`}

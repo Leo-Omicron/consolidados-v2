@@ -5,6 +5,7 @@ import {
   createLegacySubjectRowId,
   createSubjectRowId,
 } from './rowIdentity';
+import { getPresetWeights } from '../config/academicWeights';
 
 export const PASSING_GRADE = 3.0;
 export const MAX_GRADE = 5.0;
@@ -379,102 +380,35 @@ export function applyAcademicLogic(
   });
 }
 
-export function getPresetWeights(areaName: string, subjects: string[]): Record<string, number> | null {
-  const normArea = areaName.toUpperCase().trim();
-  const normSubjects = subjects.map(s => s.toUpperCase().trim());
+const SPANISH_GRADES: Record<string, number> = {
+  'PRIMERO': 1, 'SEGUNDO': 2, 'TERCERO': 3,
+  'CUARTO': 4, 'QUINTO': 5, 'SEXTO': 6,
+  'SEPTIMO': 7, 'OCTAVO': 8, 'NOVENO': 9,
+  'DECIMO': 10, 'UNDECIMO': 11,
+};
 
-  if (normArea === 'MATEMATICAS' || normArea === 'MATEMÁTICAS') {
-    const hasEst = normSubjects.includes('ESTADISTICA') || normSubjects.includes('ESTADÍSTICA');
-    const hasGeo = normSubjects.includes('GEOMETRIA') || normSubjects.includes('GEOMETRÍA');
-    const hasMat = normSubjects.includes('MATEMATICAS') || normSubjects.includes('MATEMÁTICAS');
-    if (hasEst && hasGeo && hasMat) {
-      const estKey = subjects.find(s => s.toUpperCase().trim().includes('ESTADI')) || '';
-      const geoKey = subjects.find(s => s.toUpperCase().trim().includes('GEOME')) || '';
-      const matKey = subjects.find(s => s.toUpperCase().trim() === 'MATEMATICAS' || s.toUpperCase().trim() === 'MATEMÁTICAS') || '';
-      if (estKey && geoKey && matKey) {
-        return { [estKey]: 0.30, [geoKey]: 0.20, [matKey]: 0.50 };
-      }
+export function getGradeFromGroup(grupo: string): number {
+  const match = grupo.match(/^(\d+)/);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  
+  const upperGrupo = grupo.toUpperCase();
+  // Sort by length descending to prevent "DECIMO" from matching inside "UNDECIMO"
+  const sortedEntries = Object.entries(SPANISH_GRADES).sort((a, b) => b[0].length - a[0].length);
+  
+  for (const [word, grade] of sortedEntries) {
+    if (upperGrupo.includes(word)) {
+      return grade;
     }
   }
-
-  if (normArea === 'CIENCIAS SOCIALES') {
-    const hasCatedra = normSubjects.some(s => s.includes('CATEDRA') || s.includes('CÁTEDRA'));
-    const hasGeo = normSubjects.includes('GEOGRAFIA') || normSubjects.includes('GEOGRAFÍA');
-    const hasHist = normSubjects.includes('HISTORIA') || normSubjects.includes('HISTORÍA');
-    const hasCompCiud = normSubjects.some(s => s.includes('COMPETENCIA') || s.includes('CIUDADANA'));
-    const hasEco = normSubjects.some(s => s.includes('ECONOMIA') || s.includes('ECONOMÍA'));
-
-    // Sexto a Octavo: Historia (50%), Geografía (25%), Cátedra (25%)
-    if (hasCatedra && hasGeo && hasHist) {
-      const catKey = subjects.find(s => s.toUpperCase().trim().includes('CATEDRA') || s.toUpperCase().trim().includes('CÁTEDRA')) || '';
-      const geoKey = subjects.find(s => s.toUpperCase().trim() === 'GEOGRAFIA' || s.toUpperCase().trim() === 'GEOGRAFÍA') || '';
-      const histKey = subjects.find(s => s.toUpperCase().trim() === 'HISTORIA' || s.toUpperCase().trim() === 'HISTORÍA') || '';
-      if (catKey && geoKey && histKey) {
-        return { [catKey]: 0.25, [geoKey]: 0.25, [histKey]: 0.50 };
-      }
-    }
-    
-    // Noveno: Historia (50%), Cátedra (25%), Competencias Ciudadanas (25%)
-    if (hasCatedra && hasHist && hasCompCiud && !hasGeo) {
-      const catKey = subjects.find(s => s.toUpperCase().trim().includes('CATEDRA') || s.toUpperCase().trim().includes('CÁTEDRA')) || '';
-      const histKey = subjects.find(s => s.toUpperCase().trim() === 'HISTORIA' || s.toUpperCase().trim() === 'HISTORÍA') || '';
-      const compKey = subjects.find(s => s.toUpperCase().trim().includes('COMPETENCIA') || s.toUpperCase().trim().includes('CIUDADANA')) || '';
-      if (catKey && histKey && compKey) {
-        return { [catKey]: 0.25, [histKey]: 0.50, [compKey]: 0.25 };
-      }
-    }
-
-    // Décimo y Undécimo: Economía (50%), Competencias Ciudadanas (50%)
-    if (hasEco && hasCompCiud) {
-      const ecoKey = subjects.find(s => s.toUpperCase().trim().includes('ECONOMIA') || s.toUpperCase().trim().includes('ECONOMÍA')) || '';
-      const compKey = subjects.find(s => s.toUpperCase().trim().includes('COMPETENCIA') || s.toUpperCase().trim().includes('CIUDADANA')) || '';
-      if (ecoKey && compKey) {
-        return { [ecoKey]: 0.50, [compKey]: 0.50 };
-      }
-    }
-  }
-
-  if (normArea === 'CIENCIAS NATURALES Y AMBIENTALES' || normArea === 'CIENCIAS NATURALES' || normArea === 'NATURALES') {
-    const hasEduAmb = normSubjects.some(s => s.includes('AMBIENTAL'));
-    const hasBio = normSubjects.includes('BIOLOGIA') || normSubjects.includes('BIOLOGÍA');
-    const hasQui = normSubjects.includes('QUIMICA') || normSubjects.includes('QUÍMICA');
-    const hasFis = normSubjects.includes('FISICA') || normSubjects.includes('FÍSICA');
-
-    // Sexto a Noveno: Educación Ambiental (50%), Biología (50%)
-    if (hasEduAmb && hasBio) {
-      const ambKey = subjects.find(s => s.toUpperCase().trim().includes('AMBIENTAL')) || '';
-      const bioKey = subjects.find(s => s.toUpperCase().trim() === 'BIOLOGIA' || s.toUpperCase().trim() === 'BIOLOGÍA') || '';
-      if (ambKey && bioKey) {
-        return { [ambKey]: 0.50, [bioKey]: 0.50 };
-      }
-    }
-
-    // Décimo y Undécimo: Química (50%), Física (50%)
-    if (hasQui && hasFis) {
-      const quiKey = subjects.find(s => s.toUpperCase().trim() === 'QUIMICA' || s.toUpperCase().trim() === 'QUÍMICA') || '';
-      const fisKey = subjects.find(s => s.toUpperCase().trim() === 'FISICA' || s.toUpperCase().trim() === 'FÍSICA') || '';
-      if (quiKey && fisKey) {
-        return { [quiKey]: 0.50, [fisKey]: 0.50 };
-      }
-    }
-  }
-
-  if (normArea === 'HUMANIDADES Y LENGUA CASTELLANA' || normArea === 'HUMANIDADES') {
-    const hasComp = normSubjects.some(s => s.includes('COMPRENSION') || s.includes('COMPRENSIÓN') || s.includes('LECTORA'));
-    const hasEsp = normSubjects.some(s => s.includes('ESPAÑOL') || s.includes('ESPANOL'));
-    if (hasComp && hasEsp) {
-      const compKey = subjects.find(s => s.toUpperCase().trim().includes('COMPRENSION') || s.toUpperCase().trim().includes('COMPRENSIÓN') || s.toUpperCase().trim().includes('LECTORA')) || '';
-      const espKey = subjects.find(s => s.toUpperCase().trim().includes('ESPAÑOL') || s.toUpperCase().trim().includes('ESPANOL')) || '';
-      if (compKey && espKey) {
-        return { [compKey]: 0.40, [espKey]: 0.60 };
-      }
-    }
-  }
-
-  return null;
+  
+  return 0;
 }
 
-export function inferSubjectWeights(students: Estudiante[], areaName: string): Record<string, number> {
+// old getPresetWeights was here
+
+export function inferSubjectWeights(students: Estudiante[], areaName: string, grupo: string): Record<string, number> {
   const subjects = new Set<string>();
   students.forEach(s => {
     const area = s.areas[areaName];
@@ -484,7 +418,8 @@ export function inferSubjectWeights(students: Estudiante[], areaName: string): R
   });
 
   const subjectList = Array.from(subjects);
-  const preset = getPresetWeights(areaName, subjectList);
+  const grade = getGradeFromGroup(grupo);
+  const preset = getPresetWeights(areaName, subjectList, grade);
   if (preset) return preset;
 
   if (subjectList.length === 0) return { [areaName]: 1.0 };

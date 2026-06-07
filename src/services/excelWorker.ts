@@ -92,7 +92,7 @@ export async function handleParse(
       groupStudents.forEach(s => Object.keys(s.areas).forEach(a => groupAreas.add(a)));
 
       groupAreas.forEach(areaName => {
-        inferredWeights[grupo][areaName] = inferSubjectWeights(groupStudents, areaName);
+        inferredWeights[grupo][areaName] = inferSubjectWeights(groupStudents, areaName, grupo);
       });
     });
 

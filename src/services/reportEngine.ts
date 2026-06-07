@@ -331,7 +331,7 @@ export function generateSubjectAnalyticsReport(students: Estudiante[], grupo: st
   };
 }
 
-export function generateGroupComparisonReport(students: Estudiante[], _config: PeriodConfig): GroupComparisonReport {
+export function generateGroupComparisonReport(students: Estudiante[]): GroupComparisonReport {
   const groupsSet = new Set<string>();
   students.forEach(s => {
     if (s.grupo) groupsSet.add(s.grupo);

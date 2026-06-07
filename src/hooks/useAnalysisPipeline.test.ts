@@ -107,6 +107,24 @@ describe('useAnalysisPipeline', () => {
     expect(groups[0].rows[1].area).toBe('Math');
   });
 
+  it('sorts correctly when sorting by defP4', () => {
+    const mockP4Rows = [
+      { ...createMockRow('1', 'Alice', 'Math', null, null, null, null), defP4: 4.5 },
+      { ...createMockRow('2', 'Bob', 'Science', null, null, null, null), defP4: 3.5 },
+      { ...createMockRow('3', 'Charlie', 'Math', null, null, null, null), defP4: null },
+    ];
+    
+    const sortConfig: SortConfig = { key: 'defP4', direction: 'desc' };
+    const { result } = renderHook(() =>
+      useAnalysisPipeline(mockP4Rows, 'Todos', { search: '', area: '', status: '' }, sortConfig, mockP4Rows, 'area')
+    );
+
+    const groups = result.current.groupedAndSorted;
+    expect(groups[0].estudiante).toBe('Alice'); // 4.5
+    expect(groups[1].estudiante).toBe('Bob'); // 3.5
+    expect(groups[2].estudiante).toBe('Charlie'); // null
+  });
+
   it('updates KPIs correctly when filters are applied', () => {
     const { result, rerender } = renderHook(
       (props) => useAnalysisPipeline(mockRows, 'Todos', props.filters, null, mockRows, 'area'),

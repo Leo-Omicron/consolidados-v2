@@ -121,6 +121,7 @@ export interface StudentGroup<T = PipelineRow> {
     defP1: number | null;
     defP2: number | null;
     defP3: number | null;
+    defP4?: number | null;
     promActual: number | null;
   };
   failedAreasCount?: number;

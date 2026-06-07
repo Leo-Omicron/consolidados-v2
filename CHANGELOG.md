@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/Leo-Omicron/consolidados-v2/compare/v1.2.1...v1.2.2) (2026-06-07)
+
+
+### Bug Fixes
+
+* **analysis:** harden persisted group and p4 sorting ([9b5b019](https://github.com/Leo-Omicron/consolidados-v2/commit/9b5b019584d1ae5eeadf86dfdc05cbddbd0d3c97)), closes [#40](https://github.com/Leo-Omicron/consolidados-v2/issues/40)
+
 ## [1.2.1](https://github.com/Leo-Omicron/consolidados-v2/compare/v1.2.0...v1.2.1) (2026-06-06)
 
 

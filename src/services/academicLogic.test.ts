@@ -13,12 +13,13 @@ import {
   getEvaluatedPeriods,
   getStudentAverage,
   applyAcademicLogic,
-  getPresetWeights,
   inferSubjectWeights,
   isAcademicImprovementPoint,
   isAcademicStrength,
-  isStudentReprobado
+  isStudentReprobado,
+  getGradeFromGroup
 } from './academicLogic';
+import { getPresetWeights } from '../config/academicWeights';
 import { createSubjectRowId } from './rowIdentity';
 import type { Area, PeriodoNotas, PeriodConfig, Estudiante } from '../domain/types';
 
@@ -287,57 +288,89 @@ describe('academicLogic', () => {
     });
   });
 
+  describe('getGradeFromGroup', () => {
+    it('parses numeric groups correctly', () => {
+      expect(getGradeFromGroup('10A')).toBe(10);
+      expect(getGradeFromGroup('6B')).toBe(6);
+      expect(getGradeFromGroup('11-2')).toBe(11);
+    });
+
+    it('parses spanish word groups correctly', () => {
+      expect(getGradeFromGroup('SEXTO UNO')).toBe(6);
+      expect(getGradeFromGroup('NOVENO DOS')).toBe(9);
+      expect(getGradeFromGroup('PRIMERO A')).toBe(1);
+      expect(getGradeFromGroup('UNDECIMO')).toBe(11);
+    });
+
+    it('returns 0 for unrecognized groups', () => {
+      expect(getGradeFromGroup('KINDER')).toBe(0);
+      expect(getGradeFromGroup('TRANSICION')).toBe(0);
+    });
+  });
+
   describe('getPresetWeights', () => {
     it('returns mathematics preset', () => {
-      expect(getPresetWeights('MATEMATICAS', ['ESTADISTICA', 'GEOMETRIA', 'MATEMATICAS'])).toEqual({
+      expect(getPresetWeights('MATEMATICAS', ['ESTADISTICA', 'GEOMETRIA', 'MATEMATICAS'], 6)).toEqual({
         'ESTADISTICA': 0.30, 'GEOMETRIA': 0.20, 'MATEMATICAS': 0.50
+      });
+      expect(getPresetWeights('MATEMATICAS', ['ESTADISTICA', 'GEOMETRIA', 'MATEMATICAS'], 3)).toEqual({
+        'ESTADISTICA': 0.25, 'GEOMETRIA': 0.25, 'MATEMATICAS': 0.50
       });
     });
 
     it('returns ciencias sociales 6-8 preset', () => {
-      expect(getPresetWeights('CIENCIAS SOCIALES', ['CATEDRA', 'GEOGRAFIA', 'HISTORIA'])).toEqual({
-        'CATEDRA': 0.25, 'GEOGRAFIA': 0.25, 'HISTORIA': 0.50
+      expect(getPresetWeights('CIENCIAS SOCIALES', ['COMPETENCIAS CIUDADANAS', 'GEOGRAFIA', 'HISTORIA'], 7)).toEqual({
+        'COMPETENCIAS CIUDADANAS': 0.40, 'GEOGRAFIA': 0.20, 'HISTORIA': 0.40
       });
     });
 
-    it('returns ciencias sociales 9 preset', () => {
-      expect(getPresetWeights('CIENCIAS SOCIALES', ['CATEDRA', 'COMPETENCIAS CIUDADANAS', 'HISTORIA'])).toEqual({
-        'CATEDRA': 0.25, 'HISTORIA': 0.50, 'COMPETENCIAS CIUDADANAS': 0.25
+    it('returns ciencias sociales 9 preset exception without geografia', () => {
+      expect(getPresetWeights('CIENCIAS SOCIALES', ['CATEDRA DE LA PAZ', 'COMPETENCIAS CIUDADANAS', 'HISTORIA'], 9)).toEqual({
+        'CATEDRA DE LA PAZ': 0.20, 'HISTORIA': 0.40, 'COMPETENCIAS CIUDADANAS': 0.40
       });
     });
 
     it('returns ciencias sociales 10-11 preset', () => {
-      expect(getPresetWeights('CIENCIAS SOCIALES', ['ECONOMIA', 'COMPETENCIAS CIUDADANAS'])).toEqual({
+      expect(getPresetWeights('CIENCIAS SOCIALES', ['ECONOMIA', 'COMPETENCIAS CIUDADANAS'], 11)).toEqual({
         'ECONOMIA': 0.50, 'COMPETENCIAS CIUDADANAS': 0.50
       });
     });
 
     it('returns ciencias naturales 6-9 preset', () => {
-      expect(getPresetWeights('CIENCIAS NATURALES', ['EDUCACION AMBIENTAL', 'BIOLOGIA'])).toEqual({
-        'EDUCACION AMBIENTAL': 0.50, 'BIOLOGIA': 0.50
+      expect(getPresetWeights('CIENCIAS NATURALES', ['EDUCACION AMBIENTAL', 'BIOLOGIA'], 8)).toEqual({
+        'EDUCACION AMBIENTAL': 0.40, 'BIOLOGIA': 0.60
       });
     });
 
-    it('returns ciencias naturales 10-11 preset', () => {
-      expect(getPresetWeights('CIENCIAS NATURALES', ['QUIMICA', 'FISICA'])).toEqual({
+    it('returns ciencias naturales 10-11 preset exception without biologia', () => {
+      expect(getPresetWeights('CIENCIAS NATURALES', ['QUIMICA', 'FISICA'], 10)).toEqual({
         'QUIMICA': 0.50, 'FISICA': 0.50
+      });
+    });
+    
+    it('returns ciencias naturales primary preset', () => {
+      expect(getPresetWeights('CIENCIAS NATURALES', ['EDUCACION AMBIENTAL', 'CIENCIAS NATURALES'], 3)).toEqual({
+        'EDUCACION AMBIENTAL': 0.60, 'CIENCIAS NATURALES': 0.40
       });
     });
 
     it('returns humanidades preset', () => {
-      expect(getPresetWeights('HUMANIDADES', ['COMPRENSION LECTORA', 'ESPAÑOL'])).toEqual({
-        'COMPRENSION LECTORA': 0.40, 'ESPAÑOL': 0.60
+      expect(getPresetWeights('HUMANIDADES', ['COMPRENSION LECTORA', 'ESPAÑOL'], 9)).toEqual({
+        'COMPRENSION LECTORA': 0.50, 'ESPAÑOL': 0.50
+      });
+      expect(getPresetWeights('HUMANIDADES', ['COMPRENSION LECTORA', 'ESPAÑOL'], 11)).toEqual({
+        'COMPRENSION LECTORA': 0.60, 'ESPAÑOL': 0.40
       });
     });
 
     it('returns null for unknown', () => {
-      expect(getPresetWeights('ARTES', ['DIBUJO', 'PINTURA'])).toBeNull();
+      expect(getPresetWeights('ARTES', ['DIBUJO', 'PINTURA'], 6)).toBeNull();
     });
   });
 
   describe('inferSubjectWeights', () => {
     it('returns equal weights if 0 or 1 subject', () => {
-      expect(inferSubjectWeights([], 'ARTES')).toEqual({ 'ARTES': 1.0 });
+      expect(inferSubjectWeights([], 'ARTES', '10A')).toEqual({ 'ARTES': 1.0 });
     });
 
     it('returns equal weights if too many subjects', () => {
@@ -356,7 +389,7 @@ describe('academicLogic', () => {
           }
         }
       }];
-      expect(inferSubjectWeights(students, 'ARTES')).toEqual({
+      expect(inferSubjectWeights(students, 'ARTES', '10A')).toEqual({
         'A1': 0.25, 'A2': 0.25, 'A3': 0.25, 'A4': 0.25
       });
     });
@@ -375,7 +408,7 @@ describe('academicLogic', () => {
           }
         }
       }];
-      const inferred = inferSubjectWeights(students, 'ARTES');
+      const inferred = inferSubjectWeights(students, 'ARTES', '10A');
       expect(inferred['A1']).toBeCloseTo(0.2);
       expect(inferred['A2']).toBeCloseTo(0.8);
     });
@@ -411,7 +444,7 @@ describe('academicLogic', () => {
           }
         }
       ];
-      const inferred = inferSubjectWeights(students, 'ARTES');
+      const inferred = inferSubjectWeights(students, 'ARTES', '10A');
       expect(inferred['A1']).toBeCloseTo(0.5, 1);
       expect(inferred['A2']).toBeCloseTo(0.2, 1);
       expect(inferred['A3']).toBeCloseTo(0.3, 1);

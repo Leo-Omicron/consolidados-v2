@@ -1,6 +1,5 @@
-import type { PedagogicalArchetype, ArchetypeSeverity, ArchetypeResult } from '../domain/types';
-import type { Estudiante } from '../domain/types';
-import { getStudentAverage } from './academicLogic';
+import type { PedagogicalArchetype, ArchetypeSeverity, ArchetypeResult } from '../../domain/types';
+import { generateNarrative } from './insightGenerator';
 
 // ---------------------------------------------------------------------------
 // Detection thresholds (tunable constants — not magic numbers)
@@ -39,7 +38,7 @@ interface DetectorResult {
 // ---------------------------------------------------------------------------
 
 /** Filter out null values and return the clean numeric grade array */
-function cleanGrades(periodGrades: (number | null)[]): number[] {
+export function cleanGrades(periodGrades: (number | null)[]): number[] {
   return periodGrades.filter((g): g is number => g !== null);
 }
 
@@ -68,31 +67,22 @@ function isMonotonicNonDecreasing(values: number[]): boolean {
 
 // ---------------------------------------------------------------------------
 // El Confiado — sustained decline from high start
-// Conditions:
-//   a) avg(first 2 periods) ≥ 4.0
-//   b) monotonically non-increasing
-//   c) total max→min drop ≥ 0.8
-//   d) at least one period-to-period drop ≥ 0.3
 // ---------------------------------------------------------------------------
 
 export function detectConfiado(periodGrades: (number | null)[]): DetectorResult | null {
   const grades = cleanGrades(periodGrades);
   if (grades.length < 2) return null;
 
-  // (a) avg of first two ≥ 4.0
   const avgFirstTwo = (grades[0] + grades[1]) / 2;
   if (avgFirstTwo < CONFIADO_MIN_AVG_FIRST_TWO) return null;
 
-  // (b) monotonically non-increasing
   if (!isMonotonicNonIncreasing(grades)) return null;
 
-  // (c) total max→min drop ≥ 0.8
   const maxGrade = Math.max(...grades);
   const minGrade = Math.min(...grades);
   const totalDrop = maxGrade - minGrade;
   if (totalDrop < CONFIADO_MIN_TOTAL_DROP) return null;
 
-  // (d) at least one period-to-period drop ≥ 0.3
   const hasSharpDrop = grades.some((g, i) => {
     if (i === 0) return false;
     return grades[i - 1] - g >= CONFIADO_MIN_PERIOD_DROP;
@@ -110,29 +100,20 @@ export function detectConfiado(periodGrades: (number | null)[]): DetectorResult 
 
 // ---------------------------------------------------------------------------
 // El Resiliente — sustained improvement from low start
-// Conditions:
-//   a) avg(first 2 periods) ≤ 3.0
-//   b) monotonically non-decreasing
-//   c) total max→min rise ≥ 0.8
-//   d) at least one period-to-period rise ≥ 0.3
 // ---------------------------------------------------------------------------
 
 export function detectResiliente(periodGrades: (number | null)[]): DetectorResult | null {
   const grades = cleanGrades(periodGrades);
   if (grades.length < 2) return null;
 
-  // (a) avg of first two ≤ 3.0
   const avgFirstTwo = (grades[0] + grades[1]) / 2;
   if (avgFirstTwo > RESILIENTE_MAX_AVG_FIRST_TWO) return null;
 
-  // (b) monotonically non-decreasing
   if (!isMonotonicNonDecreasing(grades)) return null;
 
-  // (c) total rise ≥ 0.8
   const totalRise = grades[grades.length - 1] - grades[0];
   if (totalRise < RESILIENTE_MIN_TOTAL_RISE) return null;
 
-  // (d) at least one period-to-period rise ≥ 0.3
   const hasSharpRise = grades.some((g, i) => {
     if (i === 0) return false;
     return g - grades[i - 1] >= RESILIENTE_MIN_PERIOD_RISE;
@@ -148,17 +129,19 @@ export function detectResiliente(periodGrades: (number | null)[]): DetectorResul
   };
 }
 
+// ---------------------------------------------------------------------------
+// La Montaña Rusa — oscillating grades
+// ---------------------------------------------------------------------------
+
 export function detectMontanaRusa(periodGrades: (number | null)[]): DetectorResult | null {
   const grades = cleanGrades(periodGrades);
   if (grades.length < 2) return null;
 
-  // Compute deltas between consecutive periods
   const deltas: number[] = [];
   for (let i = 1; i < grades.length; i++) {
     deltas.push(grades[i] - grades[i - 1]);
   }
 
-  // Count sign changes (skip zero deltas)
   let signChanges = 0;
   let prevSign: number | null = null;
   for (const d of deltas) {
@@ -171,13 +154,11 @@ export function detectMontanaRusa(periodGrades: (number | null)[]): DetectorResu
 
   if (signChanges < MONTANA_RUSA_MIN_SIGN_CHANGES) return null;
 
-  // Largest absolute delta (represents largest swing)
   const absDeltas = deltas.map(d => Math.abs(d));
   const largestSwing = Math.max(...absDeltas);
 
   if (largestSwing < MONTANA_RUSA_MIN_SWING) return null;
 
-  // At least one |delta| ≥ 0.3
   const hasSharpDelta = absDeltas.some(d => d >= MONTANA_RUSA_MIN_DELTA);
   if (!hasSharpDelta) return null;
 
@@ -190,18 +171,19 @@ export function detectMontanaRusa(periodGrades: (number | null)[]): DetectorResu
   };
 }
 
+// ---------------------------------------------------------------------------
+// El Radar — warning flags without clear pattern
+// ---------------------------------------------------------------------------
+
 export function detectRadar(periodGrades: (number | null)[]): DetectorResult | null {
   const grades = cleanGrades(periodGrades);
   if (grades.length < 2) return null;
 
-  // Warning flags
   let flags = 0;
 
-  // Flag 1: final grade < 3.0
   const finalGrade = grades[grades.length - 1];
   if (finalGrade < RADAR_FAILING_GRADE) flags++;
 
-  // Flag 2: largest single drop ≥ 0.5
   let maxDrop = 0;
   for (let i = 1; i < grades.length; i++) {
     const drop = grades[i - 1] - grades[i];
@@ -222,12 +204,8 @@ export function detectRadar(periodGrades: (number | null)[]): DetectorResult | n
 
 // ---------------------------------------------------------------------------
 // Orchestrator: detectArchetype
-// Runs all 4 detectors, applies tie-breaking by severity:
-//   confiado > resiliente > montana-rusa > radar
-// Returns null with reason 'insufficient-data' if < 2 evaluated periods.
 // ---------------------------------------------------------------------------
 
-/** Severity weight for tie-breaking */
 const SEVERITY_ORDER: Record<PedagogicalArchetype, number> = {
   'confiado': 4,
   'resiliente': 3,
@@ -238,7 +216,6 @@ const SEVERITY_ORDER: Record<PedagogicalArchetype, number> = {
 export function detectArchetype(periodGrades: (number | null)[]): ArchetypeResult | null {
   const grades = cleanGrades(periodGrades);
 
-  // Guard: need at least 2 periods
   if (grades.length < 2) return null;
 
   const detectors: Array<() => DetectorResult | null> = [
@@ -272,57 +249,4 @@ export function detectArchetype(periodGrades: (number | null)[]): ArchetypeResul
     periodGrades,
     narrative,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Narrative generator — Spanish pedagogical text per archetype
-// ---------------------------------------------------------------------------
-
-export function generateNarrative(
-  archetype: PedagogicalArchetype,
-  confidence: number,
-  periodGrades: (number | null)[],
-): string {
-  const numeric = cleanGrades(periodGrades);
-  const gradesText = numeric.map((g, i) => `P${i + 1}=${g}`).join(', ');
-  const pct = Math.round(confidence * 100);
-
-  switch (archetype) {
-    case 'confiado':
-      return (
-        `El estudiante inició con un promedio alto (${gradesText}) pero muestra una tendencia de declive sostenido. ` +
-        `La caída total es significativa, lo que sugiere exceso de confianza o desmotivación progresiva. ` +
-        `Confianza del diagnóstico: ${pct}%. Se recomienda intervención temprana para frenar la tendencia.`
-      );
-    case 'resiliente':
-      return (
-        `El estudiante arrancó con un promedio bajo (${gradesText}) pero evidencia una mejora constante período a período. ` +
-        `Este patrón indica esfuerzo, adaptación positiva y resiliencia académica. ` +
-        `Confianza del diagnóstico: ${pct}%. Se sugiere reconocer y reforzar esta trayectoria de mejora.`
-      );
-    case 'montana-rusa':
-      return (
-        `Las calificaciones del estudiante presentan alta variabilidad (${gradesText}), alternando entre períodos altos y bajos. ` +
-        `Este patrón de "montaña rusa" puede reflejar inconsistencia en el esfuerzo, factores externos o dificultades específicas en ciertos cortes. ` +
-        `Confianza del diagnóstico: ${pct}%. Se recomienda indagar las causas de los picos y valles.`
-      );
-    case 'radar':
-      return (
-        `Aunque el estudiante no encaja en un patrón claro de declive o mejora, sus calificaciones (${gradesText}) presentan señales de alerta: ` +
-        `nota final baja o caídas puntuales pronunciadas. Esto amerita seguimiento cercano. ` +
-        `Confianza del diagnóstico: ${pct}%. Se sugiere monitoreo activo en el próximo período.`
-      );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// calculateStudentPeriodAverages
-// Computes the official student average per period when available, with
-// area-level DEF averaging as fallback.
-// ---------------------------------------------------------------------------
-
-export function calculateStudentPeriodAverages(estudiante: Estudiante): (number | null)[] {
-  const periods = ['P1', 'P2', 'P3', 'P4'] as const;
-
-  return periods.map(period => getStudentAverage(estudiante, period));
 }

@@ -51,7 +51,7 @@ Phase 10 (Charts) ──> Phase 11 (UI Overhaul) ──> Phase 12 (Reports Engin
 * **Phase 14: System Verification & Release**
   * **Task 1: Build & CI Audit**: Run full clean build, verify zero TS/Linter warnings in strict mode.
   * **Task 2: Browser Engine Check**: Verify print layout and flexbox containment across WebKit (Safari) and Gecko (Firefox) engines.
-  * **Task 3: Semantic Release**: Draft final Release Notes capturing Phase 10-13, bump version to `1.2.0`, and tag the release.
+  * **Task 3: Release Closure**: Verify Release Please output, GitHub tag/release, Vercel deploy, and README/package/CHANGELOG version alignment.
 
 ---
 

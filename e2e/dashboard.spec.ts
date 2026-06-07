@@ -1,29 +1,51 @@
 import { test, expect } from '@playwright/test';
+import { generateMockExcelBuffer } from './fixtures/generateMock';
+
+const MOCK_FILE_NAME = 'mock-consolidados.xlsx';
 
 test.describe('Dashboard Baseline E2E', () => {
   test('CUJ 1: Verificar carga del dashboard y título principal', async ({ page }) => {
+    // 1. Navegar a la página principal
     await page.goto('/');
 
-    // Verificar que el título de la página esté presente (usando locators accesibles de PI)
-    await expect(page).toHaveTitle(/Consolidados IEEC/);
-    
-    // Verificar que un elemento clave esté visible (ej. el Header)
-    // Asumimos que hay un elemento semántico main o header.
-    // Usamos getByRole para cumplir con la accesibilidad requerida por PI.
-    const heading = page.getByRole('heading', { level: 1 });
-    await expect(heading).toBeVisible();
+    // 2. Esperar a que el título principal sea visible (usamos el selector por rol 'heading')
+    const mainHeading = page.getByRole('heading', { name: /Cargar Datos de Estudiantes/i });
+    await expect(mainHeading).toBeVisible();
+
+    // 3. Verificar que el área de subida de archivos está presente
+    const fileUploadAreaText = page.getByText(/Arrastrá y soltá tu planilla Excel/i);
+    await expect(fileUploadAreaText).toBeVisible();
   });
 
-  test('CUJ 2: Interacción básica inicial', async ({ page }) => {
+  test('CUJ 3: Data-Driven Flow - Subida de Excel y cálculo estadístico', async ({ page }) => {
+    // 1. Navegar a la página principal
     await page.goto('/');
 
-    // Asegurarse de que el selector de vista (Áreas vs Asignaturas) o de Reportes esté presente.
-    // Buscamos un botón o tab que diga "Promedios" o similar que sea característico del Dashboard.
-    // Si no conocemos el contenido exacto, verificamos que el contenido principal haya cargado.
-    const mainContent = page.getByRole('main');
-    await expect(mainContent).toBeVisible();
+    // Generar el buffer en memoria (sin I/O de disco)
+    const excelBuffer = generateMockExcelBuffer();
+
+    // Usar el aria-label correcto para accesibilidad
+    const fileInput = page.getByLabel('Subir archivo Excel');
     
-    // Aquí esperamos que en el futuro PI audite si agregamos flakiness.
-    // Con estas aserciones auto-waiting nos aseguramos de ser estables.
+    // Inyectar el archivo como buffer directamente
+    await fileInput.setInputFiles({
+      name: MOCK_FILE_NAME,
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      buffer: excelBuffer,
+    });
+
+    // 2. Esperar a que la tabla de promedios se renderice buscando los estudiantes
+    const student1Cell = page.getByText('Juan Perez');
+    await expect(student1Cell).toBeVisible();
+
+    const student2Cell = page.getByText('Ana Gomez');
+    await expect(student2Cell).toBeVisible();
+
+    // 3. Verificar que los cálculos de Promedios están presentes en la UI usando la fila del estudiante
+    const juanRow = page.locator('div').filter({ hasText: 'Juan Perez' }).filter({ hasText: '3.90' });
+    await expect(juanRow.first()).toBeVisible();
+
+    const anaRow = page.locator('div').filter({ hasText: 'Ana Gomez' }).filter({ hasText: '3.50' });
+    await expect(anaRow.first()).toBeVisible();
   });
 });

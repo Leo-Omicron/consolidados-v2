@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateGroupComparisonReport } from './groupComparison';
-import { baseConfig, getStudent } from '../test-fixtures';
+import { getStudent } from '../test-fixtures';
 
 describe('groupComparison', () => {
   describe('generateGroupComparisonReport', () => {

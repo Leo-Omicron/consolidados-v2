@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateHeatmapReport } from './heatmap';
-import { baseConfig, getStudent } from '../test-fixtures';
+import { getStudent } from '../test-fixtures';
 
 describe('heatmap', () => {
   describe('generateHeatmapReport', () => {

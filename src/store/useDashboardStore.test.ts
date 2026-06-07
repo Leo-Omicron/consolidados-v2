@@ -249,4 +249,43 @@ describe('useDashboardStore', () => {
       expect(state.estudiantes).toEqual([]);
     });
   });
+
+  describe('merge validation', () => {
+    it('resets selectedGrupo to Todos if it is not in availableGroups', () => {
+      // Simulate Zustand persist merge manually using store config
+      const storeConfig = (useDashboardStore as any).persist.getOptions();
+      
+      const persistedState = {
+        selectedGrupo: '10B',
+        availableGroups: ['Todos', '10A']
+      };
+      
+      const currentState = {
+        selectedGrupo: '10A',
+        availableGroups: ['Todos', '10A']
+      };
+      
+      const merged = storeConfig.merge(persistedState, currentState);
+      
+      expect(merged.selectedGrupo).toBe('Todos');
+    });
+
+    it('keeps selectedGrupo if it is in availableGroups', () => {
+      const storeConfig = (useDashboardStore as any).persist.getOptions();
+      
+      const persistedState = {
+        selectedGrupo: '10A',
+        availableGroups: ['Todos', '10A', '10B']
+      };
+      
+      const currentState = {
+        selectedGrupo: 'Todos',
+        availableGroups: ['Todos']
+      };
+      
+      const merged = storeConfig.merge(persistedState, currentState);
+      
+      expect(merged.selectedGrupo).toBe('10A');
+    });
+  });
 });

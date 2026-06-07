@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import type { RowArea, RowAsignatura, PeriodConfig } from '../../domain/types';
+import type { RowArea, RowAsignatura } from '../../domain/types';
 import { useDashboardStore } from '../../store/useDashboardStore';
 import { useThemeStore, type ThemeMode } from '../../store/useThemeStore';
 import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
@@ -193,7 +193,7 @@ export const SummaryTab: React.FC = () => {
 
   const groupComparisonChartData = useMemo(() => {
     // We pass an empty config as PeriodConfig is not heavily used in this basic aggregation
-    const report = generateGroupComparisonReport(estudiantes, {} as unknown as PeriodConfig);
+    const report = generateGroupComparisonReport(estudiantes);
     
     // Sort groups alphanumerically
     const sortedGroups = report.groups.sort((a, b) => a.grupo.localeCompare(b.grupo));

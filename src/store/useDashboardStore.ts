@@ -166,7 +166,11 @@ export const useDashboardStore = create<DashboardState>()(
         diagnosticReport: state.diagnosticReport,
       }),
       merge: (persistedState: unknown, currentState) => {
-        return { ...currentState, ...(persistedState as Partial<DashboardState>) };
+        const merged = { ...currentState, ...(persistedState as Partial<DashboardState>) };
+        if (merged.selectedGrupo !== 'Todos' && !merged.availableGroups.includes(merged.selectedGrupo)) {
+          merged.selectedGrupo = 'Todos';
+        }
+        return merged;
       },
     }
   )

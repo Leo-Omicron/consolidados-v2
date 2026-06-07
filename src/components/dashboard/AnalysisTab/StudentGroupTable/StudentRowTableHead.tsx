@@ -40,7 +40,12 @@ export const StudentRowTableHead: React.FC<StudentRowTableHeadProps> = ({
           P3 {getSortIcon(viewMode === 'area' ? 'defP3' : 'p3', sortConfig)}
         </th>
         {hasP4 && (
-          <th className="font-semibold pb-2 w-1/12 text-center">P4</th>
+          <th
+            className="font-semibold pb-2 w-1/12 text-center cursor-pointer select-none"
+            onClick={() => onSort(viewMode === 'area' ? 'defP4' : 'p4')}
+          >
+            P4 {getSortIcon(viewMode === 'area' ? 'defP4' : 'p4', sortConfig)}
+          </th>
         )}
         <th className="font-semibold pb-2 w-1/12 text-center">Acum.</th>
         <th

@@ -84,8 +84,8 @@ export const useReportsLogic = () => {
 
   const groupComparisonData = useMemo(() => {
     if (estudiantes.length === 0) return null;
-    return generateGroupComparisonReport(estudiantes, config);
-  }, [estudiantes, config]);
+    return generateGroupComparisonReport(estudiantes);
+  }, [estudiantes]);
 
   const heatmapData = useMemo(() => {
     if (estudiantes.length === 0 || !activeGroupToUse) return null;

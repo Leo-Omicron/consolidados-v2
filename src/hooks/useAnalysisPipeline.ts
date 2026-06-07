@@ -93,7 +93,7 @@ export function groupRows(
         estudiante: row.estudiante,
         grupo: row.grupo,
         rows: [],
-        aggregates: { defP1: null, defP2: null, defP3: null, promActual: null }
+        aggregates: { defP1: null, defP2: null, defP3: null, defP4: null, promActual: null }
       };
     }
     groups[row.estudiante].rows.push(row as PipelineRow);
@@ -118,6 +118,7 @@ export function groupRows(
       defP1: calcAvg('defP1', 'p1'),
       defP2: calcAvg('defP2', 'p2'),
       defP3: calcAvg('defP3', 'p3'),
+      defP4: calcAvg('defP4', 'p4'),
       promActual: calcAvg('promActual', 'promActual')
     };
     
@@ -146,7 +147,7 @@ export function sortGroups(
     
     const groupKey = key === 'aggregates.promActual' ? 'promActual' : key;
     
-    if (['defP1', 'defP2', 'defP3', 'promActual'].includes(groupKey)) {
+    if (['defP1', 'defP2', 'defP3', 'defP4', 'promActual'].includes(groupKey)) {
       valA = (a.aggregates as Record<string, number | null>)[groupKey];
       valB = (b.aggregates as Record<string, number | null>)[groupKey];
     } else {
@@ -172,6 +173,7 @@ export function sortGroups(
         if (rowKey === 'defP1') rowKey = 'p1';
         if (rowKey === 'defP2') rowKey = 'p2';
         if (rowKey === 'defP3') rowKey = 'p3';
+        if (rowKey === 'defP4') rowKey = 'p4';
       }
 
       const valA = (a as unknown as Record<string, unknown>)[rowKey];

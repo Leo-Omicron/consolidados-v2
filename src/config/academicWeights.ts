@@ -1,6 +1,5 @@
 export function getPresetWeights(areaName: string, subjects: string[], grade: number): Record<string, number> | null {
   const normArea = areaName.toUpperCase().trim();
-  const normSubjects = subjects.map(s => s.toUpperCase().trim());
 
   // 1. Área de Humanidades
   if (normArea === 'HUMANIDADES Y LENGUA CASTELLANA' || normArea === 'HUMANIDADES' || normArea === 'HUMANIDADES Y LENGUA CAST') {

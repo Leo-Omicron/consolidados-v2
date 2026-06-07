@@ -13,10 +13,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
+          # Fetch live labels from API to avoid stale opened event payloads
+          PR_LABELS=$(gh pr view $PR_NUMBER --repo $REPO --json labels -q '[.labels[].name]' 2>/dev/null || echo "[]")
+
           if [[ "$PR_HEAD_REF" == release-please--* ]] || echo "$PR_LABELS" | jq -e '.[] | startswith("autorelease:")' >/dev/null; then
             echo "Release Please PR detected; skipping human PR contract validation."
             exit 0

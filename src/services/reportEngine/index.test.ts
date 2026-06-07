@@ -12,8 +12,8 @@ import {
   generateHeatmapReport,
   generateTeacherFeedbackReportForGroup,
   generateOfficialRecordsReport
-} from './reportEngine';
-import type { Estudiante, PeriodConfig } from '../domain/types';
+} from './index';
+import type { Estudiante, PeriodConfig } from '../../domain/types';
 
 describe('reportEngine', () => {
   describe('calculateStandardDeviation', () => {

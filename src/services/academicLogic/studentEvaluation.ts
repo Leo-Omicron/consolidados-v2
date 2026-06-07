@@ -3,8 +3,8 @@ import { roundToOneDecimal } from './math';
 import { 
   ACADEMIC_FAILURE_AREA_THRESHOLD, 
   ACADEMIC_STRENGTH_THRESHOLD, 
-  AcademicPeriodKey, 
-  StudentAverageKey 
+  type AcademicPeriodKey, 
+  type StudentAverageKey 
 } from './constants';
 
 export function isStudentReprobado(failedAreaCount: number): boolean {

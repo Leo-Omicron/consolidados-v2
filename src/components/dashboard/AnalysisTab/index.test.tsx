@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import 'vitest-axe/extend-expect';
-import { AnalysisTab } from './AnalysisTab';
-import { useDashboardStore } from '../../store/useDashboardStore';
-import { useAnalysisPipeline } from '../../hooks/useAnalysisPipeline';
-import { useUIStore } from '../../store/useUIStore';
-import { useSimulationStore } from '../../store/useSimulationStore';
+import { AnalysisTab } from './index';
+import { useDashboardStore } from '../../../store/useDashboardStore';
+import { useAnalysisPipeline } from '../../../hooks/useAnalysisPipeline';
+import { useUIStore } from '../../../store/useUIStore';
+import { useSimulationStore } from '../../../store/useSimulationStore';
 
-vi.mock('../../hooks/useInsights', () => ({
+vi.mock('../../../hooks/useInsights', () => ({
   useInsights: vi.fn(() => ({
     results: [],
     counts: { confiado: 0, resiliente: 0, 'montana-rusa': 0, radar: 0, total: 0 },
@@ -16,12 +16,12 @@ vi.mock('../../hooks/useInsights', () => ({
   })),
 }));
 
-vi.mock('../../store/useDashboardStore', () => ({
+vi.mock('../../../store/useDashboardStore', () => ({
   useDashboardStore: vi.fn()
 }));
 
-vi.mock('../../hooks/useAnalysisPipeline', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../hooks/useAnalysisPipeline')>();
+vi.mock('../../../hooks/useAnalysisPipeline', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../hooks/useAnalysisPipeline')>();
   return {
     ...actual,
     useAnalysisPipeline: vi.fn(),

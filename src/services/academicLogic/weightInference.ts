@@ -2,7 +2,7 @@ import type { Estudiante, Area } from '../../domain/types';
 import { getPresetWeights } from '../../config/academicWeights';
 import { getGradeFromGroup } from './gradeExtraction';
 import { roundToOneDecimal } from './math';
-import { AcademicPeriodKey } from './constants';
+import type { AcademicPeriodKey } from './constants';
 
 export function createUniformSubjectWeights(subjectNames: string[]): Record<string, number> {
   if (subjectNames.length === 0) return {};

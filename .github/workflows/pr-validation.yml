@@ -1,0 +1,42 @@
+name: PR Validation Contract
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+jobs:
+  validate-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR Contract
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "Verificando labels type:*..."
+          # Extract type:* labels
+          TYPE_LABELS=$(echo "$PR_LABELS" | jq -r '.[] | select(startswith("type:"))' || true)
+          TYPE_COUNT=$(echo "$TYPE_LABELS" | grep -c . || true)
+          if [ "$TYPE_COUNT" -ne 1 ]; then
+            echo "::error::El PR debe tener exactamente un label 'type:*' (encontrados: $TYPE_COUNT)."
+            exit 1
+          fi
+          
+          echo "Verificando enlace a Issue..."
+          ISSUE_NUMBER=$(echo "$PR_BODY" | grep -ioE '(closes|fixes|resolves) #[0-9]+' | head -1 | grep -oE '[0-9]+' || true)
+          if [ -z "$ISSUE_NUMBER" ]; then
+            echo "::error::El PR no enlaza a un issue. Usa 'Closes #N', 'Fixes #N' o 'Resolves #N' en la descripción."
+            exit 1
+          fi
+          
+          echo "Verificando estado del Issue #$ISSUE_NUMBER..."
+          ISSUE_LABELS=$(gh issue view $ISSUE_NUMBER --repo $REPO --json labels -q '.labels[].name' 2>/dev/null || true)
+          if ! echo "$ISSUE_LABELS" | grep -q 'status:approved'; then
+            echo "::error::El Issue #$ISSUE_NUMBER no tiene el label 'status:approved'. Labels actuales: $ISSUE_LABELS"
+            exit 1
+          fi
+          
+          echo "Contrato validado exitosamente."

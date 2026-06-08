@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/Leo-Omicron/consolidados-v2/compare/v1.2.2...v1.3.0) (2026-06-08)
+
+
+### Features
+
+* executive dashboard, sede/jornada extraction, and student profiles ([#61](https://github.com/Leo-Omicron/consolidados-v2/issues/61)) ([67dcae0](https://github.com/Leo-Omicron/consolidados-v2/commit/67dcae0ddbe1d7ab81d2ce521a0b1bebfd14abaf))
+
 ## [1.2.2](https://github.com/Leo-Omicron/consolidados-v2/compare/v1.2.1...v1.2.2) (2026-06-07)
 
 

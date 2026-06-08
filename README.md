@@ -121,16 +121,16 @@ Esta arquitectura reduce costos y protege datos sensibles, pero también implica
 ## Desarrollo local
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 Validación completa:
 
 ```bash
-npm run lint
-npm run build
-npm run test
+pnpm run lint
+pnpm run build
+pnpm run test
 ```
 
 ## Estándares de trabajo
@@ -139,7 +139,7 @@ npm run test
 - Arquitectura de flujo (MANDATORIO): Usar el modelo de **Doble Worktree** (Santuario para `master` / Laboratorio en una rama nominal fresca desde `origin/master`) para proteger la rama principal.
 - Planificación limpia: Usar **SDD + Engram** para la planificación. No ensuciar el repositorio con archivos markdown en `.openspec/` u otros temporales; todo va a la memoria persistente del agente.
 - Actualizar este README cuando una mejora cambie la experiencia del usuario, el flujo de trabajo o las capacidades principales.
-- Mantener las pruebas junto a la lógica que verifican. La baseline actual exige mantener todo en verde (`npm test -- --run`).
+- Mantener las pruebas junto a la lógica que verifican. La baseline actual exige mantener todo en verde (`pnpm test -- --run`).
 - Evitar cálculos duplicados: la lógica académica canónica vive en los servicios del dominio.
 - No agregar atribución de IA ni `Co-Authored-By` en commits.
 
@@ -151,7 +151,7 @@ npm run test
 4. **Checks completos, no parciales**: no declarar cierre con solo `validate` verde; el ciclo termina cuando GitHub Actions, Release Please y el deploy de Vercel terminan con `success`.
 5. **Vercel debe correr no-interactivo**: los comandos de deploy usan `--yes --non-interactive` y el job tiene timeout para evitar checks colgados.
 6. **Release Please es excepción controlada**: sus PRs automáticos se saltan la validación humana del issue, pero deben llevar `type:chore` y pasar CI.
-7. **Cierre de release incluye documentación**: después de mergear Release Please, verificar que `package.json`, `package-lock.json`, `CHANGELOG.md`, tag/release de GitHub y esta tabla de versión del README coincidan.
+7. **Cierre de release incluye documentación**: después de mergear Release Please, verificar que `package.json`, `pnpm-lock.yaml`, `CHANGELOG.md`, tag/release de GitHub y esta tabla de versión del README coincidan.
 8. **Sincronizar antes de seguir**: al cerrar un ciclo, hacer `fetch/pull` en Santuario y resetear Laboratorio a una rama nueva desde el `origin/master` final.
 
 ## Roadmap cercano

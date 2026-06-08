@@ -44,6 +44,14 @@ Phase 10 (Charts) ──> Phase 11 (UI Overhaul) ──> Phase 12 (Reports Engin
   * Consolidado Completo: downloading all 9 reports combined into a single multi-sheet Excel file, including the new Diagnóstico Pedagógico.
   * Tailored print-media CSS layouts (hidden controls, landscape optimization, robust Ficha student profiles).
 
+### 🏆 Phase 21/22: Dashboard Directivo Institucional
+* **Goal**: Implementar el panel para directivos con KPIs globales, extracción de Sedes y Jornadas y generación masiva de perfiles.
+* **Features**:
+  * Extracción dinámica de `Sede` y `Jornada` desde Excel vía *keywords*.
+  * Dashboard Institucional (`ExecutiveTab.tsx`) con métricas globales, gráficos de aprobación y filtro Sede/Jornada.
+  * Motor analítico global para generar Top 5 histórico y Áreas Críticas.
+  * `StudentProfileModal` e impresión masiva de fichas.
+
 ---
 
 ## 🛠️ Next Steps

@@ -33,18 +33,22 @@ jobs:
             exit 1
           fi
           
-          echo "Verificando enlace a Issue..."
-          ISSUE_NUMBER=$(echo "$PR_BODY" | grep -ioE '(closes|fixes|resolves) #[0-9]+' | head -1 | grep -oE '[0-9]+' || true)
-          if [ -z "$ISSUE_NUMBER" ]; then
-            echo "::error::El PR no enlaza a un issue. Usa 'Closes #N', 'Fixes #N' o 'Resolves #N' en la descripción."
-            exit 1
-          fi
-          
-          echo "Verificando estado del Issue #$ISSUE_NUMBER..."
-          ISSUE_LABELS=$(gh issue view $ISSUE_NUMBER --repo $REPO --json labels -q '.labels[].name' 2>/dev/null || true)
-          if ! echo "$ISSUE_LABELS" | grep -q 'status:approved'; then
-            echo "::error::El Issue #$ISSUE_NUMBER no tiene el label 'status:approved'. Labels actuales: $ISSUE_LABELS"
-            exit 1
+          if echo "$TYPE_LABELS" | grep -qE "type:(chore|docs|build)"; then
+            echo "PR de tipo infra/docs ($TYPE_LABELS). Se omite validación estricta de issue."
+          else
+            echo "Verificando enlace a Issue..."
+            ISSUE_NUMBER=$(echo "$PR_BODY" | grep -ioE '(closes|fixes|resolves) #[0-9]+' | head -1 | grep -oE '[0-9]+' || true)
+            if [ -z "$ISSUE_NUMBER" ]; then
+              echo "::error::El PR no enlaza a un issue. Usa 'Closes #N', 'Fixes #N' o 'Resolves #N' en la descripción."
+              exit 1
+            fi
+            
+            echo "Verificando estado del Issue #$ISSUE_NUMBER..."
+            ISSUE_LABELS=$(gh issue view $ISSUE_NUMBER --repo $REPO --json labels -q '.labels[].name' 2>/dev/null || true)
+            if ! echo "$ISSUE_LABELS" | grep -q 'status:approved'; then
+              echo "::error::El Issue #$ISSUE_NUMBER no tiene el label 'status:approved'. Labels actuales: $ISSUE_LABELS"
+              exit 1
+            fi
           fi
           
           echo "Contrato validado exitosamente."

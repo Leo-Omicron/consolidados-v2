@@ -168,7 +168,7 @@ function extractNumber(val: unknown): number | null {
   return null;
 }
 
-export function extractStudents(dataRows: unknown[][], headers: HeaderComponent[], defaultCurso: string, defaultGrupo: string = '', director: string = ''): Estudiante[] {
+export function extractStudents(dataRows: unknown[][], headers: HeaderComponent[], defaultCurso: string, defaultGrupo: string = '', director: string = '', sede: string = '', jornada: string = ''): Estudiante[] {
   const students: Estudiante[] = [];
   let lastStudent: Estudiante | null = null;
 
@@ -211,6 +211,8 @@ export function extractStudents(dataRows: unknown[][], headers: HeaderComponent[
       name,
       CURSO: defaultCurso,
       grupo: defaultGrupo || defaultCurso,
+      sede,
+      jornada,
       director,
       areas: {},
       promedios: {},
@@ -322,15 +324,53 @@ export function parseWorkbook(workbook: XLSX.WorkBook, curso: string): Estudiant
 
     if (headerRowIndex < 2) return; // Invalid format
 
-    // Try to extract group name from row 12 (index 12) if it contains "Consolidado Curso"
+    // Try to extract group name, sede, and jornada from row 12 (index 12) if it contains "Consolidado Curso"
     let extractGrupo = curso;
+    let extractSede = '';
+    let extractJornada = '';
+    
     for (let i = 0; i < headerRowIndex; i++) {
       const text = String(rows[i]?.find(c => typeof c === 'string' && c.includes('Consolidado Curso')) || '');
       if (text) {
         // e.g. "Consolidado Curso - Año 2026 - IE EL CARMEN SEDE PRINCIPAL - SEXTO UNO- Jornada Tarde"
         const parts = text.split('-');
-        if (parts.length > 3) {
-          extractGrupo = parts[parts.length - 2].trim(); // "SEXTO UNO"
+        if (parts.length > 2) {
+          const knownJornadas = ['MAÑANA', 'TARDE', 'NOCTURNA', 'SABATINA', 'UNICA'];
+          
+          const sedePart = parts.find(p => p.toUpperCase().includes('SEDE'));
+          if (sedePart) {
+            const match = sedePart.match(/SEDE\s+(.+)/i);
+            extractSede = match ? match[1].trim() : sedePart.trim();
+          }
+
+          const jornadaPart = parts.find(p => {
+            const upper = p.toUpperCase();
+            return upper.includes('JORNADA') || knownJornadas.some(k => upper.includes(k));
+          });
+          if (jornadaPart) {
+            const match = jornadaPart.match(/JORNADA\s+(.+)/i);
+            if (match) {
+              extractJornada = match[1].trim();
+            } else {
+              const upper = jornadaPart.toUpperCase();
+              const found = knownJornadas.find(k => upper.includes(k));
+              extractJornada = found ? found : jornadaPart.trim();
+            }
+          }
+
+          const possibleGroups = parts.filter(p => {
+            const upper = p.toUpperCase();
+            return !upper.includes('CONSOLIDADO') && 
+                   !upper.includes('AÑO') &&
+                   !/\d{4}/.test(upper) &&
+                   !upper.includes('SEDE') &&
+                   !upper.includes('JORNADA') &&
+                   !knownJornadas.some(k => upper.includes(k)) &&
+                   !upper.includes('IE EL CARMEN');
+          });
+          if (possibleGroups.length > 0) {
+            extractGrupo = possibleGroups[possibleGroups.length - 1].trim();
+          }
         }
       }
     }
@@ -353,7 +393,7 @@ export function parseWorkbook(workbook: XLSX.WorkBook, curso: string): Estudiant
     const dataRows = rows.slice(headerRowIndex + 3);
 
     const { headers } = parseHeaders(headerRows);
-    const students = extractStudents(dataRows, headers, curso, extractGrupo, extractDirector);
+    const students = extractStudents(dataRows, headers, curso, extractGrupo, extractDirector, extractSede, extractJornada);
     
     allStudents = allStudents.concat(students);
   });

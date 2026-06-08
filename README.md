@@ -10,7 +10,7 @@
 
 | Área | Estado |
 |------|--------|
-| Versión | `1.2.2` |
+| Versión | `1.3.0` |
 | Frontend | React 19 + TypeScript + Vite |
 | Datos | Procesamiento local de Excel con Web Worker |
 | Calidad | 545 pruebas automatizadas con Vitest |
@@ -20,10 +20,10 @@
 
 ## Novedades recientes
 
+- **Dashboard Directivo e Institucional**: Nueva pestaña ejecutiva que centraliza métricas globales, rendimiento general, distribución de desempeño (desaprobados, básicos, altos, superiores), tasas de riesgo y métricas de excelencia.
+- **Extracción de Metadatos de Excel**: El parser ahora extrae y utiliza la Sede y Jornada de los archivos Excel reales de la institución (ej. "IE EL CARMEN SEDE PRINCIPAL", "Jornada Tarde").
 - **Exportación Masiva de Fichas en PDF**: Botón dedicado para generar e imprimir de una sola vez todas las fichas de los estudiantes de un curso, con optimización para que Chart.js las dibuje sin bloquear la memoria del navegador.
 - **Terminología institucional limpia**: la experiencia activa usa **Diagnóstico Pedagógico** de forma consistente para reemplazar nombres experimentales anteriores.
-- **Ficha de estudiante más robusta para impresión**: la vista imprimible limpia su estado aunque el navegador interrumpa o falle el diálogo de impresión.
-- **Reportes anchos contenidos**: Registro Oficial y Mapa de Calor mantienen el ancho de la página y desplazan la tabla dentro del reporte cuando hace falta.
 - **Validación con datos institucionales reales**: el flujo fue verificado con 13 archivos Excel de 1P, 342 estudiantes, 3866 filas de áreas y 5814 filas de asignaturas sin incidencias de diagnóstico.
 
 ## Para qué sirve

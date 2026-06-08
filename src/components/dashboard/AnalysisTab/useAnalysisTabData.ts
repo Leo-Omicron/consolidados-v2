@@ -40,6 +40,21 @@ export const useAnalysisTabData = (
       subjectWeights,
     );
   }, [profileStudentId, estudiantes, insightsResults, activeSimulations, config, subjectWeights]);
+
+  const fullProfiles = useMemo(() => {
+    if (!estudiantes || estudiantes.length === 0 || selectedGrupo === 'Todos') return [];
+    
+    const targetStudents = estudiantes.filter(e => e.grupo === selectedGrupo);
+
+    return targetStudents.map(st => buildStudentProfileData(
+      st.id,
+      estudiantes,
+      insightsResults as ArchetypeResult[],
+      activeSimulations,
+      config,
+      subjectWeights,
+    )).filter((p): p is NonNullable<typeof p> => p !== null);
+  }, [estudiantes, selectedGrupo, insightsResults, activeSimulations, config, subjectWeights]);
   
   const simulatedData = useMemo(() => {
     return getSimulatedRows(estudiantes, activeSimulations, config, subjectWeights);
@@ -119,6 +134,7 @@ export const useAnalysisTabData = (
     uniqueStatuses,
     activeRowsCount: activeRows.length,
     activeSimulations,
-    config
+    config,
+    fullProfiles
   };
 };

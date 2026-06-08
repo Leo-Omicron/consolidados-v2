@@ -184,6 +184,8 @@ export const FileUploadArea: React.FC = () => {
     if (files.length > 0) {
       processFiles(files);
     }
+    // Liberar el input para permitir recargar el mismo archivo si se cierra
+    e.target.value = '';
   };
 
   const handleConfigUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -200,6 +202,8 @@ export const FileUploadArea: React.FC = () => {
       };
       reader.readAsText(file);
     }
+    // Liberar el input
+    e.target.value = '';
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {

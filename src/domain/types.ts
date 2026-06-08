@@ -46,6 +46,8 @@ export interface Estudiante {
   name: string;
   CURSO: string;
   grupo: string;
+  sede?: string;
+  jornada?: string;
   areas: Record<string, Area>;
   promedios?: Record<string, number | null>;
   rankings?: Record<string, number | null>;

@@ -210,7 +210,7 @@ describe('useDashboardStore', () => {
       expect(state.estudiantes).toHaveLength(1);
       expect(state.rowsArea).toHaveLength(1);
       expect(state.availableGroups).toEqual(['Todos', '10A']);
-      expect(state.selectedGrupo).toBe('Todos');
+      expect(state.selectedGrupo).toBe('10A');
       expect(state.subjectWeights).toEqual(mockParsedResult.subjectWeights);
       expect(state.parsingProgress).toBeNull();
     });

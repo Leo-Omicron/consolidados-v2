@@ -3,6 +3,7 @@ import { Header } from './Header';
 import { FileUploadArea } from '../dashboard/FileUploadArea';
 import { useThemeStore } from '../../store/useThemeStore';
 
+const ExecutiveTab = lazy(() => import('../dashboard/ExecutiveTab').then(module => ({ default: module.ExecutiveTab })));
 const AnalysisTab = lazy(() => import('../dashboard/AnalysisTab').then(module => ({ default: module.AnalysisTab })));
 const ChartsTab = lazy(() => import('../dashboard/ChartsTab').then(module => ({ default: module.ChartsTab })));
 const ReportsTab = lazy(() => import('../dashboard/ReportsTab').then(module => ({ default: module.ReportsTab })));
@@ -21,6 +22,8 @@ export const MainLayout: React.FC = () => {
 
   const renderActiveTab = () => {
     switch (activeTab) {
+      case 'executive':
+        return <ExecutiveTab />;
       case 'analysis':
         return <AnalysisTab />;
       case 'charts':

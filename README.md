@@ -20,10 +20,10 @@
 
 ## Novedades recientes
 
+- **Exportación Masiva de Fichas en PDF**: Botón dedicado para generar e imprimir de una sola vez todas las fichas de los estudiantes de un curso, con optimización para que Chart.js las dibuje sin bloquear la memoria del navegador.
 - **Terminología institucional limpia**: la experiencia activa usa **Diagnóstico Pedagógico** de forma consistente para reemplazar nombres experimentales anteriores.
 - **Ficha de estudiante más robusta para impresión**: la vista imprimible limpia su estado aunque el navegador interrumpa o falle el diálogo de impresión.
 - **Reportes anchos contenidos**: Registro Oficial y Mapa de Calor mantienen el ancho de la página y desplazan la tabla dentro del reporte cuando hace falta.
-- **Tarjetas de Diagnóstico Pedagógico más legibles**: el nombre del estudiante queda visible como título de cada tarjeta y el botón **Ficha** abre el perfil correspondiente.
 - **Validación con datos institucionales reales**: el flujo fue verificado con 13 archivos Excel de 1P, 342 estudiantes, 3866 filas de áreas y 5814 filas de asignaturas sin incidencias de diagnóstico.
 
 ## Para qué sirve

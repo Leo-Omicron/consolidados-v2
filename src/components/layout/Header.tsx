@@ -19,6 +19,12 @@ interface TabGroupType {
 
 const tabGroups = [
   {
+    name: 'Institucional',
+    tabs: [
+      { id: 'executive', label: 'Dashboard Directivo' },
+    ]
+  },
+  {
     name: 'General',
     tabs: [
       { id: 'analysis', label: 'Dashboard Principal' },
@@ -123,7 +129,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
             <h1 className="text-xl font-bold app-text tracking-premium hidden lg:block">Dashboard de Consolidados</h1>
             <h1 className="text-xl font-bold app-text tracking-premium lg:hidden block">Dashboard</h1>
             
-            {availableGroups.length > 1 && (
+            {/* Group Selector - Hidden on executive tab since it shows all groups */}
+            {hasData && availableGroups.length > 1 && activeTab !== 'executive' && (
               <select
                 value={selectedGrupo}
                 onChange={(e) => setGrupo(e.target.value)}
@@ -141,7 +148,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm('¿Estás seguro de que deseas cerrar el archivo actual y limpiar los datos locales?')) {
+                  if (window.confirm('¿Estás seguro de que deseas cerrar el archivo actual y limpiar los datos locales?')) {
                     clearAllData();
                   }
                 }}

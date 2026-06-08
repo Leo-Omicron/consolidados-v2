@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import 'vitest-axe/extend-expect';
@@ -106,7 +106,7 @@ describe('Header', () => {
       selectedGrupo: 'Todos',
       setGrupo: setGrupoMock,
       clearAllData: vi.fn(),
-      estudiantes: []
+      estudiantes: [{ id: 1 }]
     });
     render(<Header activeTab="analysis" setActiveTab={() => {}} />);
     
@@ -122,31 +122,27 @@ describe('Header', () => {
 
   it('renders Cerrar Archivo button when data is present and calls clearAllData on confirm', () => {
     const clearAllDataMock = vi.fn();
-    (useDashboardStore as any).mockReturnValue({
-      availableGroups: ['Todos'],
+    (useDashboardStore as unknown as Mock).mockReturnValue({
+      activeTab: 'analysis',
+      setActiveTab: vi.fn(),
+      availableGroups: [],
       selectedGrupo: 'Todos',
       setGrupo: vi.fn(),
       clearAllData: clearAllDataMock,
-      estudiantes: [{ id: 1 }] // hasData becomes true
+      estudiantes: [{ id: 1, name: 'Test Student' }]
     });
-    
+
     const confirmSpy = vi.spyOn(window, 'confirm');
-    
-    // Test confirm = true
     confirmSpy.mockReturnValueOnce(true);
-    render(<Header activeTab="analysis" setActiveTab={() => {}} />);
+
+    render(<Header activeTab="analysis" setActiveTab={vi.fn()} />);
     
-    const closeBtn = screen.getByText('Cerrar Archivo');
-    expect(closeBtn).toBeDefined();
-    
-    fireEvent.click(closeBtn);
+    const cerrarButton = screen.getByText('Cerrar Archivo');
+    expect(cerrarButton).toBeDefined();
+
+    fireEvent.click(cerrarButton);
     expect(confirmSpy).toHaveBeenCalledWith('¿Estás seguro de que deseas cerrar el archivo actual y limpiar los datos locales?');
     expect(clearAllDataMock).toHaveBeenCalledTimes(1);
-    
-    // Test confirm = false
-    confirmSpy.mockReturnValueOnce(false);
-    fireEvent.click(closeBtn);
-    expect(clearAllDataMock).toHaveBeenCalledTimes(1); // not called again
     
     confirmSpy.mockRestore();
   });

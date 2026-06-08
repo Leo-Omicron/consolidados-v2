@@ -131,7 +131,7 @@ export const useDashboardStore = create<DashboardState>()(
             rowsAsignatura: result.rowsAsignatura,
             subjectWeights: result.subjectWeights,
             availableGroups: result.availableGroups,
-            selectedGrupo: 'Todos',
+            selectedGrupo: result.availableGroups.length === 2 ? result.availableGroups[1] : 'Todos',
             diagnosticReport: result.diagnosticReport,
             loading: false,
             parsingProgress: null
@@ -142,8 +142,14 @@ export const useDashboardStore = create<DashboardState>()(
         }
       },
 
-      clearAllData: () => set({
-        estudiantes: [],
+      clearAllData: () => {
+        // Limpiar también las simulaciones activas para evitar inconsistencias
+        import('./useSimulationStore').then(module => {
+          module.useSimulationStore.getState().clearAllSimulations();
+        });
+        
+        set({
+          estudiantes: [],
         rowsArea: [],
         rowsAsignatura: [],
         subjectWeights: {},
@@ -152,7 +158,8 @@ export const useDashboardStore = create<DashboardState>()(
         diagnosticReport: null,
         error: null,
         parsingProgress: null
-      })
+      });
+      }
     }),
     {
       name: 'dashboard-storage',

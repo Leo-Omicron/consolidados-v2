@@ -13,26 +13,29 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v6
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run Linter
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Run Tests
-        run: npm run test
+        run: pnpm run test
 
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+        run: pnpm exec playwright install --with-deps
 
       - name: Run E2E Tests
-        run: npm run test:e2e
+        run: pnpm run test:e2e
 
   deploy:
     runs-on: ubuntu-latest
@@ -46,20 +49,23 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v6
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Pull Vercel Environment Info
-        run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        run: pnpm dlx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Locally
-        run: npx vercel build --prod --yes --non-interactive --token=${{ secrets.VERCEL_TOKEN }}
+        run: pnpm dlx vercel build --prod --yes --non-interactive --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Prebuilt Artifacts to Vercel
-        run: npx vercel deploy --prebuilt --prod --yes --non-interactive --token=${{ secrets.VERCEL_TOKEN }}
+        run: pnpm dlx vercel deploy --prebuilt --prod --yes --non-interactive --token=${{ secrets.VERCEL_TOKEN }}

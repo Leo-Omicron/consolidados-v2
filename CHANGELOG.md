@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/Leo-Omicron/consolidados-v2/compare/v1.3.0...v1.4.0) (2026-06-08)
+
+
+### Features
+
+* **build:** migrate to pnpm ([#67](https://github.com/Leo-Omicron/consolidados-v2/issues/67)) ([c26e091](https://github.com/Leo-Omicron/consolidados-v2/commit/c26e0911f8f6dd921faad892c7ed5b5e9f272db0))
+
 ## [1.3.0](https://github.com/Leo-Omicron/consolidados-v2/compare/v1.2.2...v1.3.0) (2026-06-08)
 
 

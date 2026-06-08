@@ -37,7 +37,7 @@ const InfoTooltip = ({ text }: { text: string }) => (
 
 export const ExecutiveTab: React.FC = () => {
   const estudiantes = useDashboardStore(state => state.estudiantes);
-  const availableGroups = useDashboardStore(state => state.availableGroups);
+  // 1. Obtener todas las sedes y jornadas únicas de los estudiantes disponibles
 
   const [selectedSede, setSelectedSede] = useState<string>('Todas');
   const [selectedJornada, setSelectedJornada] = useState<string>('Todas');
@@ -79,6 +79,54 @@ export const ExecutiveTab: React.FC = () => {
     return (
       <div className="flex justify-center items-center h-64 app-text-muted">
         No hay datos para mostrar. Carga un archivo consolidado primero.
+      </div>
+    );
+  }
+
+  // Check for empty report before building charts
+  if (!report) {
+    return (
+      <div className="p-6 app-text animate-in fade-in duration-300">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+          <div>
+            <h2 className="text-2xl font-bold app-text">Dashboard Global Directivo</h2>
+            <p className="text-sm app-text-muted mt-1">Visión panorámica de la institución (0 cursos visibles)</p>
+          </div>
+          
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3 bg-blue-500/5 border border-blue-500/20 p-2.5 rounded-xl">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold app-text-muted">Sede:</span>
+              <select 
+                className="bg-transparent border app-border rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none app-text"
+                value={selectedSede}
+                onChange={(e) => setSelectedSede(e.target.value)}
+              >
+                <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Todas">Todas las Sedes</option>
+                {sedes.map(s => <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold app-text-muted">Jornada:</span>
+              <select 
+                className="bg-transparent border app-border rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none app-text"
+                value={selectedJornada}
+                onChange={(e) => setSelectedJornada(e.target.value)}
+              >
+                <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" value="Todas">Todas las Jornadas</option>
+                {jornadas.map(j => <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" key={j} value={j}>{j}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="app-surface p-12 rounded-xl border app-border text-center">
+          <div className="text-4xl mb-4">📭</div>
+          <h3 className="text-xl font-bold app-text mb-2">Sin resultados</h3>
+          <p className="app-text-muted">
+            No se encontraron estudiantes para la Sede y Jornada seleccionadas.
+          </p>
+        </div>
       </div>
     );
   }
@@ -228,19 +276,9 @@ export const ExecutiveTab: React.FC = () => {
         </div>
       </div>
 
-      {!report ? (
-        <div className="app-surface p-12 rounded-xl border app-border text-center">
-          <div className="text-4xl mb-4">📭</div>
-          <h3 className="text-xl font-bold app-text mb-2">Sin resultados</h3>
-          <p className="app-text-muted">
-            No se encontraron estudiantes para la Sede y Jornada seleccionadas.
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* Top KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-            <div className="app-surface p-5 rounded-xl border app-border shadow-premium flex flex-col justify-between">
+      {/* Top KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+        <div className="app-surface p-5 rounded-xl border app-border shadow-premium flex flex-col justify-between">
           <div className="text-sm font-semibold app-text-muted uppercase tracking-wider mb-2">
             Estudiantes Totales
             <InfoTooltip text="Número total de estudiantes en los cursos seleccionados." />
@@ -391,8 +429,6 @@ export const ExecutiveTab: React.FC = () => {
           </div>
         </div>
       </div>
-        </>
-      )}
 
     </div>
   );

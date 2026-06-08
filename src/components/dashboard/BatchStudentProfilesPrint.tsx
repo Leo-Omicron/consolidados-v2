@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import type { StudentProfileData } from '../../services/studentProfileService';
 import { StudentProfileView } from './StudentProfileView';
 

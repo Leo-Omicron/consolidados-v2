@@ -13,7 +13,7 @@
 | Versión | `1.4.0` |
 | Frontend | React 19 + TypeScript + Vite |
 | Datos | Procesamiento local de Excel con Web Worker |
-| Calidad | 545 pruebas automatizadas con Vitest |
+| Calidad | 560 pruebas automatizadas con Vitest |
 | Despliegue | Vercel |
 | Privacidad | Los archivos se procesan en el equipo del usuario |
 

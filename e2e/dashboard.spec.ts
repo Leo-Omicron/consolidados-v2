@@ -35,10 +35,10 @@ test.describe('Dashboard Baseline E2E', () => {
     });
 
     // 2. Esperar a que la tabla de promedios se renderice buscando los estudiantes
-    const student1Cell = page.getByText('Juan Perez');
+    const student1Cell = page.getByText('Juan Perez').first();
     await expect(student1Cell).toBeVisible();
 
-    const student2Cell = page.getByText('Ana Gomez');
+    const student2Cell = page.getByText('Ana Gomez').first();
     await expect(student2Cell).toBeVisible();
 
     // 3. Verificar que los cálculos de Promedios están presentes en la UI usando la fila del estudiante

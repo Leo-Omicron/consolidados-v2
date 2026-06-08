@@ -1220,8 +1220,8 @@ describe('AnalysisTab — sub-component composition', () => {
   it('renders StudentGroupTable sub-component with student data', () => {
     render(<AnalysisTab />);
 
-    expect(screen.getByText('Juan')).toBeInTheDocument();
-    expect(screen.getByRole('table')).toBeInTheDocument();
+    expect(screen.getAllByText('Juan')[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('table')[0]).toBeInTheDocument();
   });
 
   it('renders SimulationBanner sub-component when simulations are active', () => {
@@ -1287,7 +1287,7 @@ describe('AnalysisTab — sub-component composition', () => {
     expect(screen.getByLabelText('Grupo')).toBeInTheDocument();
     expect(screen.getByLabelText('Buscar estudiante')).toBeInTheDocument();
     // 3. StudentGroupTable
-    expect(screen.getByText('Juan')).toBeInTheDocument();
+    expect(screen.getAllByText('Juan')[0]).toBeInTheDocument();
     // 4. SimulationBanner should NOT be visible (no simulations active)
     expect(screen.queryByText(/Modo de Simulación Activo/)).not.toBeInTheDocument();
     // But the orchestrator header is visible

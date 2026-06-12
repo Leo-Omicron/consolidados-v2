@@ -9,6 +9,19 @@ export async function handleParse(
   request: WorkerRequest,
   postMsg: (msg: WorkerMessage) => void
 ): Promise<void> {
+  const deepMergeWeights = (inferred: SubjectWeightConfig, user: SubjectWeightConfig): SubjectWeightConfig => {
+    const merged: SubjectWeightConfig = JSON.parse(JSON.stringify(inferred));
+    for (const group of Object.keys(user)) {
+      if (!merged[group]) merged[group] = {};
+      for (const area of Object.keys(user[group])) {
+        if (!merged[group][area]) merged[group][area] = {};
+        for (const asig of Object.keys(user[group][area])) {
+          merged[group][area][asig] = user[group][area][asig];
+        }
+      }
+    }
+    return merged;
+  };
   try {
     postMsg({ type: 'PROGRESS', phase: 'Leyendo archivos...', message: `Leyendo ${request.files.length} archivos Excel...` });
 
@@ -102,8 +115,8 @@ export async function handleParse(
       message: 'Calculando promedios, estados y requerimientos...'
     });
 
-    const defaultConfig = { P1: 33.3, P2: 33.3, P3: 33.4 };
-    applyAcademicLogic(allStudents, defaultConfig, inferredWeights);
+    const finalWeights = deepMergeWeights(inferredWeights, request.subjectWeights || {});
+    applyAcademicLogic(allStudents, request.config || { P1: 33.3, P2: 33.3, P3: 33.4 }, finalWeights);
 
     const { rowsArea, rowsAsignatura } = flattenRows(allStudents);
 
@@ -113,7 +126,7 @@ export async function handleParse(
         estudiantes: allStudents,
         rowsArea,
         rowsAsignatura,
-        subjectWeights: inferredWeights,
+        subjectWeights: finalWeights,
         availableGroups,
         diagnosticReport: combinedReport
       }

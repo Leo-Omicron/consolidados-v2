@@ -36,6 +36,9 @@ export interface DashboardState {
   setGrupo: (grupo: string) => void;
   setViewMode: (mode: 'area' | 'subject') => void;
   updateSubjectWeight: (grupo: string, area: string, asignatura: string, weight: number) => void;
+  updateSubjectWeights: (grupo: string, area: string, weights: Record<string, number>) => void;
+  applyPresetWeights: (config: SubjectWeightConfig) => void;
+  clearCustomWeights: () => void;
   processFiles: (files: File[]) => Promise<void>;
   clearAllData: () => void;
 }
@@ -72,7 +75,6 @@ export const useDashboardStore = create<DashboardState>()(
         if (!updatedWeights[grupo][area]) updatedWeights[grupo][area] = {};
         updatedWeights[grupo][area][asignatura] = weight;
         
-        // Re-apply logic with new weights
         const newEstudiantes = structuredClone(state.estudiantes);
         let newRowsArea = state.rowsArea;
         let newRowsAsignatura = state.rowsAsignatura;
@@ -86,6 +88,75 @@ export const useDashboardStore = create<DashboardState>()(
 
         return { 
           subjectWeights: updatedWeights,
+          estudiantes: newEstudiantes,
+          rowsArea: newRowsArea,
+          rowsAsignatura: newRowsAsignatura
+        };
+      }),
+
+      updateSubjectWeights: (grupo: string, area: string, weights: Record<string, number>) => set((state) => {
+        const updatedWeights = JSON.parse(JSON.stringify(state.subjectWeights)) as SubjectWeightConfig;
+        if (!updatedWeights[grupo]) updatedWeights[grupo] = {};
+        if (!updatedWeights[grupo][area]) updatedWeights[grupo][area] = {};
+        
+        Object.entries(weights).forEach(([asignatura, weight]) => {
+          updatedWeights[grupo][area][asignatura] = weight;
+        });
+
+        const newEstudiantes = structuredClone(state.estudiantes);
+        let newRowsArea = state.rowsArea;
+        let newRowsAsignatura = state.rowsAsignatura;
+
+        if (newEstudiantes.length > 0) {
+          applyAcademicLogic(newEstudiantes, state.config, updatedWeights);
+          const flattened = flattenRows(newEstudiantes);
+          newRowsArea = flattened.rowsArea;
+          newRowsAsignatura = flattened.rowsAsignatura;
+        }
+
+        return { 
+          subjectWeights: updatedWeights,
+          estudiantes: newEstudiantes,
+          rowsArea: newRowsArea,
+          rowsAsignatura: newRowsAsignatura
+        };
+      }),
+
+      applyPresetWeights: (config: SubjectWeightConfig) => set((state) => {
+        const updatedWeights = JSON.parse(JSON.stringify(config)) as SubjectWeightConfig;
+        const newEstudiantes = structuredClone(state.estudiantes);
+        let newRowsArea = state.rowsArea;
+        let newRowsAsignatura = state.rowsAsignatura;
+
+        if (newEstudiantes.length > 0) {
+          applyAcademicLogic(newEstudiantes, state.config, updatedWeights);
+          const flattened = flattenRows(newEstudiantes);
+          newRowsArea = flattened.rowsArea;
+          newRowsAsignatura = flattened.rowsAsignatura;
+        }
+
+        return { 
+          subjectWeights: updatedWeights,
+          estudiantes: newEstudiantes,
+          rowsArea: newRowsArea,
+          rowsAsignatura: newRowsAsignatura
+        };
+      }),
+
+      clearCustomWeights: () => set((state) => {
+        const newEstudiantes = structuredClone(state.estudiantes);
+        let newRowsArea = state.rowsArea;
+        let newRowsAsignatura = state.rowsAsignatura;
+
+        if (newEstudiantes.length > 0) {
+          applyAcademicLogic(newEstudiantes, state.config, {});
+          const flattened = flattenRows(newEstudiantes);
+          newRowsArea = flattened.rowsArea;
+          newRowsAsignatura = flattened.rowsAsignatura;
+        }
+
+        return { 
+          subjectWeights: {},
           estudiantes: newEstudiantes,
           rowsArea: newRowsArea,
           rowsAsignatura: newRowsAsignatura
@@ -113,10 +184,11 @@ export const useDashboardStore = create<DashboardState>()(
       }),
       
       processFiles: async (files: File[]) => {
+        const { config, subjectWeights } = useDashboardStore.getState();
         set({ loading: true, error: null, diagnosticReport: null, parsingProgress: 'Leyendo archivos...' });
         
         try {
-          const result = await parseFileInWorker(files, {
+          const result = await parseFileInWorker(files, config, subjectWeights, {
             onProgress: (_phase, message) => {
               set({ parsingProgress: message });
             },

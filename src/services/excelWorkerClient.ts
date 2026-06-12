@@ -82,6 +82,8 @@ function setupWorkerListeners(
 
 export async function parseFileInWorker(
   files: File[],
+  config: import('../domain/types').PeriodConfig,
+  subjectWeights: import('../domain/types').SubjectWeightConfig,
   callbacks?: ParseCallbacks
 ): Promise<ParsedExcelData> {
   terminateWorker();
@@ -108,7 +110,9 @@ export async function parseFileInWorker(
       const buffers = fileDatas.map(fd => fd.buffer);
       const request: WorkerRequest = {
         type: 'PARSE',
-        files: fileDatas
+        files: fileDatas,
+        config,
+        subjectWeights
       };
       w.postMessage(request, buffers);
     }).catch(err => {

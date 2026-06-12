@@ -1,5 +1,5 @@
 import type { DiagnosticReport } from './excelParser';
-import type { Estudiante, RowArea, RowAsignatura, SubjectWeightConfig } from '../domain/types';
+import type { Estudiante, RowArea, RowAsignatura, SubjectWeightConfig, PeriodConfig } from '../domain/types';
 
 // ---------------------------------------------------------------------------
 // Worker Protocol Types — phase17-web-worker
@@ -17,6 +17,8 @@ export interface FileData {
 export interface WorkerRequest {
   type: 'PARSE';
   files: FileData[];
+  config: PeriodConfig;
+  subjectWeights: SubjectWeightConfig;
 }
 
 /** Posted by worker to report pipeline progress. */

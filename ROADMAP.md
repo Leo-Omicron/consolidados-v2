@@ -52,11 +52,20 @@ Phase 10 (Charts) ──> Phase 11 (UI Overhaul) ──> Phase 12 (Reports Engin
   * Motor analítico global para generar Top 5 histórico y Áreas Críticas.
   * `StudentProfileModal` e impresión masiva de fichas.
 
+### ⚙️ Phase 15: Settings Tab & Weight Editor
+* **Goal**: Interactive configuration module for academic weight editing.
+* **Features**:
+  * Period weights editor (P1-P4) with auto-compensation sliders.
+  * Subject weights editor (grupo → área → asignatura) with auto-compensation.
+  * Institutional presets manager (preview, apply, restore).
+  * Worker deep merge: user weights survive Excel re-uploads.
+  * 5 new test files, 575 tests passing, strict TDD.
+
 ---
 
 ## 🛠️ Next Steps
 
-* **Phase 14: System Verification & Release**
+* **Phase 14: System Verification & Release** — COMPLETED (v1.5.0 released)
   * **Task 1: Build & CI Audit**: Run full clean build, verify zero TS/Linter warnings in strict mode.
   * **Task 2: Browser Engine Check**: Verify print layout and flexbox containment across WebKit (Safari) and Gecko (Firefox) engines.
   * **Task 3: Release Closure**: Verify Release Please output, GitHub tag/release, Vercel deploy, and README/package/CHANGELOG version alignment.

@@ -10,7 +10,7 @@
 
 | Área | Estado |
 |------|--------|
-| Versión | `1.4.0` |
+| Versión | `1.5.0` |
 | Frontend | React 19 + TypeScript + Vite |
 | Datos | Procesamiento local de Excel con Web Worker |
 | Calidad | 560 pruebas automatizadas con Vitest |
@@ -20,6 +20,7 @@
 
 ## Novedades recientes
 
+- ⚙️ **Configuración de Pesos**: Edición interactiva de ponderaciones por período y por asignatura (grupo/área/materia) con presets institucionales.
 - **Dashboard Directivo e Institucional**: Nueva pestaña ejecutiva que centraliza métricas globales, rendimiento general, distribución de desempeño (desaprobados, básicos, altos, superiores), tasas de riesgo y métricas de excelencia.
 - **Extracción de Metadatos de Excel**: El parser ahora extrae y utiliza la Sede y Jornada de los archivos Excel reales de la institución (ej. "IE EL CARMEN SEDE PRINCIPAL", "Jornada Tarde").
 - **Exportación Masiva de Fichas en PDF**: Botón dedicado para generar e imprimir de una sola vez todas las fichas de los estudiantes de un curso, con optimización para que Chart.js las dibuje sin bloquear la memoria del navegador.

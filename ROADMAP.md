@@ -7,8 +7,10 @@ This roadmap serves as the master planning and alignment document for the **Cons
 ## 🗺️ Execution Roadmap
 
 ```
-Phase 10 (Charts) ──> Phase 11 (UI Overhaul) ──> Phase 12 (Reports Engine) ──> Phase 13 (Export & Print) ──> System Verification
-   [COMPLETED]           [COMPLETED]               [COMPLETED]                 [COMPLETED]               [NEXT UP]
+Phase 10 (Charts) ──> Phase 11 (UI Overhaul) ──> Phase 12 (Reports Engine) ──> Phase 13 (Export & Print) ──> Phase 14 (Verification) ──> Phase 15 (Settings) ──> System Ready
+   [COMPLETED]           [COMPLETED]               [COMPLETED]                 [COMPLETED]                  [COMPLETED]              [COMPLETED]             [v1.5.0]
+
+Phase 21/22 (Executive Dashboard) — COMPLETED (integrated in v1.4.0)
 ```
 
 ---
@@ -66,9 +68,10 @@ Phase 10 (Charts) ──> Phase 11 (UI Overhaul) ──> Phase 12 (Reports Engin
 ## 🛠️ Next Steps
 
 * **Phase 14: System Verification & Release** — COMPLETED (v1.5.0 released)
-  * **Task 1: Build & CI Audit**: Run full clean build, verify zero TS/Linter warnings in strict mode.
-  * **Task 2: Browser Engine Check**: Verify print layout and flexbox containment across WebKit (Safari) and Gecko (Firefox) engines.
-  * **Task 3: Release Closure**: Verify Release Please output, GitHub tag/release, Vercel deploy, and README/package/CHANGELOG version alignment.
+* **Next Feature: Multi-Excel Historical Upload** — SDD pending
+  * Explore loading files from multiple academic periods (1P, 2P, 3P, 4P).
+  * Define period-over-period comparison and trend analysis requirements.
+  * Validate performance implications before implementation.
 
 ---
 

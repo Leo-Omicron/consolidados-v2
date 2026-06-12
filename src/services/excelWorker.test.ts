@@ -76,7 +76,8 @@ describe('excelWorker — handleParse', () => {
     const request: WorkerRequest = {
       type: 'PARSE',
       files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
-      
+      config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+      subjectWeights: {}
     };
 
     await handleParse(request, postMessageSpy);
@@ -94,7 +95,8 @@ describe('excelWorker — handleParse', () => {
     const request: WorkerRequest = {
       type: 'PARSE',
       files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
-      
+      config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+      subjectWeights: {}
     };
 
     await handleParse(request, postMessageSpy);
@@ -116,7 +118,8 @@ describe('excelWorker — handleParse', () => {
     const request: WorkerRequest = {
       type: 'PARSE',
       files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
-      
+      config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+      subjectWeights: {}
     };
 
     await handleParse(request, postMessageSpy);
@@ -145,7 +148,8 @@ describe('excelWorker — handleParse', () => {
     const request: WorkerRequest = {
       type: 'PARSE',
       files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
-      
+      config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+      subjectWeights: {}
     };
 
     await handleParse(request, postMessageSpy);
@@ -166,7 +170,8 @@ describe('excelWorker — handleParse', () => {
     const request: WorkerRequest = {
       type: 'PARSE',
       files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
-      
+      config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+      subjectWeights: {}
     };
 
     await handleParse(request, postMessageSpy);
@@ -190,7 +195,8 @@ describe('excelWorker — handleParse', () => {
     const request: WorkerRequest = {
       type: 'PARSE',
       files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
-      
+      config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+      subjectWeights: {}
     };
 
     await handleParse(request, postMessageSpy);
@@ -228,7 +234,8 @@ describe('excelWorker — handleParse', () => {
     const request: WorkerRequest = {
       type: 'PARSE',
       files: [{ buffer: new ArrayBuffer(10), name: 'test.xlsx' }],
-      
+      config: { P1: 33.3, P2: 33.3, P3: 33.4 },
+      subjectWeights: {}
     };
 
     await handleParse(request, postMessageSpy);

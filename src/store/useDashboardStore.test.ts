@@ -144,7 +144,7 @@ describe('useDashboardStore', () => {
       await useDashboardStore.getState().processFiles([]);
 
       expect(parseFileMock).toHaveBeenCalledTimes(1);
-      expect(parseFileMock).toHaveBeenCalledWith(expect.any(Array), expect.objectContaining({
+      expect(parseFileMock).toHaveBeenCalledWith(expect.any(Array), expect.any(Object), expect.any(Object), expect.objectContaining({
         onProgress: expect.any(Function),
         onDiagnostic: expect.any(Function)
       }));
@@ -162,7 +162,7 @@ describe('useDashboardStore', () => {
 
     it('updates parsingProgress from onProgress callback', async () => {
       // Capture the callbacks
-      parseFileMock.mockImplementation(async (_file: File, callbacks: ParseCallbacks) => {
+      parseFileMock.mockImplementation(async (_file: File, _config: any, _subjectWeights: any, callbacks: ParseCallbacks) => {
         callbacks?.onProgress?.('Leyendo archivos...', '10%');
         callbacks?.onProgress?.('Extrayendo estudiantes...', '50%');
         callbacks?.onProgress?.('Calculando pesos...', '75%');
@@ -183,7 +183,7 @@ describe('useDashboardStore', () => {
         issues: [{ code: 'EMPTY_GRADE' as const, severity: 'WARNING' as const, sheet: 'Sheet1', col: 'C', row: 5, message: 'empty', action: 'fix' }]
       };
 
-      parseFileMock.mockImplementation(async (_file: File, callbacks: ParseCallbacks) => {
+      parseFileMock.mockImplementation(async (_file: File, _config: any, _subjectWeights: any, callbacks: ParseCallbacks) => {
         callbacks?.onDiagnostic?.(warnReport);
         // RESULT carries the same diagnosticReport
         return { ...mockParsedResult, diagnosticReport: warnReport };
@@ -234,7 +234,7 @@ describe('useDashboardStore', () => {
         issues: [{ code: 'MISSING_SCHEMA' as const, severity: 'CRITICAL' as const, sheet: 'Global', message: 'No hay hojas válidas', action: 'fix' }]
       };
 
-      parseFileMock.mockImplementation(async (_file: File, callbacks: ParseCallbacks) => {
+      parseFileMock.mockImplementation(async (_file: File, _config: any, _subjectWeights: any, callbacks: ParseCallbacks) => {
         callbacks?.onDiagnostic?.(criticalDiag);
         throw new Error('No hay hojas válidas');
       });

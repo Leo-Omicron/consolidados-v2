@@ -45,6 +45,12 @@ const tabGroups = [
       { id: 'volatility', label: 'Volatilidad' },
       { id: 'tutors', label: 'Mentores' },
     ]
+  },
+  {
+    name: 'Administraci├│n',
+    tabs: [
+      { id: 'settings', label: 'Configuraci├│n de Pesos' }
+    ]
   }
 ];
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback';
 
@@ -18,11 +18,7 @@ export const SubjectWeightsEditor: React.FC = () => {
     return Array.from(areas).sort();
   }, [selectedGroup, estudiantes]);
 
-  useEffect(() => {
-    if (!groupAreas.includes(selectedArea) && groupAreas.length > 0) {
-      setSelectedArea(groupAreas[0]);
-    }
-  }, [groupAreas, selectedArea]);
+
 
   const groupStudents = useMemo(() => estudiantes.find(e => e.grupo === selectedGroup), [estudiantes, selectedGroup]);
   const subjectsInArea = useMemo(() => {
@@ -44,10 +40,15 @@ export const SubjectWeightsEditor: React.FC = () => {
   }, [subjectWeights, selectedGroup, selectedArea, subjectsInArea]);
 
   const [localWeights, setLocalWeights] = useState<Record<string, number>>(currentStoreWeights);
+  const [prevStoreWeightsStr, setPrevStoreWeightsStr] = useState<string>(JSON.stringify(currentStoreWeights));
 
-  useEffect(() => {
+  const currentStoreWeightsStr = JSON.stringify(currentStoreWeights);
+  if (currentStoreWeightsStr !== prevStoreWeightsStr) {
+    setPrevStoreWeightsStr(currentStoreWeightsStr);
     setLocalWeights(currentStoreWeights);
-  }, [currentStoreWeights]);
+  }
+
+
 
   const debouncedUpdate = useDebouncedCallback((grupo: string, area: string, weightsToSave: Record<string, number>) => {
     // Convert 0-100 to 0-1 before dispatching
@@ -77,7 +78,7 @@ export const SubjectWeightsEditor: React.FC = () => {
     setLocalWeights(prev => {
       const draft = { ...prev, [subject]: newValue };
       
-      let sum = Object.values(draft).reduce((acc, v) => acc + v, 0);
+      const sum = Object.values(draft).reduce((acc, v) => acc + v, 0);
       
       if (sum !== 100 && subjectsInArea.length > 1) {
         let diff = 100 - sum;
@@ -116,7 +117,18 @@ export const SubjectWeightsEditor: React.FC = () => {
           <label className="block text-sm font-medium app-text-muted mb-2">Grupo</label>
           <select
             value={selectedGroup}
-            onChange={(e) => setSelectedGroup(e.target.value)}
+            onChange={(e) => {
+              const newGroup = e.target.value;
+              setSelectedGroup(newGroup);
+              const areas = new Set<string>();
+              estudiantes.filter(student => student.grupo === newGroup).forEach(student => {
+                Object.keys(student.areas).forEach(a => areas.add(a));
+              });
+              const newGroupAreas = Array.from(areas).sort();
+              if (newGroupAreas.length > 0 && !newGroupAreas.includes(selectedArea)) {
+                setSelectedArea(newGroupAreas[0]);
+              }
+            }}
             className="w-full pl-3 pr-8 py-2 text-sm border app-control app-focus rounded-lg"
           >
             {groups.map(g => (

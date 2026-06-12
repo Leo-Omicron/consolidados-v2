@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDashboardStore } from '../../../store/useDashboardStore';
 import { useDebouncedCallback } from '../../../hooks/useDebouncedCallback';
 import type { PeriodConfig } from '../../../domain/types';
@@ -7,14 +7,19 @@ export const PeriodWeightsEditor: React.FC = () => {
   const storeConfig = useDashboardStore(state => state.config);
   const setConfig = useDashboardStore(state => state.setConfig);
   const [localConfig, setLocalConfig] = useState<PeriodConfig>(storeConfig);
+  const [prevStoreConfigStr, setPrevStoreConfigStr] = useState<string>(JSON.stringify(storeConfig));
+
+  const storeConfigStr = JSON.stringify(storeConfig);
+  if (storeConfigStr !== prevStoreConfigStr) {
+    setPrevStoreConfigStr(storeConfigStr);
+    setLocalConfig(storeConfig);
+  }
 
   const debouncedSetConfig = useDebouncedCallback((config: PeriodConfig) => {
     setConfig(config);
   }, 300);
 
-  useEffect(() => {
-    setLocalConfig(storeConfig);
-  }, [storeConfig]);
+
 
   const handleSliderChange = (period: keyof PeriodConfig, valueStr: string) => {
     let newValue = parseInt(valueStr, 10);
@@ -34,7 +39,7 @@ export const PeriodWeightsEditor: React.FC = () => {
         draft.P4 = 0;
       }
 
-      let sum = periods.reduce((acc, p) => acc + (draft[p] || 0), 0);
+      const sum = periods.reduce((acc, p) => acc + (draft[p] || 0), 0);
       
       if (sum !== 100) {
         const diff = 100 - sum;

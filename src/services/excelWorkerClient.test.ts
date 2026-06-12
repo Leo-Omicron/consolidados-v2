@@ -54,7 +54,7 @@ describe('excelWorkerClient', () => {
   }
 
   it('parses a file and resolves with ParsedExcelData', async () => {
-    const promise = parseFileInWorker([]);
+    const promise = parseFileInWorker([], {P1: 33.3, P2: 33.3, P3: 33.4}, {});
 
     // Flush microtasks so arrayBuffer().then() runs
     await flushMicrotasks();
@@ -78,7 +78,7 @@ describe('excelWorkerClient', () => {
   it('rejects when worker sends ERROR', async () => {
     
 
-    const promise = parseFileInWorker([]);
+    const promise = parseFileInWorker([], {P1: 33.3, P2: 33.3, P3: 33.4}, {});
     await flushMicrotasks();
 
     simulateWorkerMessage({ type: 'ERROR', message: 'parse failed', stack: 'at Worker' });
@@ -89,7 +89,7 @@ describe('excelWorkerClient', () => {
   it('calls onProgress callback with phase and message', async () => {
     const onProgress = vi.fn();
 
-    const promise = parseFileInWorker([], { onProgress });
+    const promise = parseFileInWorker([], {P1: 33.3, P2: 33.3, P3: 33.4}, {}, { onProgress });
     await flushMicrotasks();
 
     // Simulate progress and result
@@ -107,7 +107,7 @@ describe('excelWorkerClient', () => {
   it('calls onDiagnostic callback with report', async () => {
     const onDiagnostic = vi.fn();
 
-    const promise = parseFileInWorker([], { onDiagnostic });
+    const promise = parseFileInWorker([], {P1: 33.3, P2: 33.3, P3: 33.4}, {}, { onDiagnostic });
     await flushMicrotasks();
 
     const report = { isValid: false, totalSheetsProcessed: 0, issues: [{ code: 'MISSING_SCHEMA' as const, severity: 'CRITICAL' as const, sheet: 'Sheet1', message: 'bad', action: 'fix' }] };
@@ -128,7 +128,7 @@ describe('excelWorkerClient', () => {
       writable: true
     });
 
-    const promise = parseFileInWorker([file]);
+    const promise = parseFileInWorker([file], {P1: 33.3, P2: 33.3, P3: 33.4}, {});
     await flushMicrotasks();
 
     const posted = mockWorkerPostMessage.mock.calls[0];
@@ -152,7 +152,7 @@ describe('excelWorkerClient', () => {
 
     
 
-    await expect(parseFileInWorker([])).rejects.toThrow('Workers not supported');
+    await expect(parseFileInWorker([], {P1: 33.3, P2: 33.3, P3: 33.4}, {})).rejects.toThrow('Workers not supported');
   });
 
   it('terminates previous worker on new upload', async () => {
@@ -160,7 +160,7 @@ describe('excelWorkerClient', () => {
     
 
     // Start first parse (no prior worker, so no terminate)
-    const promise1 = parseFileInWorker([]);
+    const promise1 = parseFileInWorker([], {P1: 33.3, P2: 33.3, P3: 33.4}, {});
     await flushMicrotasks();
     expect(mockWorkerTerminate).not.toHaveBeenCalled();
 
@@ -170,7 +170,7 @@ describe('excelWorkerClient', () => {
 
     // Start second parse — this internally calls terminateWorker(),
     // which should abort the first parse's promise
-    const promise2 = parseFileInWorker([]);
+    const promise2 = parseFileInWorker([], {P1: 33.3, P2: 33.3, P3: 33.4}, {});
     await flushMicrotasks();
 
     await rejectionAssertion;

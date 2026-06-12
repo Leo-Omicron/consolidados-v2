@@ -11,6 +11,7 @@ const AlertsTab = lazy(() => import('../dashboard/AlertsTab').then(module => ({ 
 const TutorsTab = lazy(() => import('../dashboard/TutorsTab').then(module => ({ default: module.TutorsTab })));
 const HeatmapTab = lazy(() => import('../dashboard/HeatmapTab').then(module => ({ default: module.HeatmapTab })));
 const VolatilityTab = lazy(() => import('../dashboard/VolatilityTab').then(module => ({ default: module.VolatilityTab })));
+const SettingsTab = lazy(() => import('../dashboard/SettingsTab').then(module => ({ default: module.SettingsTab })));
 
 export const MainLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('analysis');
@@ -38,6 +39,8 @@ export const MainLayout: React.FC = () => {
         return <VolatilityTab />;
       case 'heatmap':
         return <HeatmapTab />;
+      case 'settings':
+        return <SettingsTab />;
       default:
         return <AnalysisTab />;
     }

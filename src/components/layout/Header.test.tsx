@@ -25,9 +25,11 @@ describe('Header', () => {
   it('renders all group names and the title', () => {
     render(<Header activeTab="analysis" setActiveTab={() => {}} />);
     expect(screen.getByText('Dashboard de Consolidados')).toBeDefined();
+    expect(screen.getByRole('button', { name: /Institucional/ })).toBeDefined();
     expect(screen.getByRole('button', { name: /General/ })).toBeDefined();
     expect(screen.getByRole('button', { name: /Desempeño/ })).toBeDefined();
     expect(screen.getByRole('button', { name: /Seguimiento/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Administración/ })).toBeDefined();
   });
 
   it('has no accessibility violations', async () => {

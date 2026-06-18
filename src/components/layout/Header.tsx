@@ -47,9 +47,9 @@ const tabGroups = [
     ]
   },
   {
-    name: 'Administraci├│n',
+    name: 'Administración',
     tabs: [
-      { id: 'settings', label: 'Configuraci├│n de Pesos' }
+      { id: 'settings', label: 'Configuración de Pesos' }
     ]
   }
 ];

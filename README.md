@@ -10,7 +10,7 @@
 
 | Área | Estado |
 |------|--------|
-| Versión | `1.5.0` |
+| Versión | `1.5.1` |
 | Frontend | React 19 + TypeScript + Vite |
 | Datos | Procesamiento local de Excel con Web Worker |
 | Calidad | 575+ pruebas automatizadas con Vitest |

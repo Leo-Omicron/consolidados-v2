@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/Leo-Omicron/consolidados-v2/compare/v1.5.0...v1.5.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* **ui:** corrige encoding mojibake en labels de navegación ([59b4cce](https://github.com/Leo-Omicron/consolidados-v2/commit/59b4ccebe696d5163774cae710e955bbb353e642))
+* **ui:** corrige encoding mojibake en labels de navegación ([381131c](https://github.com/Leo-Omicron/consolidados-v2/commit/381131c89aa20e562574c25cc04c5e857d1294f7))
+
 ## [1.5.0](https://github.com/Leo-Omicron/consolidados-v2/compare/v1.4.0...v1.5.0) (2026-06-12)
 
 
